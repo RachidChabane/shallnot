@@ -112,7 +112,7 @@ In GitHub Actions:
 ```yaml
 - run: pytest --junitxml=junit.xml        # your test step, producing JUnit XML
   continue-on-error: true
-- uses: RachidChabane/shallnot@v0.1.0
+- uses: RachidChabane/shallnot@v0.1.1
   with:
     args: --specs specs --tests tests --results junit.xml
 ```
