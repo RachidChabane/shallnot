@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Record build/demo.gif: the quickstart project going from FAIL to PASS.
+# The README shows the copy published in the shallnot-demo repository (media/demo.gif).
 # Needs vhs (https://github.com/charmbracelet/vhs) and python3.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."

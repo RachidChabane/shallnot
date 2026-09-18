@@ -9,7 +9,7 @@ verify a requirement that does not exist.
 It is a single static binary. It makes no network access and calls no model:
 the same inputs give the same output, byte for byte.
 
-![A requirement without a test blocks the gate; adding a tagged, passing test turns the verdict to PASS](https://github.com/RachidChabane/shallnot/releases/download/v0.1.1/demo.gif)
+![A requirement without a test blocks the gate; adding a tagged, passing test turns the verdict to PASS](https://raw.githubusercontent.com/RachidChabane/shallnot-demo/main/media/demo.gif)
 
 The first half of that run, as text:
 
