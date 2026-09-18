@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Trace shallnot's own requirements (specs/) to its own test results.
+# Run script/test first. Extra arguments go to `shallnot check`.
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+script/build
+bin/shallnot check "$@"

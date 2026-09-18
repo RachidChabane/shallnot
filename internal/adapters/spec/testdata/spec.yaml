@@ -1,0 +1,29 @@
+requirements:
+  - id: REQ-1
+    revision: 3
+    title: Totals
+    statement: >
+      WHEN a cart holds line items THE SYSTEM SHALL
+      compute the total.
+  - id: REQ-2
+    statement: THE SYSTEM SHALL default to revision 1.
+  - id: REQ-3
+    statement: THE page SHALL feel uncluttered.
+    status: non_testable
+    justification: Judged in design review.
+  - id: REQ-4
+    statement: THE page SHALL feel fast.
+    status: non_testable
+  - id: req four
+    statement: THE id SHALL match the pattern.
+  - id: REQ-5
+    revision: 0
+    statement: THE revision SHALL be positive.
+  - id: REQ-6
+  - id: REQ-7
+    statement: THE status SHALL be known.
+    status: someday
+  - id: REQ-8
+    statement: THE keys SHALL be known.
+    priority: high
+  - just a string

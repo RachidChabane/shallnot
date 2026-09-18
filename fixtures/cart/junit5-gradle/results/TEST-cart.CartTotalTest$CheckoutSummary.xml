@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="checkout summary [verifies CART-1~1]" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-09-18T19:46:26.215Z" hostname="localhost" time="0.001">
+  <properties/>
+  <testcase name="reports the subtotal before any discount" classname="cart.CartTotalTest$CheckoutSummary" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Run every test and write the JUnit XML results that script/trace reads.
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+mkdir -p build/test-results
+go tool gotestsum --format pkgname --junitfile build/test-results/go.xml -- -count=1 ./... "$@"

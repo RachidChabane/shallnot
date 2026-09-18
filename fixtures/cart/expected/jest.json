@@ -1,0 +1,387 @@
+{
+  "schema_version": "1.0",
+  "tool": {
+    "name": "shallnot",
+    "version": "dev"
+  },
+  "run": {
+    "advisory": false,
+    "fail_on": "error",
+    "id_pattern": "[A-Z][A-Z0-9]*-[0-9]+(?:\\.[A-Za-z0-9]+)*",
+    "focus": {
+      "everything": true,
+      "files": [],
+      "ids": []
+    },
+    "spec_files": [
+      "fixtures/cart/spec/cart.md"
+    ],
+    "test_roots": [
+      "fixtures/cart/jest"
+    ],
+    "results_files": [
+      "fixtures/cart/jest/results/junit.xml"
+    ]
+  },
+  "verdict": "fail",
+  "exit_code": 1,
+  "summary": {
+    "requirements": {
+      "known": 7,
+      "in_focus": 7,
+      "covered": 2,
+      "failed": 1,
+      "skipped": 1,
+      "not_run": 1,
+      "uncovered": 1,
+      "non_testable": 1
+    },
+    "tests": {
+      "total": 13,
+      "bound": 11,
+      "untagged": 1
+    },
+    "findings": {
+      "error": 7,
+      "warning": 1,
+      "info": 1,
+      "blocking": 7
+    }
+  },
+  "requirements": [
+    {
+      "id": "CART-1",
+      "revision": 1,
+      "ref": "CART-1~1",
+      "statement": "WHEN a cart holds line items THE SYSTEM SHALL compute the total as the sum of each line item's price times its quantity.",
+      "status": "active",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 8
+      },
+      "in_focus": true,
+      "coverage": "covered",
+      "tests": [
+        {
+          "name": " stays consistent between total and discounted total [verifies CART-1~1, CART-2~2]",
+          "classname": " stays consistent between total and discounted total [verifies CART-1~1, CART-2~2]",
+          "suite": "undefined",
+          "outcome": "passed",
+          "results_file": "fixtures/cart/jest/results/junit.xml",
+          "source": {
+            "file": "fixtures/cart/jest/test/cart.test.js",
+            "line": 62
+          }
+        },
+        {
+          "name": " sums line items [verifies CART-1~1]",
+          "classname": " sums line items [verifies CART-1~1]",
+          "suite": "undefined",
+          "outcome": "passed",
+          "results_file": "fixtures/cart/jest/results/junit.xml",
+          "source": {
+            "file": "fixtures/cart/jest/test/cart.test.js",
+            "line": 11
+          }
+        }
+      ],
+      "extensions": {}
+    },
+    {
+      "id": "CART-4",
+      "revision": 1,
+      "ref": "CART-4~1",
+      "statement": "WHEN a total has more than two decimals THE SYSTEM SHALL round it to two decimals, half-up.",
+      "status": "active",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 11
+      },
+      "in_focus": true,
+      "coverage": "skipped",
+      "tests": [
+        {
+          "name": " rounds totals to two decimals using half-up [verifies CART-4~1]",
+          "classname": " rounds totals to two decimals using half-up [verifies CART-4~1]",
+          "suite": "undefined",
+          "outcome": "skipped",
+          "results_file": "fixtures/cart/jest/results/junit.xml",
+          "source": {
+            "file": "fixtures/cart/jest/test/cart.test.js",
+            "line": 43
+          }
+        }
+      ],
+      "extensions": {}
+    },
+    {
+      "id": "CART-2",
+      "revision": 2,
+      "ref": "CART-2~2",
+      "title": "Percentage discount codes",
+      "statement": "WHEN a customer applies a percentage discount code THE SYSTEM SHALL reduce the total by that percentage.",
+      "status": "active",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 16
+      },
+      "in_focus": true,
+      "coverage": "covered",
+      "tests": [
+        {
+          "name": " stays consistent between total and discounted total [verifies CART-1~1, CART-2~2]",
+          "classname": " stays consistent between total and discounted total [verifies CART-1~1, CART-2~2]",
+          "suite": "undefined",
+          "outcome": "passed",
+          "results_file": "fixtures/cart/jest/results/junit.xml",
+          "source": {
+            "file": "fixtures/cart/jest/test/cart.test.js",
+            "line": 62
+          }
+        },
+        {
+          "name": "discount codes [verifies CART-2~2] percentage codes applies a 10% code to a 100 total",
+          "classname": "discount codes [verifies CART-2~2] percentage codes applies a 10% code to a 100 total",
+          "suite": "undefined",
+          "outcome": "passed",
+          "results_file": "fixtures/cart/jest/results/junit.xml",
+          "source": {
+            "file": "fixtures/cart/jest/test/cart.test.js",
+            "line": 72
+          }
+        },
+        {
+          "name": "discount codes [verifies CART-2~2] percentage codes applies a 20% code to a 50 total",
+          "classname": "discount codes [verifies CART-2~2] percentage codes applies a 20% code to a 50 total",
+          "suite": "undefined",
+          "outcome": "passed",
+          "results_file": "fixtures/cart/jest/results/junit.xml",
+          "source": {
+            "file": "fixtures/cart/jest/test/cart.test.js",
+            "line": 72
+          }
+        },
+        {
+          "name": "discount codes applies 10% off a 100 total to get 90 [verifies CART-2~2]",
+          "classname": "discount codes applies 10% off a 100 total to get 90 [verifies CART-2~2]",
+          "suite": "undefined",
+          "outcome": "passed",
+          "results_file": "fixtures/cart/jest/results/junit.xml",
+          "source": {
+            "file": "fixtures/cart/jest/test/cart.test.js",
+            "line": 25
+          }
+        },
+        {
+          "name": "discount codes applies 20% off a 50 total to get 40 [verifies CART-2~2]",
+          "classname": "discount codes applies 20% off a 50 total to get 40 [verifies CART-2~2]",
+          "suite": "undefined",
+          "outcome": "passed",
+          "results_file": "fixtures/cart/jest/results/junit.xml",
+          "source": {
+            "file": "fixtures/cart/jest/test/cart.test.js",
+            "line": 25
+          }
+        },
+        {
+          "name": "discount codes applies 25% off a 200 total to get 150 [verifies CART-2~2]",
+          "classname": "discount codes applies 25% off a 200 total to get 150 [verifies CART-2~2]",
+          "suite": "undefined",
+          "outcome": "passed",
+          "results_file": "fixtures/cart/jest/results/junit.xml",
+          "source": {
+            "file": "fixtures/cart/jest/test/cart.test.js",
+            "line": 25
+          }
+        }
+      ],
+      "extensions": {}
+    },
+    {
+      "id": "CART-3",
+      "revision": 1,
+      "ref": "CART-3~1",
+      "statement": "WHEN a customer checks out an empty cart THE SYSTEM SHALL reject the checkout with an error.",
+      "status": "active",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 25
+      },
+      "in_focus": true,
+      "coverage": "failed",
+      "tests": [
+        {
+          "name": " rejects checking out an empty cart [verifies CART-3~1]",
+          "classname": " rejects checking out an empty cart [verifies CART-3~1]",
+          "suite": "undefined",
+          "outcome": "failed",
+          "results_file": "fixtures/cart/jest/results/junit.xml",
+          "source": {
+            "file": "fixtures/cart/jest/test/cart.test.js",
+            "line": 36
+          }
+        }
+      ],
+      "extensions": {}
+    },
+    {
+      "id": "CART-5",
+      "revision": 1,
+      "ref": "CART-5~1",
+      "statement": "WHEN a line item quantity exceeds 99 THE SYSTEM SHALL reject the line item.",
+      "status": "active",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 27
+      },
+      "in_focus": true,
+      "coverage": "not_run",
+      "tests": [
+        {
+          "name": "rejects a line item quantity above 99 [verifies CART-5~1]",
+          "outcome": "not_run",
+          "source": {
+            "file": "fixtures/cart/jest/test/integration/quantity-limits.test.js",
+            "line": 3
+          }
+        }
+      ],
+      "extensions": {}
+    },
+    {
+      "id": "CART-6",
+      "revision": 1,
+      "ref": "CART-6~1",
+      "statement": "WHEN a total is displayed THE SYSTEM SHALL show it in the customer's currency.",
+      "status": "active",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 32
+      },
+      "in_focus": true,
+      "coverage": "uncovered",
+      "tests": [],
+      "extensions": {}
+    },
+    {
+      "id": "CART-7",
+      "revision": 1,
+      "ref": "CART-7~1",
+      "statement": "THE checkout page SHALL feel uncluttered on a phone screen.",
+      "status": "non_testable",
+      "justification": "judged in the quarterly design review with customer panels; no automated check can stand in for it.",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 34
+      },
+      "in_focus": true,
+      "coverage": "non_testable",
+      "tests": [],
+      "extensions": {}
+    }
+  ],
+  "findings": [
+    {
+      "category": "untagged_test",
+      "severity": "info",
+      "blocking": false,
+      "message": "test \" keeps quantities editable after adding an item ›  keeps quantities editable after adding an item\" verifies no stated requirement",
+      "location": {
+        "file": "fixtures/cart/jest/results/junit.xml"
+      },
+      "test": {
+        "name": " keeps quantities editable after adding an item",
+        "classname": " keeps quantities editable after adding an item",
+        "results_file": "fixtures/cart/jest/results/junit.xml"
+      }
+    },
+    {
+      "category": "revision_mismatch",
+      "severity": "error",
+      "blocking": true,
+      "message": "tag cites CART-2~1, but the spec declares CART-2~2: re-verify the test against the current statement, then cite CART-2~2",
+      "requirement_id": "CART-2",
+      "location": {
+        "file": "fixtures/cart/jest/test/cart.test.js",
+        "line": 31
+      }
+    },
+    {
+      "category": "orphan_tag",
+      "severity": "error",
+      "blocking": true,
+      "message": "tag cites CART-99~1, but no known spec declares CART-99",
+      "requirement_id": "CART-99",
+      "location": {
+        "file": "fixtures/cart/jest/test/cart.test.js",
+        "line": 48
+      }
+    },
+    {
+      "category": "malformed_tag",
+      "severity": "error",
+      "blocking": true,
+      "message": "malformed tag [verifies CART-1]: \"CART-1\" cites no revision (expected ID~REVISION)",
+      "location": {
+        "file": "fixtures/cart/jest/test/cart.test.js",
+        "line": 52
+      }
+    },
+    {
+      "category": "tag_not_in_results",
+      "severity": "warning",
+      "blocking": false,
+      "message": "tag citing CART-5~1 appears in no results file: the test did not run, or the tag sits where the runner does not report it",
+      "requirement_id": "CART-5",
+      "location": {
+        "file": "fixtures/cart/jest/test/integration/quantity-limits.test.js",
+        "line": 3
+      }
+    },
+    {
+      "category": "skipped_requirement",
+      "severity": "error",
+      "blocking": true,
+      "message": "requirement CART-4~1 is not verified: its bound tests were skipped",
+      "requirement_id": "CART-4",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 11
+      }
+    },
+    {
+      "category": "failed_requirement",
+      "severity": "error",
+      "blocking": true,
+      "message": "requirement CART-3~1 is not verified: no bound test passed and at least one failed",
+      "requirement_id": "CART-3",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 25
+      }
+    },
+    {
+      "category": "not_run_requirement",
+      "severity": "error",
+      "blocking": true,
+      "message": "requirement CART-5~1 is not verified: its tagged tests appear in no results file (they did not run, or the tag sits where the runner does not report it)",
+      "requirement_id": "CART-5",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 27
+      }
+    },
+    {
+      "category": "uncovered_requirement",
+      "severity": "error",
+      "blocking": true,
+      "message": "requirement CART-6~1 has no bound test",
+      "requirement_id": "CART-6",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 32
+      }
+    }
+  ],
+  "extensions": {}
+}

@@ -1,0 +1,423 @@
+{
+  "schema_version": "1.0",
+  "tool": {
+    "name": "shallnot",
+    "version": "dev"
+  },
+  "run": {
+    "advisory": false,
+    "fail_on": "error",
+    "id_pattern": "[A-Z][A-Z0-9]*-[0-9]+(?:\\.[A-Za-z0-9]+)*",
+    "focus": {
+      "everything": true,
+      "files": [],
+      "ids": []
+    },
+    "spec_files": [
+      "fixtures/cart/spec/cart.md"
+    ],
+    "test_roots": [
+      "fixtures/cart/pytest"
+    ],
+    "results_files": [
+      "fixtures/cart/pytest/results/junit.xml"
+    ]
+  },
+  "verdict": "fail",
+  "exit_code": 1,
+  "summary": {
+    "requirements": {
+      "known": 7,
+      "in_focus": 7,
+      "covered": 2,
+      "failed": 1,
+      "skipped": 1,
+      "not_run": 1,
+      "uncovered": 1,
+      "non_testable": 1
+    },
+    "tests": {
+      "total": 16,
+      "bound": 13,
+      "untagged": 2
+    },
+    "findings": {
+      "error": 7,
+      "warning": 1,
+      "info": 2,
+      "blocking": 7
+    }
+  },
+  "requirements": [
+    {
+      "id": "CART-1",
+      "revision": 1,
+      "ref": "CART-1~1",
+      "statement": "WHEN a cart holds line items THE SYSTEM SHALL compute the total as the sum of each line item's price times its quantity.",
+      "status": "active",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 8
+      },
+      "in_focus": true,
+      "coverage": "covered",
+      "tests": [
+        {
+          "name": "test_discounted_total_reflects_line_items",
+          "classname": "tests.test_misc",
+          "suite": "pytest",
+          "outcome": "passed",
+          "results_file": "fixtures/cart/pytest/results/junit.xml",
+          "source": {
+            "file": "fixtures/cart/pytest/tests/test_misc.py",
+            "line": 26
+          }
+        },
+        {
+          "name": "test_total_reflects_each_line_item",
+          "classname": "tests.test_totals",
+          "suite": "pytest",
+          "outcome": "passed",
+          "results_file": "fixtures/cart/pytest/results/junit.xml",
+          "source": {
+            "file": "fixtures/cart/pytest/tests/test_totals.py",
+            "line": 15
+          }
+        },
+        {
+          "name": "test_total_sums_price_times_quantity",
+          "classname": "tests.test_totals",
+          "suite": "pytest",
+          "outcome": "passed",
+          "results_file": "fixtures/cart/pytest/results/junit.xml",
+          "source": {
+            "file": "fixtures/cart/pytest/tests/test_totals.py",
+            "line": 6
+          }
+        }
+      ],
+      "extensions": {}
+    },
+    {
+      "id": "CART-4",
+      "revision": 1,
+      "ref": "CART-4~1",
+      "statement": "WHEN a total has more than two decimals THE SYSTEM SHALL round it to two decimals, half-up.",
+      "status": "active",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 11
+      },
+      "in_focus": true,
+      "coverage": "skipped",
+      "tests": [
+        {
+          "name": "test_total_rounds_half_up_to_two_decimals",
+          "classname": "tests.test_rounding",
+          "suite": "pytest",
+          "outcome": "skipped",
+          "results_file": "fixtures/cart/pytest/results/junit.xml",
+          "source": {
+            "file": "fixtures/cart/pytest/tests/test_rounding.py",
+            "line": 7
+          }
+        }
+      ],
+      "extensions": {}
+    },
+    {
+      "id": "CART-2",
+      "revision": 2,
+      "ref": "CART-2~2",
+      "title": "Percentage discount codes",
+      "statement": "WHEN a customer applies a percentage discount code THE SYSTEM SHALL reduce the total by that percentage.",
+      "status": "active",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 16
+      },
+      "in_focus": true,
+      "coverage": "covered",
+      "tests": [
+        {
+          "name": "test_discount_code_reduces_total[10.00-2-10-18.0]",
+          "classname": "tests.test_discounts",
+          "suite": "pytest",
+          "outcome": "passed",
+          "results_file": "fixtures/cart/pytest/results/junit.xml",
+          "source": {
+            "file": "fixtures/cart/pytest/tests/test_discounts.py",
+            "line": 6
+          }
+        },
+        {
+          "name": "test_discount_code_reduces_total[15.00-4-5-57.0]",
+          "classname": "tests.test_discounts",
+          "suite": "pytest",
+          "outcome": "passed",
+          "results_file": "fixtures/cart/pytest/results/junit.xml",
+          "source": {
+            "file": "fixtures/cart/pytest/tests/test_discounts.py",
+            "line": 6
+          }
+        },
+        {
+          "name": "test_discount_code_reduces_total[50.00-1-20-40.0]",
+          "classname": "tests.test_discounts",
+          "suite": "pytest",
+          "outcome": "passed",
+          "results_file": "fixtures/cart/pytest/results/junit.xml",
+          "source": {
+            "file": "fixtures/cart/pytest/tests/test_discounts.py",
+            "line": 6
+          }
+        },
+        {
+          "name": "test_full_discount_zeroes_total",
+          "classname": "tests.test_discounts.TestDiscounts",
+          "suite": "pytest",
+          "outcome": "passed",
+          "results_file": "fixtures/cart/pytest/results/junit.xml",
+          "source": {
+            "file": "fixtures/cart/pytest/tests/test_discounts.py",
+            "line": 30
+          }
+        },
+        {
+          "name": "test_partial_discount_on_multiple_items",
+          "classname": "tests.test_discounts.TestDiscounts",
+          "suite": "pytest",
+          "outcome": "passed",
+          "results_file": "fixtures/cart/pytest/results/junit.xml",
+          "source": {
+            "file": "fixtures/cart/pytest/tests/test_discounts.py",
+            "line": 30
+          }
+        },
+        {
+          "name": "test_zero_discount_leaves_total_unchanged",
+          "classname": "tests.test_discounts.TestDiscounts",
+          "suite": "pytest",
+          "outcome": "passed",
+          "results_file": "fixtures/cart/pytest/results/junit.xml",
+          "source": {
+            "file": "fixtures/cart/pytest/tests/test_discounts.py",
+            "line": 30
+          }
+        },
+        {
+          "name": "test_discounted_total_reflects_line_items",
+          "classname": "tests.test_misc",
+          "suite": "pytest",
+          "outcome": "passed",
+          "results_file": "fixtures/cart/pytest/results/junit.xml",
+          "source": {
+            "file": "fixtures/cart/pytest/tests/test_misc.py",
+            "line": 26
+          }
+        }
+      ],
+      "extensions": {}
+    },
+    {
+      "id": "CART-3",
+      "revision": 1,
+      "ref": "CART-3~1",
+      "statement": "WHEN a customer checks out an empty cart THE SYSTEM SHALL reject the checkout with an error.",
+      "status": "active",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 25
+      },
+      "in_focus": true,
+      "coverage": "failed",
+      "tests": [
+        {
+          "name": "test_checkout_rejects_empty_cart",
+          "classname": "tests.test_checkout",
+          "suite": "pytest",
+          "outcome": "failed",
+          "results_file": "fixtures/cart/pytest/results/junit.xml",
+          "source": {
+            "file": "fixtures/cart/pytest/tests/test_checkout.py",
+            "line": 6
+          }
+        }
+      ],
+      "extensions": {}
+    },
+    {
+      "id": "CART-5",
+      "revision": 1,
+      "ref": "CART-5~1",
+      "statement": "WHEN a line item quantity exceeds 99 THE SYSTEM SHALL reject the line item.",
+      "status": "active",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 27
+      },
+      "in_focus": true,
+      "coverage": "not_run",
+      "tests": [
+        {
+          "name": "test_quantity_above_limit_is_rejected",
+          "outcome": "not_run",
+          "source": {
+            "file": "fixtures/cart/pytest/tests/slow/test_quantity_limits.py",
+            "line": 6
+          }
+        }
+      ],
+      "extensions": {}
+    },
+    {
+      "id": "CART-6",
+      "revision": 1,
+      "ref": "CART-6~1",
+      "statement": "WHEN a total is displayed THE SYSTEM SHALL show it in the customer's currency.",
+      "status": "active",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 32
+      },
+      "in_focus": true,
+      "coverage": "uncovered",
+      "tests": [],
+      "extensions": {}
+    },
+    {
+      "id": "CART-7",
+      "revision": 1,
+      "ref": "CART-7~1",
+      "statement": "THE checkout page SHALL feel uncluttered on a phone screen.",
+      "status": "non_testable",
+      "justification": "judged in the quarterly design review with customer panels; no automated check can stand in for it.",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 34
+      },
+      "in_focus": true,
+      "coverage": "non_testable",
+      "tests": [],
+      "extensions": {}
+    }
+  ],
+  "findings": [
+    {
+      "category": "untagged_test",
+      "severity": "info",
+      "blocking": false,
+      "message": "test \"tests.test_misc › test_cart_starts_with_no_discount\" verifies no stated requirement",
+      "location": {
+        "file": "fixtures/cart/pytest/results/junit.xml"
+      },
+      "test": {
+        "name": "test_cart_starts_with_no_discount",
+        "classname": "tests.test_misc",
+        "results_file": "fixtures/cart/pytest/results/junit.xml"
+      }
+    },
+    {
+      "category": "untagged_test",
+      "severity": "info",
+      "blocking": false,
+      "message": "test \"tests.test_totals › test_total_with_no_discount_matches_subtotal\" verifies no stated requirement",
+      "location": {
+        "file": "fixtures/cart/pytest/results/junit.xml"
+      },
+      "test": {
+        "name": "test_total_with_no_discount_matches_subtotal",
+        "classname": "tests.test_totals",
+        "results_file": "fixtures/cart/pytest/results/junit.xml"
+      }
+    },
+    {
+      "category": "tag_not_in_results",
+      "severity": "warning",
+      "blocking": false,
+      "message": "tag citing CART-5~1 appears in no results file: the test did not run, or the tag sits where the runner does not report it",
+      "requirement_id": "CART-5",
+      "location": {
+        "file": "fixtures/cart/pytest/tests/slow/test_quantity_limits.py",
+        "line": 6
+      }
+    },
+    {
+      "category": "revision_mismatch",
+      "severity": "error",
+      "blocking": true,
+      "message": "tag cites CART-2~1, but the spec declares CART-2~2: re-verify the test against the current statement, then cite CART-2~2",
+      "requirement_id": "CART-2",
+      "location": {
+        "file": "fixtures/cart/pytest/tests/test_discounts.py",
+        "line": 22
+      }
+    },
+    {
+      "category": "orphan_tag",
+      "severity": "error",
+      "blocking": true,
+      "message": "tag cites CART-99~1, but no known spec declares CART-99",
+      "requirement_id": "CART-99",
+      "location": {
+        "file": "fixtures/cart/pytest/tests/test_misc.py",
+        "line": 6
+      }
+    },
+    {
+      "category": "malformed_tag",
+      "severity": "error",
+      "blocking": true,
+      "message": "malformed tag pytest.mark.verifies(\"CART-1\"): \"CART-1\" cites no revision (expected ID~REVISION)",
+      "location": {
+        "file": "fixtures/cart/pytest/tests/test_misc.py",
+        "line": 13
+      }
+    },
+    {
+      "category": "skipped_requirement",
+      "severity": "error",
+      "blocking": true,
+      "message": "requirement CART-4~1 is not verified: its bound tests were skipped",
+      "requirement_id": "CART-4",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 11
+      }
+    },
+    {
+      "category": "failed_requirement",
+      "severity": "error",
+      "blocking": true,
+      "message": "requirement CART-3~1 is not verified: no bound test passed and at least one failed",
+      "requirement_id": "CART-3",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 25
+      }
+    },
+    {
+      "category": "not_run_requirement",
+      "severity": "error",
+      "blocking": true,
+      "message": "requirement CART-5~1 is not verified: its tagged tests appear in no results file (they did not run, or the tag sits where the runner does not report it)",
+      "requirement_id": "CART-5",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 27
+      }
+    },
+    {
+      "category": "uncovered_requirement",
+      "severity": "error",
+      "blocking": true,
+      "message": "requirement CART-6~1 has no bound test",
+      "requirement_id": "CART-6",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 32
+      }
+    }
+  ],
+  "extensions": {}
+}

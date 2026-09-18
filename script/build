@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Build the shallnot binary into bin/.
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+VERSION="${VERSION:-$(git describe --tags --always --dirty 2>/dev/null || echo dev)}"
+CGO_ENABLED=0 go build -trimpath \
+  -ldflags "-s -w -X github.com/RachidChabane/shallnot/internal/version.Version=${VERSION}" \
+  -o bin/shallnot ./cmd/shallnot

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Re-run the real test runners of every fixture project and refresh their
+# committed JUnit XML, then the expected reports.
+# Needs uv, node + npm, a JDK and Maven; the Gradle project uses its wrapper.
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+for project in pytest jest vitest junit5-maven junit5-gradle junit5-kotlin; do
+  echo "== $project"
+  "fixtures/cart/$project/regen.sh"
+done
+go test ./internal/cli -run 'TestEcosystems|TestReports' -update

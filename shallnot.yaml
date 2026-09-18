@@ -1,0 +1,14 @@
+version: 1
+id_pattern: 'SN-[0-9]+'
+specs:
+  - specs
+tests:
+  - internal
+  - schemas
+results:
+  - build/test-results/*.xml
+exclude:
+  - '**/testdata/**'
+severities:
+  tag_not_in_results: error
+  bound_non_testable: error

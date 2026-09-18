@@ -1,0 +1,427 @@
+{
+  "schema_version": "1.0",
+  "tool": {
+    "name": "shallnot",
+    "version": "dev"
+  },
+  "run": {
+    "advisory": false,
+    "fail_on": "error",
+    "id_pattern": "[A-Z][A-Z0-9]*-[0-9]+(?:\\.[A-Za-z0-9]+)*",
+    "focus": {
+      "everything": true,
+      "files": [],
+      "ids": []
+    },
+    "spec_files": [
+      "fixtures/cart/spec/cart.md"
+    ],
+    "test_roots": [
+      "fixtures/cart/junit5-gradle"
+    ],
+    "results_files": [
+      "fixtures/cart/junit5-gradle/results/TEST-cart.CartTotalTest$CheckoutSummary.xml",
+      "fixtures/cart/junit5-gradle/results/TEST-cart.CartTotalTest.xml"
+    ]
+  },
+  "verdict": "fail",
+  "exit_code": 1,
+  "summary": {
+    "requirements": {
+      "known": 7,
+      "in_focus": 7,
+      "covered": 2,
+      "failed": 1,
+      "skipped": 1,
+      "not_run": 1,
+      "uncovered": 1,
+      "non_testable": 1
+    },
+    "tests": {
+      "total": 12,
+      "bound": 6,
+      "untagged": 5
+    },
+    "findings": {
+      "error": 7,
+      "warning": 3,
+      "info": 5,
+      "blocking": 7
+    }
+  },
+  "requirements": [
+    {
+      "id": "CART-1",
+      "revision": 1,
+      "ref": "CART-1~1",
+      "statement": "WHEN a cart holds line items THE SYSTEM SHALL compute the total as the sum of each line item's price times its quantity.",
+      "status": "active",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 8
+      },
+      "in_focus": true,
+      "coverage": "covered",
+      "tests": [
+        {
+          "name": "checkout summary [verifies CART-1~1]",
+          "outcome": "not_run",
+          "source": {
+            "file": "fixtures/cart/junit5-gradle/src/test/java/cart/CartTotalTest.java",
+            "line": 108
+          }
+        },
+        {
+          "name": "combines a base total with a discount code [verifies CART-1~1, CART-2~2]",
+          "classname": "cart.CartTotalTest",
+          "suite": "cart.CartTotalTest",
+          "outcome": "passed",
+          "results_file": "fixtures/cart/junit5-gradle/results/TEST-cart.CartTotalTest.xml",
+          "source": {
+            "file": "fixtures/cart/junit5-gradle/src/test/java/cart/CartTotalTest.java",
+            "line": 99
+          }
+        },
+        {
+          "name": "sums line item prices times quantities [verifies CART-1~1]",
+          "classname": "cart.CartTotalTest",
+          "suite": "cart.CartTotalTest",
+          "outcome": "passed",
+          "results_file": "fixtures/cart/junit5-gradle/results/TEST-cart.CartTotalTest.xml",
+          "source": {
+            "file": "fixtures/cart/junit5-gradle/src/test/java/cart/CartTotalTest.java",
+            "line": 18
+          }
+        }
+      ],
+      "extensions": {}
+    },
+    {
+      "id": "CART-4",
+      "revision": 1,
+      "ref": "CART-4~1",
+      "statement": "WHEN a total has more than two decimals THE SYSTEM SHALL round it to two decimals, half-up.",
+      "status": "active",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 11
+      },
+      "in_focus": true,
+      "coverage": "skipped",
+      "tests": [
+        {
+          "name": "rounds totals to two decimals half-up [verifies CART-4~1]",
+          "classname": "cart.CartTotalTest",
+          "suite": "cart.CartTotalTest",
+          "outcome": "skipped",
+          "results_file": "fixtures/cart/junit5-gradle/results/TEST-cart.CartTotalTest.xml",
+          "source": {
+            "file": "fixtures/cart/junit5-gradle/src/test/java/cart/CartTotalTest.java",
+            "line": 60
+          }
+        }
+      ],
+      "extensions": {}
+    },
+    {
+      "id": "CART-2",
+      "revision": 2,
+      "ref": "CART-2~2",
+      "title": "Percentage discount codes",
+      "statement": "WHEN a customer applies a percentage discount code THE SYSTEM SHALL reduce the total by that percentage.",
+      "status": "active",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 16
+      },
+      "in_focus": true,
+      "coverage": "covered",
+      "tests": [
+        {
+          "name": "applies a percentage discount code [verifies CART-2~2]",
+          "outcome": "not_run",
+          "source": {
+            "file": "fixtures/cart/junit5-gradle/src/test/java/cart/CartTotalTest.java",
+            "line": 33
+          }
+        },
+        {
+          "name": "combines a base total with a discount code [verifies CART-1~1, CART-2~2]",
+          "classname": "cart.CartTotalTest",
+          "suite": "cart.CartTotalTest",
+          "outcome": "passed",
+          "results_file": "fixtures/cart/junit5-gradle/results/TEST-cart.CartTotalTest.xml",
+          "source": {
+            "file": "fixtures/cart/junit5-gradle/src/test/java/cart/CartTotalTest.java",
+            "line": 99
+          }
+        }
+      ],
+      "extensions": {}
+    },
+    {
+      "id": "CART-3",
+      "revision": 1,
+      "ref": "CART-3~1",
+      "statement": "WHEN a customer checks out an empty cart THE SYSTEM SHALL reject the checkout with an error.",
+      "status": "active",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 25
+      },
+      "in_focus": true,
+      "coverage": "failed",
+      "tests": [
+        {
+          "name": "rejects checkout of an empty cart [verifies CART-3~1]",
+          "classname": "cart.CartTotalTest",
+          "suite": "cart.CartTotalTest",
+          "outcome": "failed",
+          "results_file": "fixtures/cart/junit5-gradle/results/TEST-cart.CartTotalTest.xml",
+          "source": {
+            "file": "fixtures/cart/junit5-gradle/src/test/java/cart/CartTotalTest.java",
+            "line": 51
+          }
+        }
+      ],
+      "extensions": {}
+    },
+    {
+      "id": "CART-5",
+      "revision": 1,
+      "ref": "CART-5~1",
+      "statement": "WHEN a line item quantity exceeds 99 THE SYSTEM SHALL reject the line item.",
+      "status": "active",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 27
+      },
+      "in_focus": true,
+      "coverage": "not_run",
+      "tests": [
+        {
+          "name": "rejects a line item quantity above the per-order limit [verifies CART-5~1]",
+          "outcome": "not_run",
+          "source": {
+            "file": "fixtures/cart/junit5-gradle/src/slow-test/java/cart/BulkOrderTest.java",
+            "line": 13
+          }
+        }
+      ],
+      "extensions": {}
+    },
+    {
+      "id": "CART-6",
+      "revision": 1,
+      "ref": "CART-6~1",
+      "statement": "WHEN a total is displayed THE SYSTEM SHALL show it in the customer's currency.",
+      "status": "active",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 32
+      },
+      "in_focus": true,
+      "coverage": "uncovered",
+      "tests": [],
+      "extensions": {}
+    },
+    {
+      "id": "CART-7",
+      "revision": 1,
+      "ref": "CART-7~1",
+      "statement": "THE checkout page SHALL feel uncluttered on a phone screen.",
+      "status": "non_testable",
+      "justification": "judged in the quarterly design review with customer panels; no automated check can stand in for it.",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 34
+      },
+      "in_focus": true,
+      "coverage": "non_testable",
+      "tests": [],
+      "extensions": {}
+    }
+  ],
+  "findings": [
+    {
+      "category": "untagged_test",
+      "severity": "info",
+      "blocking": false,
+      "message": "test \"cart.CartTotalTest$CheckoutSummary › reports the subtotal before any discount\" verifies no stated requirement",
+      "location": {
+        "file": "fixtures/cart/junit5-gradle/results/TEST-cart.CartTotalTest$CheckoutSummary.xml"
+      },
+      "test": {
+        "name": "reports the subtotal before any discount",
+        "classname": "cart.CartTotalTest$CheckoutSummary",
+        "results_file": "fixtures/cart/junit5-gradle/results/TEST-cart.CartTotalTest$CheckoutSummary.xml"
+      }
+    },
+    {
+      "category": "untagged_test",
+      "severity": "info",
+      "blocking": false,
+      "message": "test \"cart.CartTotalTest › 10% off leaves 90.00\" verifies no stated requirement",
+      "location": {
+        "file": "fixtures/cart/junit5-gradle/results/TEST-cart.CartTotalTest.xml"
+      },
+      "test": {
+        "name": "10% off leaves 90.00",
+        "classname": "cart.CartTotalTest",
+        "results_file": "fixtures/cart/junit5-gradle/results/TEST-cart.CartTotalTest.xml"
+      }
+    },
+    {
+      "category": "untagged_test",
+      "severity": "info",
+      "blocking": false,
+      "message": "test \"cart.CartTotalTest › 25% off leaves 30.00\" verifies no stated requirement",
+      "location": {
+        "file": "fixtures/cart/junit5-gradle/results/TEST-cart.CartTotalTest.xml"
+      },
+      "test": {
+        "name": "25% off leaves 30.00",
+        "classname": "cart.CartTotalTest",
+        "results_file": "fixtures/cart/junit5-gradle/results/TEST-cart.CartTotalTest.xml"
+      }
+    },
+    {
+      "category": "untagged_test",
+      "severity": "info",
+      "blocking": false,
+      "message": "test \"cart.CartTotalTest › 50% off leaves 9.99\" verifies no stated requirement",
+      "location": {
+        "file": "fixtures/cart/junit5-gradle/results/TEST-cart.CartTotalTest.xml"
+      },
+      "test": {
+        "name": "50% off leaves 9.99",
+        "classname": "cart.CartTotalTest",
+        "results_file": "fixtures/cart/junit5-gradle/results/TEST-cart.CartTotalTest.xml"
+      }
+    },
+    {
+      "category": "untagged_test",
+      "severity": "info",
+      "blocking": false,
+      "message": "test \"cart.CartTotalTest › treats zero-price items as free\" verifies no stated requirement",
+      "location": {
+        "file": "fixtures/cart/junit5-gradle/results/TEST-cart.CartTotalTest.xml"
+      },
+      "test": {
+        "name": "treats zero-price items as free",
+        "classname": "cart.CartTotalTest",
+        "results_file": "fixtures/cart/junit5-gradle/results/TEST-cart.CartTotalTest.xml"
+      }
+    },
+    {
+      "category": "tag_not_in_results",
+      "severity": "warning",
+      "blocking": false,
+      "message": "tag citing CART-5~1 appears in no results file: the test did not run, or the tag sits where the runner does not report it",
+      "requirement_id": "CART-5",
+      "location": {
+        "file": "fixtures/cart/junit5-gradle/src/slow-test/java/cart/BulkOrderTest.java",
+        "line": 13
+      }
+    },
+    {
+      "category": "tag_not_in_results",
+      "severity": "warning",
+      "blocking": false,
+      "message": "tag citing CART-2~2 appears in no results file: the test did not run, or the tag sits where the runner does not report it",
+      "requirement_id": "CART-2",
+      "location": {
+        "file": "fixtures/cart/junit5-gradle/src/test/java/cart/CartTotalTest.java",
+        "line": 33
+      }
+    },
+    {
+      "category": "revision_mismatch",
+      "severity": "error",
+      "blocking": true,
+      "message": "tag cites CART-2~1, but the spec declares CART-2~2: re-verify the test against the current statement, then cite CART-2~2",
+      "requirement_id": "CART-2",
+      "location": {
+        "file": "fixtures/cart/junit5-gradle/src/test/java/cart/CartTotalTest.java",
+        "line": 42
+      }
+    },
+    {
+      "category": "orphan_tag",
+      "severity": "error",
+      "blocking": true,
+      "message": "tag cites CART-99~1, but no known spec declares CART-99",
+      "requirement_id": "CART-99",
+      "location": {
+        "file": "fixtures/cart/junit5-gradle/src/test/java/cart/CartTotalTest.java",
+        "line": 69
+      }
+    },
+    {
+      "category": "malformed_tag",
+      "severity": "error",
+      "blocking": true,
+      "message": "malformed tag [verifies CART-1]: \"CART-1\" cites no revision (expected ID~REVISION)",
+      "location": {
+        "file": "fixtures/cart/junit5-gradle/src/test/java/cart/CartTotalTest.java",
+        "line": 78
+      }
+    },
+    {
+      "category": "tag_not_in_results",
+      "severity": "warning",
+      "blocking": false,
+      "message": "tag citing CART-1~1 appears in no results file: the test did not run, or the tag sits where the runner does not report it",
+      "requirement_id": "CART-1",
+      "location": {
+        "file": "fixtures/cart/junit5-gradle/src/test/java/cart/CartTotalTest.java",
+        "line": 108
+      }
+    },
+    {
+      "category": "skipped_requirement",
+      "severity": "error",
+      "blocking": true,
+      "message": "requirement CART-4~1 is not verified: its bound tests were skipped",
+      "requirement_id": "CART-4",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 11
+      }
+    },
+    {
+      "category": "failed_requirement",
+      "severity": "error",
+      "blocking": true,
+      "message": "requirement CART-3~1 is not verified: no bound test passed and at least one failed",
+      "requirement_id": "CART-3",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 25
+      }
+    },
+    {
+      "category": "not_run_requirement",
+      "severity": "error",
+      "blocking": true,
+      "message": "requirement CART-5~1 is not verified: its tagged tests appear in no results file (they did not run, or the tag sits where the runner does not report it)",
+      "requirement_id": "CART-5",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 27
+      }
+    },
+    {
+      "category": "uncovered_requirement",
+      "severity": "error",
+      "blocking": true,
+      "message": "requirement CART-6~1 has no bound test",
+      "requirement_id": "CART-6",
+      "location": {
+        "file": "fixtures/cart/spec/cart.md",
+        "line": 32
+      }
+    }
+  ],
+  "extensions": {}
+}

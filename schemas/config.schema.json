@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/RachidChabane/shallnot/main/schemas/config.schema.json",
+  "title": "shallnot configuration",
+  "description": "The shallnot.yaml configuration file. Relative paths are resolved against the file's directory.",
+  "type": "object",
+  "properties": {
+    "version": {
+      "const": 1,
+      "description": "Configuration format version."
+    },
+    "id_pattern": {
+      "type": "string",
+      "description": "Regular expression (RE2) a whole requirement ID must match. It must not match text containing '~', ',', ']' or whitespace."
+    },
+    "specs": {
+      "type": "array",
+      "description": "Known specs: files, directories or globs.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "focus": {
+      "type": "array",
+      "description": "Spec files whose requirements the run must find covered. They are known specs too.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "focus_ids": {
+      "type": "array",
+      "description": "Globs on requirement IDs the run must find covered.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tests": {
+      "type": "array",
+      "description": "Test source root directories scanned for tags.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "results": {
+      "type": "array",
+      "description": "JUnit XML results: files, directories or globs.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "exclude": {
+      "type": "array",
+      "description": "Globs of source paths the scan ignores, matched against the path as reported.",
+      "items": {
+        "type": "string"
+      }
+    },
+    "default_excludes": {
+      "type": "boolean",
+      "description": "Whether dependency and build directories are ignored by the scan. Default true."
+    },
+    "advisory": {
+      "type": "boolean",
+      "description": "Report everything but always exit 0. Default false."
+    },
+    "strict": {
+      "type": "boolean",
+      "description": "Treat untagged tests as errors. Default false."
+    },
+    "fail_on": {
+      "type": "string",
+      "description": "Lowest blocking severity. Default error.",
+      "enum": [
+        "info",
+        "warning",
+        "error"
+      ]
+    },
+    "severities": {
+      "type": "object",
+      "description": "Severity per finding category.",
+      "properties": {
+        "uncovered_requirement": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "failed_requirement": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "skipped_requirement": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "not_run_requirement": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "failing_bound_test": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "tag_not_in_results": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "orphan_tag": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "revision_mismatch": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "malformed_tag": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "unjustified_non_testable": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "bound_non_testable": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "duplicate_id": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "malformed_requirement": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "untagged_test": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "version"
+  ],
+  "additionalProperties": false
+}

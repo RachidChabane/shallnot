@@ -1,0 +1,12 @@
+version: 1
+id_pattern: '[A-Z]+-[0-9]+\.AC[0-9]+'
+specs:
+  - plans
+tests:
+  - service/tests
+  - client/test
+results:
+  - service/results
+  - client/results/*.xml
+severities:
+  tag_not_in_results: error

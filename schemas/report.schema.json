@@ -1,0 +1,499 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/RachidChabane/shallnot/main/schemas/report.schema.json",
+  "title": "shallnot report",
+  "description": "The JSON report of `shallnot check`. Consumers must ignore properties they do not know: minor versions add properties, only a major version removes or changes one.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "MAJOR.MINOR version of this format.",
+      "pattern": "^1\\.[0-9]+$"
+    },
+    "tool": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Always \"shallnot\"."
+        },
+        "version": {
+          "type": "string",
+          "description": "Version of the binary that produced the report."
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ]
+    },
+    "run": {
+      "type": "object",
+      "description": "What the run was asked to do and what it read.",
+      "properties": {
+        "advisory": {
+          "type": "boolean",
+          "description": "True when the run was advisory: the exit code is 0 whatever the verdict."
+        },
+        "fail_on": {
+          "type": "string",
+          "description": "Lowest severity that blocks.",
+          "enum": [
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "id_pattern": {
+          "type": "string",
+          "description": "Regular expression a requirement ID must match."
+        },
+        "focus": {
+          "type": "object",
+          "properties": {
+            "everything": {
+              "type": "boolean",
+              "description": "True when no focus was given: every known requirement is in focus."
+            },
+            "files": {
+              "type": "array",
+              "description": "Spec files given as focus.",
+              "items": {
+                "type": "string"
+              }
+            },
+            "ids": {
+              "type": "array",
+              "description": "ID globs given as focus.",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "everything",
+            "files",
+            "ids"
+          ]
+        },
+        "spec_files": {
+          "type": "array",
+          "description": "Every known spec file read, focus included.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "test_roots": {
+          "type": "array",
+          "description": "Directories scanned for tags.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "results_files": {
+          "type": "array",
+          "description": "JUnit XML files read.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "advisory",
+        "fail_on",
+        "id_pattern",
+        "focus",
+        "spec_files",
+        "test_roots",
+        "results_files"
+      ]
+    },
+    "verdict": {
+      "type": "string",
+      "description": "\"fail\" when at least one finding is blocking. Independent of advisory mode.",
+      "enum": [
+        "pass",
+        "fail"
+      ]
+    },
+    "exit_code": {
+      "type": "integer",
+      "description": "Exit code of the process that wrote this report: 0 or 1. A tool failure (2) writes no report.",
+      "enum": [
+        0,
+        1
+      ]
+    },
+    "summary": {
+      "type": "object",
+      "properties": {
+        "requirements": {
+          "type": "object",
+          "properties": {
+            "known": {
+              "type": "integer",
+              "description": "Requirements declared by the known specs.",
+              "minimum": 0
+            },
+            "in_focus": {
+              "type": "integer",
+              "description": "Requirements whose coverage this run demanded.",
+              "minimum": 0
+            },
+            "covered": {
+              "type": "integer",
+              "description": "In focus and covered.",
+              "minimum": 0
+            },
+            "failed": {
+              "type": "integer",
+              "description": "In focus and failed.",
+              "minimum": 0
+            },
+            "skipped": {
+              "type": "integer",
+              "description": "In focus and skipped.",
+              "minimum": 0
+            },
+            "not_run": {
+              "type": "integer",
+              "description": "In focus and not run.",
+              "minimum": 0
+            },
+            "uncovered": {
+              "type": "integer",
+              "description": "In focus and uncovered.",
+              "minimum": 0
+            },
+            "non_testable": {
+              "type": "integer",
+              "description": "In focus and non-testable.",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "known",
+            "in_focus",
+            "covered",
+            "failed",
+            "skipped",
+            "not_run",
+            "uncovered",
+            "non_testable"
+          ]
+        },
+        "tests": {
+          "type": "object",
+          "properties": {
+            "total": {
+              "type": "integer",
+              "description": "Test cases in the results files.",
+              "minimum": 0
+            },
+            "bound": {
+              "type": "integer",
+              "description": "Test cases citing at least one well-formed reference.",
+              "minimum": 0
+            },
+            "untagged": {
+              "type": "integer",
+              "description": "Test cases carrying no tag at all.",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "total",
+            "bound",
+            "untagged"
+          ]
+        },
+        "findings": {
+          "type": "object",
+          "properties": {
+            "error": {
+              "type": "integer",
+              "description": "Findings of severity error.",
+              "minimum": 0
+            },
+            "warning": {
+              "type": "integer",
+              "description": "Findings of severity warning.",
+              "minimum": 0
+            },
+            "info": {
+              "type": "integer",
+              "description": "Findings of severity info.",
+              "minimum": 0
+            },
+            "blocking": {
+              "type": "integer",
+              "description": "Findings at or above fail_on.",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "error",
+            "warning",
+            "info",
+            "blocking"
+          ]
+        }
+      },
+      "required": [
+        "requirements",
+        "tests",
+        "findings"
+      ]
+    },
+    "requirements": {
+      "type": "array",
+      "description": "The coverage matrix: every known requirement, in focus or not, ordered by spec file and line.",
+      "items": {
+        "$ref": "#/$defs/requirement"
+      }
+    },
+    "findings": {
+      "type": "array",
+      "description": "Every finding whose severity is not \"off\", ordered by file, line, category, message.",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "description": "Reserved for data contributed by analyses outside the deterministic core (code coverage, mutation score, judge answers). Keys are extension names. Empty in this version; consumers must tolerate unknown keys.",
+      "additionalProperties": true
+    }
+  },
+  "required": [
+    "schema_version",
+    "tool",
+    "run",
+    "verdict",
+    "exit_code",
+    "summary",
+    "requirements",
+    "findings",
+    "extensions"
+  ],
+  "$defs": {
+    "location": {
+      "type": "object",
+      "description": "A place in a file.",
+      "properties": {
+        "file": {
+          "type": "string",
+          "description": "Path relative to the working directory, with forward slashes."
+        },
+        "line": {
+          "type": "integer",
+          "description": "1-based line. Absent when the location is a whole file.",
+          "minimum": 1
+        }
+      },
+      "required": [
+        "file"
+      ]
+    },
+    "requirement": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Requirement ID."
+        },
+        "revision": {
+          "type": "integer",
+          "description": "Current revision.",
+          "minimum": 1
+        },
+        "ref": {
+          "type": "string",
+          "description": "ID~REVISION, the text a tag must cite."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title, when the spec gives one."
+        },
+        "statement": {
+          "type": "string",
+          "description": "The requirement's statement."
+        },
+        "status": {
+          "type": "string",
+          "description": "Whether tests are expected to verify the requirement.",
+          "enum": [
+            "active",
+            "non_testable"
+          ]
+        },
+        "justification": {
+          "type": "string",
+          "description": "Why the requirement is non-testable."
+        },
+        "location": {
+          "$ref": "#/$defs/location"
+        },
+        "in_focus": {
+          "type": "boolean",
+          "description": "Whether this run demanded the requirement's coverage."
+        },
+        "coverage": {
+          "type": "string",
+          "description": "covered: at least one bound test passed. failed: none passed, at least one failed or errored. skipped: none passed or failed, at least one was skipped. not_run: tagged tests exist in source but in no results file. uncovered: no bound test. non_testable: status is non_testable.",
+          "enum": [
+            "covered",
+            "failed",
+            "skipped",
+            "not_run",
+            "uncovered",
+            "non_testable"
+          ]
+        },
+        "tests": {
+          "type": "array",
+          "description": "Tests bound to the requirement at its current revision.",
+          "items": {
+            "$ref": "#/$defs/bound_test"
+          }
+        },
+        "extensions": {
+          "type": "object",
+          "description": "Reserved for data contributed by analyses outside the deterministic core (code coverage, mutation score, judge answers). Keys are extension names. Empty in this version; consumers must tolerate unknown keys.",
+          "additionalProperties": true
+        }
+      },
+      "required": [
+        "id",
+        "revision",
+        "ref",
+        "statement",
+        "status",
+        "location",
+        "in_focus",
+        "coverage",
+        "tests",
+        "extensions"
+      ]
+    },
+    "bound_test": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Test case name from the results file. For a not_run test, the label of its source tag (may be empty)."
+        },
+        "classname": {
+          "type": "string",
+          "description": "Test case classname from the results file."
+        },
+        "suite": {
+          "type": "string",
+          "description": "Enclosing test suite name from the results file."
+        },
+        "outcome": {
+          "type": "string",
+          "description": "What happened to the test.",
+          "enum": [
+            "passed",
+            "failed",
+            "errored",
+            "skipped",
+            "not_run"
+          ]
+        },
+        "results_file": {
+          "type": "string",
+          "description": "Results file recording the test. Absent for a not_run test."
+        },
+        "source": {
+          "$ref": "#/$defs/location",
+          "description": "Source tag the binding was matched to. Absent when no test root contains it."
+        }
+      },
+      "required": [
+        "name",
+        "outcome"
+      ]
+    },
+    "finding": {
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": "string",
+          "description": "Kind of finding.",
+          "enum": [
+            "uncovered_requirement",
+            "failed_requirement",
+            "skipped_requirement",
+            "not_run_requirement",
+            "failing_bound_test",
+            "tag_not_in_results",
+            "orphan_tag",
+            "revision_mismatch",
+            "malformed_tag",
+            "unjustified_non_testable",
+            "bound_non_testable",
+            "duplicate_id",
+            "malformed_requirement",
+            "untagged_test"
+          ]
+        },
+        "severity": {
+          "type": "string",
+          "description": "Configured severity of the category.",
+          "enum": [
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "blocking": {
+          "type": "boolean",
+          "description": "True when the severity is at or above fail_on."
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable explanation."
+        },
+        "requirement_id": {
+          "type": "string",
+          "description": "Requirement concerned, when there is one."
+        },
+        "location": {
+          "$ref": "#/$defs/location",
+          "description": "Where to act: a spec line, a source tag line, or a results file."
+        },
+        "test": {
+          "type": "object",
+          "description": "Test concerned, when the finding comes from a results file.",
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Test case name."
+            },
+            "classname": {
+              "type": "string",
+              "description": "Test case classname."
+            },
+            "results_file": {
+              "type": "string",
+              "description": "Results file recording the test."
+            }
+          },
+          "required": [
+            "name",
+            "results_file"
+          ]
+        }
+      },
+      "required": [
+        "category",
+        "severity",
+        "blocking",
+        "message",
+        "location"
+      ]
+    }
+  }
+}

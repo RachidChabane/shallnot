@@ -1,0 +1,44 @@
+name: shallnot
+description: Trace spec requirements to passing tests and gate the job on the verdict.
+branding:
+  icon: check-square
+  color: gray-dark
+
+inputs:
+  version:
+    description: Release tag of shallnot to download, or "latest".
+    default: latest
+  args:
+    description: Extra arguments for `shallnot check`, for example `--focus plans/ABC-101.md --advisory`.
+    default: ""
+  working-directory:
+    description: Directory to run in; the one holding shallnot.yaml.
+    default: "."
+  json-report:
+    description: Path, relative to the working directory, where the JSON report is written.
+    default: shallnot-report.json
+
+outputs:
+  exit-code:
+    description: Exit code of shallnot (0 clean, 1 blocked, 2 tool failure).
+    value: ${{ steps.check.outputs.exit-code }}
+  json-report:
+    description: Path of the JSON report. The file is absent after a tool failure.
+    value: ${{ steps.check.outputs.json-report }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install shallnot
+      shell: bash
+      env:
+        SHALLNOT_VERSION: ${{ inputs.version }}
+      run: '"$GITHUB_ACTION_PATH/action/install.sh"'
+    - name: Check
+      id: check
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        SHALLNOT_ARGS: ${{ inputs.args }}
+        SHALLNOT_JSON_REPORT: ${{ inputs.json-report }}
+      run: '"$GITHUB_ACTION_PATH/action/check.sh"'

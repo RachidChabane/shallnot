@@ -1,0 +1,39 @@
+requirements:
+  - id: CART-1
+    revision: 1
+    statement: >
+      WHEN a cart holds line items THE SYSTEM SHALL compute the total as the
+      sum of each line item's price times its quantity.
+  - id: CART-4
+    revision: 1
+    statement: >
+      WHEN a total has more than two decimals THE SYSTEM SHALL round it to two
+      decimals, half-up.
+  - id: CART-2
+    revision: 2
+    title: Percentage discount codes
+    statement: >
+      WHEN a customer applies a percentage discount code THE SYSTEM SHALL
+      reduce the total by that percentage.
+  - id: CART-3
+    revision: 1
+    statement: >
+      WHEN a customer checks out an empty cart THE SYSTEM SHALL reject the
+      checkout with an error.
+  - id: CART-5
+    revision: 1
+    statement: >
+      WHEN a line item quantity exceeds 99 THE SYSTEM SHALL reject the line
+      item.
+  - id: CART-6
+    revision: 1
+    statement: >
+      WHEN a total is displayed THE SYSTEM SHALL show it in the customer's
+      currency.
+  - id: CART-7
+    revision: 1
+    statement: THE checkout page SHALL feel uncluttered on a phone screen.
+    status: non_testable
+    justification: >
+      judged in the quarterly design review with customer panels; no automated
+      check can stand in for it.

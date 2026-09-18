@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Lint
+        run: script/lint
+      - name: Test
+        run: script/test
+      - name: Trace shallnot's own requirements
+        run: |
+          script/trace --github-annotations --json-out build/shallnot-report.json --markdown-out build/shallnot-summary.md
+      - name: Publish the summary
+        if: always()
+        run: |
+          if [ -f build/shallnot-summary.md ]; then cat build/shallnot-summary.md >> "$GITHUB_STEP_SUMMARY"; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: shallnot-report-${{ matrix.os }}
+          path: build/shallnot-report.json
+          if-no-files-found: ignore
+
+  fuzz:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Fuzz the parsers
+        run: script/fuzz
+
+  cross-compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build every release target
+        run: script/dist ci

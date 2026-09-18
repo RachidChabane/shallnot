@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="1" failures="0" errors="0" time="0.004">
+    <testsuite name="test/export.test.ts" timestamp="2026-09-14T07:13:02.481Z" hostname="localhost" tests="1" failures="0" errors="0" skipped="0" time="0.004">
+        <testcase classname="test/export.test.ts" name="invoice page &gt; starts the download in place when Export is clicked [verifies ABC-101.AC2~1]" time="0.003">
+        </testcase>
+    </testsuite>
+</testsuites>

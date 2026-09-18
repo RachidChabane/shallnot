@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="cart.CartTotalTest" tests="11" skipped="1" failures="1" errors="0" timestamp="2026-09-18T19:46:26.174Z" hostname="localhost" time="0.04">
+  <properties/>
+  <testcase name="sums line item prices times quantities [verifies CART-1~1]" classname="cart.CartTotalTest" time="0.005"/>
+  <testcase name="rounds totals to two decimals half-up [verifies CART-4~1]" classname="cart.CartTotalTest" time="0.0">
+    <skipped/>
+  </testcase>
+  <testcase name="applies the legacy discount code format [verifies CART-2~1]" classname="cart.CartTotalTest" time="0.0"/>
+  <testcase name="combines a base total with a discount code [verifies CART-1~1, CART-2~2]" classname="cart.CartTotalTest" time="0.001"/>
+  <testcase name="rejects checkout of an empty cart [verifies CART-3~1]" classname="cart.CartTotalTest" time="0.003">
+    <failure message="org.opentest4j.AssertionFailedError: Expected cart.EmptyCartException to be thrown, but nothing was thrown." type="org.opentest4j.AssertionFailedError">org.opentest4j.AssertionFailedError: Expected cart.EmptyCartException to be thrown, but nothing was thrown.
+	at org.junit.jupiter.api.AssertionFailureBuilder.build(AssertionFailureBuilder.java:152)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:73)
+	at org.junit.jupiter.api.AssertThrows.assertThrows(AssertThrows.java:35)
+	at org.junit.jupiter.api.Assertions.assertThrows(Assertions.java:3128)
+	at cart.CartTotalTest.rejectsEmptyCartCheckout(CartTotalTest.java:55)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+</failure>
+  </testcase>
+  <testcase name="10% off leaves 90.00" classname="cart.CartTotalTest" time="0.006"/>
+  <testcase name="25% off leaves 30.00" classname="cart.CartTotalTest" time="0.001"/>
+  <testcase name="50% off leaves 9.99" classname="cart.CartTotalTest" time="0.0"/>
+  <testcase name="keeps totals in whole currency units [verifies CART-99~1]" classname="cart.CartTotalTest" time="0.0"/>
+  <testcase name="keeps the total stable across repeated reads [verifies CART-1]" classname="cart.CartTotalTest" time="0.0"/>
+  <testcase name="treats zero-price items as free" classname="cart.CartTotalTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

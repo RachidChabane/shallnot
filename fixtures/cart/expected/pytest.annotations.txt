@@ -1,0 +1,10 @@
+::notice file=fixtures/cart/pytest/results/junit.xml,title=shallnot untagged_test::test "tests.test_misc › test_cart_starts_with_no_discount" verifies no stated requirement
+::notice file=fixtures/cart/pytest/results/junit.xml,title=shallnot untagged_test::test "tests.test_totals › test_total_with_no_discount_matches_subtotal" verifies no stated requirement
+::warning file=fixtures/cart/pytest/tests/slow/test_quantity_limits.py,line=6,title=shallnot tag_not_in_results::tag citing CART-5~1 appears in no results file: the test did not run, or the tag sits where the runner does not report it
+::error file=fixtures/cart/pytest/tests/test_discounts.py,line=22,title=shallnot revision_mismatch::tag cites CART-2~1, but the spec declares CART-2~2: re-verify the test against the current statement, then cite CART-2~2
+::error file=fixtures/cart/pytest/tests/test_misc.py,line=6,title=shallnot orphan_tag::tag cites CART-99~1, but no known spec declares CART-99
+::error file=fixtures/cart/pytest/tests/test_misc.py,line=13,title=shallnot malformed_tag::malformed tag pytest.mark.verifies("CART-1"): "CART-1" cites no revision (expected ID~REVISION)
+::error file=fixtures/cart/spec/cart.md,line=11,title=shallnot skipped_requirement::requirement CART-4~1 is not verified: its bound tests were skipped
+::error file=fixtures/cart/spec/cart.md,line=25,title=shallnot failed_requirement::requirement CART-3~1 is not verified: no bound test passed and at least one failed
+::error file=fixtures/cart/spec/cart.md,line=27,title=shallnot not_run_requirement::requirement CART-5~1 is not verified: its tagged tests appear in no results file (they did not run, or the tag sits where the runner does not report it)
+::error file=fixtures/cart/spec/cart.md,line=32,title=shallnot uncovered_requirement::requirement CART-6~1 has no bound test

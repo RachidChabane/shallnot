@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="outer">
+    <testcase classname="cart" name="passes [verifies REQ-1~1]"/>
+    <testcase classname="cart" name="fails [verifies REQ-2~1]"><failure message="boom">trace</failure></testcase>
+    <testcase classname="cart" name="errors [verifies REQ-3~1]"><error message="boom"/></testcase>
+    <testcase classname="cart" name="is skipped [verifies REQ-4~1]"><skipped/></testcase>
+    <testsuite name="inner">
+      <testcase classname="suite title [verifies REQ-5~1]" name="is bound by its classname [verifies REQ-5~1]"/>
+      <testcase classname="cart" name="test_property">
+        <properties>
+          <property name="verifies" value="REQ-6~1, REQ-7~2"/>
+          <property name="owner" value="[not a tag]"/>
+        </properties>
+      </testcase>
+      <testcase classname="cart" name="test_property_text"><properties><property name="verifies">REQ-8~1</property></properties></testcase>
+      <testcase classname="cart" name="test_bad_property"><properties><property name="verifies" value="REQ-9"/></properties></testcase>
+      <testcase classname="cart" name="untagged"/>
+    </testsuite>
+  </testsuite>
+</testsuites>

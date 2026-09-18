@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/RachidChabane/shallnot/main/schemas/spec.schema.json",
+  "title": "shallnot YAML spec",
+  "description": "A specification file in YAML.",
+  "type": "object",
+  "properties": {
+    "requirements": {
+      "type": "array",
+      "description": "The requirements the file declares.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Requirement ID, matching the project's id pattern."
+          },
+          "revision": {
+            "type": "integer",
+            "description": "Incremented when the requirement's meaning changes. Default 1.",
+            "minimum": 1
+          },
+          "title": {
+            "type": "string",
+            "description": "Short title."
+          },
+          "statement": {
+            "type": "string",
+            "description": "What the system shall do.",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "description": "Default active.",
+            "enum": [
+              "active",
+              "non_testable"
+            ]
+          },
+          "justification": {
+            "type": "string",
+            "description": "Why no test can verify the requirement. Mandatory when status is non_testable."
+          }
+        },
+        "required": [
+          "id",
+          "statement"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "requirements"
+  ],
+  "additionalProperties": false
+}

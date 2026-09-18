@@ -1,0 +1,27 @@
+[tasks.build]
+description = "Build bin/shallnot"
+run = "script/build"
+
+[tasks.test]
+description = "Run every test and write JUnit XML"
+run = "script/test"
+
+[tasks.fuzz]
+description = "Fuzz each parser"
+run = "script/fuzz"
+
+[tasks.lint]
+description = "gofmt check and go vet"
+run = "script/lint"
+
+[tasks.trace]
+description = "Trace shallnot's own requirements to its test results"
+run = "script/trace"
+
+[tasks.ci]
+description = "Lint, test, self-trace"
+run = "script/ci"
+
+[tasks.regen-fixtures]
+description = "Re-run the real test runners of the fixture projects"
+run = "script/regen-fixtures"
