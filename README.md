@@ -98,6 +98,9 @@ tar -xzf "shallnot_${os}_${arch}.tar.gz" shallnot
 sudo install shallnot /usr/local/bin/
 ```
 
+On macOS, replace `sha256sum -c -` with `shasum -a 256 -c -`. On Windows,
+download `shallnot_windows_amd64.zip` or `shallnot_windows_arm64.zip`.
+
 Or build from source with Go:
 
 ```sh
