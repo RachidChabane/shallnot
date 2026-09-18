@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="13" failures="1" errors="0" time="0.17">
+  <testsuite name="undefined" errors="0" failures="1" skipped="1" timestamp="2026-09-18T19:45:24" time="0.083" tests="13">
+    <testcase classname=" sums line items [verifies CART-1~1]" name=" sums line items [verifies CART-1~1]" time="0.001">
+    </testcase>
+    <testcase classname="discount codes applies 10% off a 100 total to get 90 [verifies CART-2~2]" name="discount codes applies 10% off a 100 total to get 90 [verifies CART-2~2]" time="0.001">
+    </testcase>
+    <testcase classname="discount codes applies 20% off a 50 total to get 40 [verifies CART-2~2]" name="discount codes applies 20% off a 50 total to get 40 [verifies CART-2~2]" time="0">
+    </testcase>
+    <testcase classname="discount codes applies 25% off a 200 total to get 150 [verifies CART-2~2]" name="discount codes applies 25% off a 200 total to get 150 [verifies CART-2~2]" time="0">
+    </testcase>
+    <testcase classname="discount codes applies a flat 5% welcome code [verifies CART-2~1]" name="discount codes applies a flat 5% welcome code [verifies CART-2~1]" time="0">
+    </testcase>
+    <testcase classname=" rejects checking out an empty cart [verifies CART-3~1]" name=" rejects checking out an empty cart [verifies CART-3~1]" time="0.001">
+      <failure>Error: expect(received).toThrow()
+
+Received function did not throw
+    at Object.toThrow (test/cart.test.js:38:37)
+    at Promise.finally.completed (node_modules/jest-circus/build/jestAdapterInit.js:1834:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (node_modules/jest-circus/build/jestAdapterInit.js:1774:10)
+    at _callCircusTest (node_modules/jest-circus/build/jestAdapterInit.js:1167:40)
+    at _runTestInContext (node_modules/jest-circus/build/jestAdapterInit.js:1103:3)
+    at runTestWithContext (node_modules/jest-circus/build/jestAdapterInit.js:996:5)
+    at _runTestsForDescribeBlockOnce (node_modules/jest-circus/build/jestAdapterInit.js:1008:11)
+    at _runTestsForDescribeBlock (node_modules/jest-circus/build/jestAdapterInit.js:824:5)
+    at run (node_modules/jest-circus/build/jestAdapterInit.js:789:3)
+    at runAndTransformResultsToJestFormat (node_modules/jest-circus/build/jestAdapterInit.js:2300:21)
+    at jestAdapter (node_modules/jest-circus/build/runner.js:111:19)
+    at runTestInternal (node_modules/jest-runner/build/index.js:247:16)
+    at runTest (node_modules/jest-runner/build/index.js:315:7)</failure>
+    </testcase>
+    <testcase classname=" rounds totals to two decimals using half-up [verifies CART-4~1]" name=" rounds totals to two decimals using half-up [verifies CART-4~1]" time="0">
+      <skipped/>
+    </testcase>
+    <testcase classname=" adds a gift wrap fee to the order total [verifies CART-99~1]" name=" adds a gift wrap fee to the order total [verifies CART-99~1]" time="0">
+    </testcase>
+    <testcase classname=" computes the subtotal for a single line item [verifies CART-1]" name=" computes the subtotal for a single line item [verifies CART-1]" time="0">
+    </testcase>
+    <testcase classname=" keeps quantities editable after adding an item" name=" keeps quantities editable after adding an item" time="0">
+    </testcase>
+    <testcase classname=" stays consistent between total and discounted total [verifies CART-1~1, CART-2~2]" name=" stays consistent between total and discounted total [verifies CART-1~1, CART-2~2]" time="0">
+    </testcase>
+    <testcase classname="discount codes [verifies CART-2~2] percentage codes applies a 10% code to a 100 total" name="discount codes [verifies CART-2~2] percentage codes applies a 10% code to a 100 total" time="0.001">
+    </testcase>
+    <testcase classname="discount codes [verifies CART-2~2] percentage codes applies a 20% code to a 50 total" name="discount codes [verifies CART-2~2] percentage codes applies a 20% code to a 50 total" time="0">
+    </testcase>
+  </testsuite>
+</testsuites>

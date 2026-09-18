@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="13" failures="1" errors="0" time="0.003450416">
+    <testsuite name="test/cart.test.ts" timestamp="2026-09-18T19:45:41.283Z" hostname="localhost" tests="13" failures="1" errors="0" skipped="1" time="0.003450416">
+        <testcase classname="test/cart.test.ts" name="sums line items [verifies CART-1~1]" time="0.000575417">
+        </testcase>
+        <testcase classname="test/cart.test.ts" name="applies a 10% discount code to 100 -&gt; 90 [verifies CART-2~2]" time="0.000079167">
+        </testcase>
+        <testcase classname="test/cart.test.ts" name="applies a 20% discount code to 50 -&gt; 40 [verifies CART-2~2]" time="0.000042333">
+        </testcase>
+        <testcase classname="test/cart.test.ts" name="applies a 25% discount code to 200 -&gt; 150 [verifies CART-2~2]" time="0.000042708">
+        </testcase>
+        <testcase classname="test/cart.test.ts" name="leaves the total unchanged when no discount code is applied [verifies CART-2~1]" time="0.000064458">
+        </testcase>
+        <testcase classname="test/cart.test.ts" name="rejects checking out an empty cart [verifies CART-3~1]" time="0.001771">
+            <failure message="expected [Function] to throw an error" type="AssertionError">
+AssertionError: expected [Function] to throw an error
+ ❯ test/cart.test.ts:35:30
+            </failure>
+        </testcase>
+        <testcase classname="test/cart.test.ts" name="rounds a total half-up to two decimals [verifies CART-4~1]" time="0">
+            <skipped/>
+        </testcase>
+        <testcase classname="test/cart.test.ts" name="adds a gift wrap fee to the total [verifies CART-99~1]" time="0.0000635">
+        </testcase>
+        <testcase classname="test/cart.test.ts" name="computes a subtotal before tax [verifies CART-1]" time="0.000046625">
+        </testcase>
+        <testcase classname="test/cart.test.ts" name="keeps quantities as positive integers" time="0.000056">
+        </testcase>
+        <testcase classname="test/cart.test.ts" name="keeps the discounted total consistent with the summed total [verifies CART-1~1, CART-2~2]" time="0.000073959">
+        </testcase>
+        <testcase classname="test/cart.test.ts" name="discount codes [verifies CART-2~2] &gt; percentage codes &gt; applies a 10% code" time="0.000049041">
+        </testcase>
+        <testcase classname="test/cart.test.ts" name="discount codes [verifies CART-2~2] &gt; percentage codes &gt; applies a 20% code" time="0.000030125">
+        </testcase>
+    </testsuite>
+</testsuites>
