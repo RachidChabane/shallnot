@@ -25,3 +25,7 @@ run = "script/ci"
 [tasks.regen-fixtures]
 description = "Re-run the real test runners of the fixture projects"
 run = "script/regen-fixtures"
+
+[tasks.demo]
+description = "Record build/demo.gif with vhs"
+run = "script/demo"

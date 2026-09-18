@@ -1,0 +1,30 @@
+diff --git a/password.py b/password.py
+index 5710393..842f175 100644
+--- a/password.py
++++ b/password.py
+@@ -2,4 +2,6 @@ MINIMUM_LENGTH = 12
+ 
+ 
+ def is_acceptable(password: str, username: str) -> bool:
+-    return len(password) >= MINIMUM_LENGTH
++    if len(password) < MINIMUM_LENGTH:
++        return False
++    return username.lower() not in password.lower()
+diff --git a/tests/test_password.py b/tests/test_password.py
+index 9ccedcf..62833cb 100644
+--- a/tests/test_password.py
++++ b/tests/test_password.py
+@@ -11,3 +11,13 @@ def test_short_passwords_are_rejected():
+ @pytest.mark.verifies("PWD-1~1")
+ def test_long_passwords_are_accepted():
+     assert is_acceptable("correct horse battery", username="ada")
++
++
++@pytest.mark.verifies("PWD-2~1")
++def test_passwords_containing_the_username_are_rejected():
++    assert not is_acceptable("ada-loves-long-passwords", username="ada")
++
++
++@pytest.mark.verifies("PWD-2~1")
++def test_the_username_is_matched_whatever_its_case():
++    assert not is_acceptable("ADA-loves-long-passwords", username="ada")

@@ -9,6 +9,10 @@ verify a requirement that does not exist.
 It is a single static binary. It makes no network access and calls no model:
 the same inputs give the same output, byte for byte.
 
+![A requirement without a test blocks the gate; adding a tagged, passing test turns the verdict to PASS](https://github.com/RachidChabane/shallnot/releases/download/v0.1.1/demo.gif)
+
+The first half of that run, as text:
+
 ```text
 $ shallnot check --specs spec.md --tests tests --results junit.xml
 shallnot: FAIL
@@ -164,7 +168,18 @@ shallnot check --specs spec.md --tests tests --results junit.xml
 
 The output is the report at the top of this page, with exit code `1`:
 `PWD-2~1` has no test. Write one, tag it `PWD-2~1`, fix `password.py` until it
-passes, and the verdict turns to `PASS`. Change the meaning of `PWD-1` and
+passes, and the verdict turns to `PASS`. `username-rule.patch` holds that
+change:
+
+```sh
+patch -p1 < username-rule.patch
+python -m pytest --junitxml=junit.xml
+shallnot check --specs spec.md --tests tests --results junit.xml   # PASS, exit code 0
+```
+
+[shallnot-demo](https://github.com/RachidChabane/shallnot-demo) is the same
+project gated in GitHub Actions on Linux, macOS and Windows; its Actions
+history shows the blocked run and the passing one. Change the meaning of `PWD-1` and
 bump it to `PWD-1~2`: both existing tags become `revision_mismatch` findings
 until the tests are re-verified and cite `PWD-1~2`.
 
@@ -238,6 +253,7 @@ script/trace            # shallnot traces its own requirements (specs/) to its o
 script/ci               # lint + test + trace
 script/fuzz             # fuzz the parsers
 script/regen-fixtures   # re-run pytest, Jest, Vitest, Maven and Gradle on the fixture projects
+script/demo             # record build/demo.gif with vhs
 ```
 
 `make <verb>` runs the same scripts. `shallnot` traces itself: its

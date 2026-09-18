@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Record build/demo.gif: the quickstart project going from FAIL to PASS.
+# Needs vhs (https://github.com/charmbracelet/vhs) and python3.
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+script/build
+demo_dir="$(mktemp -d)"
+trap 'rm -rf "$demo_dir"' EXIT
+cp -R examples/quickstart/. "$demo_dir/"
+rm -rf "$demo_dir/.venv" "$demo_dir/junit.xml" "$demo_dir/.pytest_cache"
+python3 -m venv "$demo_dir/.venv"
+"$demo_dir/.venv/bin/pip" install --quiet pytest
+
+mkdir -p build
+DEMO_DIR="$demo_dir" DEMO_BIN="$PWD/bin" vhs script/demo.d/demo.tape
+echo "wrote build/demo.gif"

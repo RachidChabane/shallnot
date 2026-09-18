@@ -1,4 +1,4 @@
-.PHONY: build test fuzz lint trace ci regen-fixtures dist
+.PHONY: build test fuzz lint trace ci regen-fixtures dist demo
 
 build:
 	script/build
@@ -23,3 +23,6 @@ regen-fixtures:
 
 dist:
 	script/dist $(VERSION)
+
+demo:
+	script/demo
