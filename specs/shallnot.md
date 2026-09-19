@@ -116,18 +116,20 @@ The requirements of shallnot itself, in its own Markdown spec format.
 - **SN-74~1**: WHEN asked to equip a repository THE SYSTEM SHALL write a
   starter config for the test runners it detects without rewriting an existing
   one, add the pytest hook to `conftest.py`, and list what remains to be done.
-- **SN-75~1**: WHEN asked to equip a repository THE SYSTEM SHALL install the
-  packaged skill as a marked section of `AGENTS.md`, import it from
-  `CLAUDE.md`, and copy it to `.claude/skills`, leaving other content alone.
+- **SN-75~2**: WHEN asked to equip a repository THE SYSTEM SHALL install every
+  packaged skill, in reading order, as one marked section of `AGENTS.md`,
+  import it from `CLAUDE.md`, and copy each skill to `.claude/skills`, leaving
+  other content alone.
 - **SN-76~1**: WHEN asked to equip a repository THE SYSTEM SHALL add the
   end-of-turn hook to each selected harness's configuration, keeping the
   settings already there.
 - **SN-77~1**: WHEN equipping a repository that is already equipped THE SYSTEM
   SHALL change nothing, and with `--check` it SHALL write nothing and exit 1 if
   a file would change.
-- **SN-78~1**: THE plugin package SHALL be a conformant Agent Plugins
-  package and a Claude Code plugin carrying the same skill and version, whose
-  hooks only call the binary.
+- **SN-78~2**: THE plugin package SHALL be a conformant Agent Plugins
+  package and a Claude Code plugin carrying the same skills and version, whose
+  hooks only call the binary; each skill SHALL name itself and say when to use
+  it without being asked.
 
 ## Reports
 

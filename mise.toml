@@ -29,3 +29,7 @@ run = "script/regen-fixtures"
 [tasks.demo]
 description = "Record a real agent session as a GIF"
 run = "script/demo"
+
+[tasks.eval-plugin]
+description = "Evaluate the plugin with claude plugin eval (spends model tokens)"
+run = "script/eval-plugin"

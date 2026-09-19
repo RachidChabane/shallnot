@@ -60,7 +60,7 @@ func TestInitCommand(t *testing.T) {
 		}
 	})
 
-	t.Run("installs the agent instructions every harness reads [verifies SN-75~1]", func(t *testing.T) {
+	t.Run("installs the agent instructions every harness reads [verifies SN-75~2]", func(t *testing.T) {
 		directory := t.TempDir()
 		writeFiles(t, directory, map[string]string{"AGENTS.md": "# House rules\n\nBe kind.\n", "CLAUDE.md": "# Claude\n"})
 		shallnot(t, "init", "--dir", directory, "--hooks", "none")
@@ -74,12 +74,19 @@ func TestInitCommand(t *testing.T) {
 		if claude := readFile(t, directory, "CLAUDE.md"); claude != "# Claude\n\n@AGENTS.md\n" {
 			t.Fatalf("got %q", claude)
 		}
-		if skill := readFile(t, directory, ".claude/skills/shallnot/SKILL.md"); skill != string(plugin.Skill) {
-			t.Fatal("the installed skill differs from the packaged one")
+		for _, skill := range plugin.Skills() {
+			if installed := readFile(t, directory, ".claude/skills/"+skill.Name+"/SKILL.md"); installed != string(skill.Content) {
+				t.Fatalf("the installed %s skill differs from the packaged one", skill.Name)
+			}
+		}
+		for _, heading := range []string{"## Tracing requirements to tests", "## Writing requirements for shallnot", "## Reviewing tests against their requirements"} {
+			if !strings.Contains(agents, "\n"+heading) && !strings.Contains(agents, heading) {
+				t.Errorf("AGENTS.md lacks %q", heading)
+			}
 		}
 	})
 
-	t.Run("updates its AGENTS.md section in place and leaves the rest alone [verifies SN-75~1]", func(t *testing.T) {
+	t.Run("updates its AGENTS.md section in place and leaves the rest alone [verifies SN-75~2]", func(t *testing.T) {
 		directory := t.TempDir()
 		writeFiles(t, directory, map[string]string{"AGENTS.md": "Before.\n\n<!-- shallnot:begin -->\nold text\n<!-- shallnot:end -->\n\nAfter.\n"})
 		shallnot(t, "init", "--dir", directory, "--hooks", "none")

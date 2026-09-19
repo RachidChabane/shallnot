@@ -30,13 +30,35 @@ are advice a model can skip; a step that must always happen belongs in a
 hook. Both are shipped, and the hook repeats nothing: it runs the gate and
 hands over the findings.
 
+### Three skills, one per role
+
+The work has three roles: whoever owns intent writes the requirement, whoever
+implements binds tests to it, whoever owns verification judges the rigour of
+those tests. One agent often plays all three, so the package carries a skill
+for each: `shallnot-plan`, `shallnot`, `shallnot-review`. The review skill is
+where semantic judgement lives (does this test really verify that statement);
+it stays a skill, outside the binary, so the gate remains deterministic.
+
+The line between planning and gaming is drawn the same way in all three: a
+requirement is written from a request for behaviour, before the code. Writing
+one from the user's request is planning; writing or editing one to clear a
+finding is forbidden.
+
+### The plugin is evaluated, not assumed
+
+`plugin/evals/` is a `claude plugin eval` suite: plain requests in a small
+gated project, graded on what the agent did, with the plugin and without it.
+It covers acting unprompted, planning first, refusing to game the gate,
+reviewing, and staying silent in a project that is not gated. It spends model
+tokens and is run on demand with `script/eval-plugin`, not in CI.
+
 ### `shallnot init` is the primary vehicle, not the plugin
 
 A plugin equips one person's agent. `init` equips the repository, which covers
 every teammate, every harness that reads `AGENTS.md`, and unattended pipeline
 agents. It writes files and nothing else: a starter `shallnot.yaml` (never
 rewritten once it exists), a marked section of `AGENTS.md`, an `@AGENTS.md`
-import in `CLAUDE.md`, the project skill, the pytest `conftest.py` hook, and
+import in `CLAUDE.md`, the project skills, the pytest `conftest.py` hook, and
 the end-of-turn hook configuration. It is idempotent and has a `--check` mode,
 so a repository can verify in CI that its agent files are current.
 
@@ -88,6 +110,6 @@ Code defines where it looks for them.
   hook. Other harnesses get the instructions only.
 - The repository dogfoods the mechanism: it is equipped by its own `init`, CI
   runs `shallnot gate` and `shallnot init --check`.
-- The skill has one source (`plugin/skills/shallnot/SKILL.md`); the `AGENTS.md`
+- Each skill has one source (`plugin/skills/<name>/SKILL.md`); the `AGENTS.md`
   section is derived from it at run time, so no generated copy is committed
   except the ones `init` writes into this repository, which `--check` guards.

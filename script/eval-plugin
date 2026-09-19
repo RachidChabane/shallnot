@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Evaluate the plugin with `claude plugin eval`: every case, with the plugin
+# and without it. Spends model tokens. Extra arguments go to the eval command,
+# for example: script/eval-plugin --case plan-first --keep-temp
+# EVAL_MODEL selects the model under test (default: haiku).
+set -euo pipefail
+cd "$(dirname "${BASH_SOURCE[0]}")/../plugin"
+
+exec claude plugin eval . \
+  --scaffold --allow-tools Bash Write Edit \
+  --trust-plugin --no-publish \
+  --ablation with-without --runs 1 --concurrency 4 \
+  --model "${EVAL_MODEL:-haiku}" "$@"

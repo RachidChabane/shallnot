@@ -1,0 +1,10 @@
+version: 1
+id_pattern: 'PWD-[0-9]+'
+specs:
+  - specs
+tests:
+  - tests
+results:
+  - test-results/pytest.xml
+test_commands:
+  - .venv/bin/python -m pytest -q -o junit_family=xunit1 --junitxml=test-results/pytest.xml

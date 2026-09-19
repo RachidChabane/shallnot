@@ -17,10 +17,15 @@ gate is part of doing that work properly. Whenever you add or change
 behaviour:
 
 1. Find the requirement the work implements in the specs listed in
-   `shallnot.yaml`.
+   `shallnot.yaml`. If no requirement describes the behaviour you were asked
+   for, state it first: write the requirement from the request, before the
+   code (the `shallnot-plan` skill says how).
 2. Bind the tests you write to it with a tag.
 3. Run `shallnot gate` before you say the work is done, and resolve what it
    reports.
+4. Check that each test you tagged would fail if the behaviour were missing
+   (the `shallnot-review` skill says how). The gate only proves a tagged test
+   passed.
 
 ## Requirements
 
@@ -71,9 +76,9 @@ carries no tag; do not invent one.
    - `2`: no verdict (a results file is missing or was not rewritten by the
      test run, the config is wrong). This says nothing about your code. Read
      the message on standard error and fix the cause: usually the tests did
-     not run to the point of writing their report. If the specs themselves
-     are missing, stop and tell the user; never write requirements yourself
-     to satisfy the gate.
+     not run to the point of writing their report. If the project has no spec
+     at all, stop and tell the user; requirements come from a request for
+     behaviour, never from the need to satisfy the gate.
 3. In `shallnot-report.json`, read `findings` where `blocking` is `true`. Each
    has a `category`, a `message`, a `location` (`file`, `line`) and usually a
    `requirement_id`. `requirements[]` holds the full matrix: each requirement's
@@ -91,7 +96,7 @@ you the blocking findings. Treat that message exactly like a blocked gate.
 | `failing_bound_test` | A bound test fails although another passes. | Same as above: fix the code. |
 | `skipped_requirement` | Its bound tests were all skipped. | Un-skip the test and make it pass. |
 | `not_run_requirement`, `tag_not_in_results` | The tag is in the source but in no results file. | Make sure the test is collected and run, that its results file is passed to `shallnot`, and that the tag sits where the runner reports it (see the table above). |
-| `orphan_tag` | The tag cites an ID no spec declares. | Fix a typo in the ID. If the requirement does not exist, remove the claim: the test verifies nothing stated. If the behaviour matters, ask for the requirement to be added to the spec; do not add it yourself unless you own the spec. |
+| `orphan_tag` | The tag cites an ID no spec declares. | Fix a typo in the ID. If the requirement does not exist, remove the claim: the test verifies nothing stated. A requirement is written from a request for behaviour, before the code; never invent one to give a tag something to cite. |
 | `revision_mismatch` | The tag cites another revision than the spec. | Re-read the requirement's current statement, update the test so that it verifies that statement, then cite the current revision. |
 | `malformed_tag` | The tag cannot be read. | Write it as `[verifies ID~REVISION]`. |
 | `unjustified_non_testable`, `duplicate_id`, `malformed_requirement` | The spec is defective. | Report it to the spec's owner, or fix the spec if you own it. |

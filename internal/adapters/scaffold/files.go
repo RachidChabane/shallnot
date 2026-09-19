@@ -14,7 +14,8 @@ const (
 	specsDirectory = "specs"
 	agentsPath     = "AGENTS.md"
 	claudePath     = "CLAUDE.md"
-	skillPath      = ".claude/skills/shallnot/SKILL.md"
+	skillsRoot     = ".claude/skills"
+	skillFile      = "SKILL.md"
 	conftestPath   = "conftest.py"
 
 	sectionBegin = "<!-- shallnot:begin -->"
@@ -80,16 +81,28 @@ func testRoots(directory string, detected []Runner) []string {
 	return roots
 }
 
-// AgentsSection renders the skill as a section of an AGENTS.md: no front
+// AgentsSection renders the skills as a section of an AGENTS.md: no front
 // matter, headings one level down, between markers that let init update it.
 func AgentsSection() string {
-	body := string(plugin.Skill)
-	if strings.HasPrefix(body, "---\n") {
-		if end := strings.Index(body[4:], "\n---\n"); end >= 0 {
-			body = body[4+end+len("\n---\n"):]
+	var bodies []string
+	for _, skill := range plugin.Skills() {
+		bodies = append(bodies, demoteHeadings(withoutFrontMatter(string(skill.Content))))
+	}
+	return sectionBegin + "\n" + strings.Join(bodies, "\n\n") + "\n" + sectionEnd + "\n"
+}
+
+func withoutFrontMatter(text string) string {
+	const fence = "---\n"
+	if strings.HasPrefix(text, fence) {
+		if end := strings.Index(text[len(fence):], "\n"+fence); end >= 0 {
+			text = text[len(fence)+end+len("\n"+fence):]
 		}
 	}
-	lines := strings.Split(strings.TrimSpace(body), "\n")
+	return strings.TrimSpace(text)
+}
+
+func demoteHeadings(text string) string {
+	lines := strings.Split(text, "\n")
 	inFence := false
 	for index, line := range lines {
 		if strings.HasPrefix(line, "```") {
@@ -99,7 +112,7 @@ func AgentsSection() string {
 			lines[index] = "#" + line
 		}
 	}
-	return sectionBegin + "\n" + strings.Join(lines, "\n") + "\n" + sectionEnd + "\n"
+	return strings.Join(lines, "\n")
 }
 
 // agentsFile keeps the shallnot section of AGENTS.md current and leaves the rest of the file alone.
@@ -137,9 +150,17 @@ func claudeMemory() provisioner {
 	}}
 }
 
-// claudeSkill installs the skill where Claude Code discovers project skills.
-func claudeSkill() provisioner {
-	return provisioner{path: skillPath, desired: func([]byte) ([]byte, error) { return plugin.Skill, nil }}
+// claudeSkills installs each skill where Claude Code discovers project skills.
+func claudeSkills() []provisioner {
+	var provisioners []provisioner
+	for _, skill := range plugin.Skills() {
+		content := skill.Content
+		provisioners = append(provisioners, provisioner{
+			path:    skillsRoot + "/" + skill.Name + "/" + skillFile,
+			desired: func([]byte) ([]byte, error) { return content, nil },
+		})
+	}
+	return provisioners
 }
 
 const conftestMarker = `item.iter_markers(name="verifies")`

@@ -1,4 +1,4 @@
-.PHONY: build test fuzz lint trace ci regen-fixtures dist demo
+.PHONY: build test fuzz lint trace ci regen-fixtures dist demo eval-plugin
 
 build:
 	script/build
@@ -26,3 +26,6 @@ dist:
 
 demo:
 	script/demo
+
+eval-plugin:
+	script/eval-plugin

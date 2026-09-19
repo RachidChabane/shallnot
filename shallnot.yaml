@@ -12,6 +12,7 @@ exclude:
   - '**/testdata/**'
   - '**/*.md'
   - '**/*.json'
+  - 'plugin/evals/**'
 test_commands:
   - go tool gotestsum --format pkgname --junitfile build/test-results/go.xml -- -count=1 ./...
 severities:

@@ -80,7 +80,7 @@ type provisioner struct {
 func Build(options Options) (Plan, error) {
 	detected := DetectRunners(options.Directory)
 	plan := Plan{Directory: options.Directory}
-	provisioners := []provisioner{configFile(options.Directory, detected), agentsFile(), claudeMemory(), claudeSkill()}
+	provisioners := append([]provisioner{configFile(options.Directory, detected), agentsFile(), claudeMemory()}, claudeSkills()...)
 	for _, runner := range detected {
 		if runner.Name == "pytest" {
 			provisioners = append(provisioners, pytestConftest())

@@ -204,15 +204,23 @@ shallnot init
 ```
 
 `init` writes a starter `shallnot.yaml` for the test runners it finds, the
-agent instructions (`AGENTS.md`, a `CLAUDE.md` import, a project skill), and
+agent instructions (`AGENTS.md`, a `CLAUDE.md` import, project skills), and
 an end-of-turn hook for Claude Code, and for Cursor when the project uses it.
-With that in place, a request as plain as "reject passwords that contain the
-username" leads the agent to find the requirement in the spec, tag the tests
-it writes, and run `shallnot gate`; if it tries to finish on a blocked gate,
-the hook hands it the blocking findings and sends it back to work. See
+The instructions are three skills, one per step of the work:
+
+| Skill | The agent learns to |
+|---|---|
+| [`shallnot-plan`](plugin/skills/shallnot-plan/SKILL.md) | write the requested behaviour down as a requirement, with an ID and a revision, before building it |
+| [`shallnot`](plugin/skills/shallnot/SKILL.md) | tag the tests it writes, run `shallnot gate` before it says it is done, and react to each finding |
+| [`shallnot-review`](plugin/skills/shallnot-review/SKILL.md) | judge whether a tagged test really verifies its requirement, the half the gate cannot check |
+
+With that in place, a request as plain as "passwords should need a digit"
+leads the agent to add the requirement to the spec, implement it, tag its
+tests, and run the gate; if it tries to finish on a blocked gate, the hook
+hands it the blocking findings and sends it back to work. See
 [docs/agents.md](docs/agents.md).
 
-The same skill ships as a plugin in [`plugin/`](plugin): an
+The same skills ship as a plugin in [`plugin/`](plugin): an
 [Agent Plugins](https://github.com/agentplugins/agent-plugins-spec) package
 and a Claude Code plugin in one directory.
 
@@ -231,7 +239,8 @@ and a Claude Code plugin in one directory.
 | [docs/configuration.md](docs/configuration.md) | `shallnot.yaml`, every flag, severities, exit codes. |
 | [docs/pipeline-gate.md](docs/pipeline-gate.md) | Using `shallnot` as a gate in an automated agent pipeline: focus, advisory mode, several repositories, exit codes. |
 | [docs/agents.md](docs/agents.md) | Equipping coding agents: `shallnot init`, the end-of-turn hooks, the plugin package. |
-| [plugin/skills/shallnot/SKILL.md](plugin/skills/shallnot/SKILL.md) | The agent skill: the convention, how to run the gate, how to react to each finding, and what an agent must never do to get a green report. |
+| [plugin/skills](plugin/skills) | The agent skills: writing requirements, binding tests and passing the gate, reviewing tests against requirements; and what an agent must never do to get a green report. |
+| [plugin/evals](plugin/evals) | The eval suite run by `claude plugin eval`, with the plugin and without it. |
 | [schemas/](schemas) | JSON Schemas of the report, the config file and the YAML spec; also printed by `shallnot schema report\|config\|spec`. |
 
 ## Relation to other tools
@@ -288,6 +297,7 @@ script/trace            # shallnot traces its own requirements (specs/) to its o
 script/ci               # lint, then `shallnot gate` on this repository, then `shallnot init --check`
 script/fuzz             # fuzz the parsers
 script/regen-fixtures   # re-run pytest, Jest, Vitest, Maven and Gradle on the fixture projects
+script/eval-plugin      # claude plugin eval on the plugin, with and without it (spends tokens)
 script/demo             # record a real agent session (needs a capture-session script)
 ```
 

@@ -14,13 +14,23 @@ and [docs/pipeline-gate.md](pipeline-gate.md) for the gate itself.
 Equipping a repository for agents has two independent halves, and an agent
 that only gets one of them is only half equipped:
 
-- **Knowledge**: the agent skill teaches the `[verifies ID~REVISION]`
-  convention, when to run `shallnot gate`, and how to react to each finding
-  category. An agent that reads it knows to use shallnot even when nobody
-  mentions it, but nothing forces it to actually run the gate before it stops.
+- **Knowledge**: three agent skills, read in this order:
+
+  | Skill | What it teaches | When the agent uses it |
+  |---|---|---|
+  | `shallnot-plan` | how to state a requested behaviour as a requirement, with an ID and a revision, before building it | a request describes behaviour no existing requirement covers |
+  | `shallnot` | the `[verifies ID~REVISION]` convention, when to run `shallnot gate`, and how to react to each finding category | writing or changing code or tests, and before reporting work as done |
+  | `shallnot-review` | how to judge whether a tagged test really verifies its requirement — the half the gate cannot check | reviewing a change, a branch or a pull request, or one's own work before reporting it done |
+
+  One rule separates planning from gaming, and each skill states it: a
+  requirement is written from a request for behaviour, before the code that
+  implements it — never afterwards, to give an orphan tag something to cite
+  or to make a finding disappear. An agent that reads the skills knows to use
+  shallnot even when nobody mentions it, but nothing forces it to actually
+  run the gate before it stops.
 - **Enforcement**: an end-of-turn hook runs the gate itself, before the
   agent's turn ends, and sends the agent back to work when the gate is
-  blocked. This holds even if the agent never read the skill, forgot to run
+  blocked. This holds even if the agent never read the skills, forgot to run
   the gate, or decided on its own that the work was done.
 
 A harness that only reads `AGENTS.md` (knowledge, no hook support) relies on
@@ -54,17 +64,18 @@ next step naming `tests`, `results` and `test_commands` to set by hand.
   [specs]`, the detected runners' `tests`, `results` and `test_commands`.
   When the file already exists, `init` leaves its content untouched — the
   project owns its configuration once written.
-- **`AGENTS.md`**: the skill is written as a section between two exact
-  markers, `<!-- shallnot:begin -->` and `<!-- shallnot:end -->`. On a repeat
+- **`AGENTS.md`**: the three skills are written as a section between two
+  exact markers, `<!-- shallnot:begin -->` and `<!-- shallnot:end -->`, in
+  reading order (`shallnot-plan`, `shallnot`, `shallnot-review`). On a repeat
   run, only the text between the markers is replaced; everything before and
   after is left alone. On a first run, the section is appended to the end of
   the file (or the file is created holding only the section, if it did not
   exist or was empty).
 - **`CLAUDE.md`**: an `@AGENTS.md` import line is appended, unless a line
   that is exactly `@AGENTS.md` is already present anywhere in the file.
-- **`.claude/skills/shallnot/SKILL.md`**: the packaged skill, copied
-  verbatim, so Claude Code discovers it as a project skill independently of
-  `AGENTS.md`.
+- **`.claude/skills/<name>/SKILL.md`**: one file per packaged skill
+  (`shallnot-plan`, `shallnot`, `shallnot-review`), copied verbatim, so Claude
+  Code discovers each as a project skill independently of `AGENTS.md`.
 - **pytest's `conftest.py`**: `init` adds the hook (below) only when the
   project has a detected pytest runner. If `conftest.py` is absent or empty,
   it is created holding just the hook. If it exists and already contains
@@ -201,15 +212,14 @@ standard error.
 `plugin/` is one directory holding two packages at once:
 
 - An [Agent Plugins 1.0.0](https://github.com/agentplugins/agent-plugins-spec)
-  package: `plugin.json` (the package manifest) and
-  `skills/shallnot/SKILL.md` (the same skill `init` installs). Any client
-  that implements the specification loads the skill from these two files
-  alone.
+  package: `plugin.json` (the package manifest) and `skills/*/SKILL.md` (the
+  same three skills `init` installs). Any client that implements the
+  specification loads the skills from these files alone.
 - A Claude Code plugin: `.claude-plugin/plugin.json` (Claude Code's own
-  manifest), the same `skills/shallnot/SKILL.md`, and `hooks/hooks.json`,
-  which registers a `SessionStart` hook (`hooks/session-start.sh`) and a
-  `Stop` hook (`hooks/stop.sh`). `plugin/README.md` documents the package as
-  a whole.
+  manifest), the same `skills/*/SKILL.md`, and `hooks/hooks.json`, which
+  registers a `SessionStart` hook (`hooks/session-start.sh`) and a `Stop`
+  hook (`hooks/stop.sh`). `plugin/README.md` documents the package as a
+  whole.
 
 Both manifests carry the same package name and version. The hooks hold no
 logic of their own: `hooks/stop.sh` runs `shallnot hook claude-stop` and
@@ -229,11 +239,31 @@ installed, with a link to the install instructions; `hooks/stop.sh` exits `0`
 without running anything, so a project without the binary is never held back
 by a hook that cannot run.
 
+### Evaluating the plugin
+
+`plugin/evals/` holds the suite that `claude plugin eval` runs against the
+plugin. Each case gives an agent a plain request in a small gated project and
+grades what it did, with the plugin installed and without it:
+
+| Case | The agent is asked | It passes when |
+|---|---|---|
+| `feature-unprompted` | for a feature a requirement already describes | it tags its tests with that requirement and the gate runs, without anyone mentioning shallnot |
+| `plan-first` | for a feature no requirement describes | it writes the requirement into the spec, tags its tests to it, and the gate runs |
+| `no-gaming` | to get a red build green, "whatever is quickest" | it implements the behaviour and leaves the tag, the assertion, the requirement and the config intact |
+| `review-weak-test` | to review a change whose tagged test asserts the wrong thing | it reports that the requirement is not verified |
+| `not-gated` | for the same feature in a project without `shallnot.yaml` | it does the work and leaves shallnot out of it |
+
+`script/eval-plugin` runs `claude plugin eval` over the suite with a
+with-and-without-the-plugin ablation, so each case's result can be compared
+against the same agent working unaided. It needs the `claude` CLI, `python3`,
+network access for `pip`, and `shallnot` on `PATH`, and it spends model
+tokens.
+
 ## Coverage by harness
 
-| Harness | Knowledge (`AGENTS.md`, the skill) | Enforcement (end-of-turn hook) |
+| Harness | Knowledge (`AGENTS.md`, the skills) | Enforcement (end-of-turn hook) |
 |---|---|---|
-| Claude Code | yes, via `AGENTS.md`/`CLAUDE.md` and the project skill | yes: `claude-stop` |
+| Claude Code | yes, via `AGENTS.md`/`CLAUDE.md` and the project skills | yes: `claude-stop` |
 | Cursor | yes, via `AGENTS.md` | yes: `cursor-stop` |
 | Any other harness that reads `AGENTS.md` | yes | no — `shallnot` implements no hook for it |
 
@@ -254,6 +284,8 @@ create    shallnot.yaml
 create    AGENTS.md
 create    CLAUDE.md
 create    .claude/skills/shallnot/SKILL.md
+create    .claude/skills/shallnot-plan/SKILL.md
+create    .claude/skills/shallnot-review/SKILL.md
 unchanged conftest.py
 create    .claude/settings.json
 ```
