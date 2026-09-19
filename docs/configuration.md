@@ -54,6 +54,7 @@ Every flag has a config-file equivalent, except `--config` and `--no-config`
 | `--focus-id <glob>` (repeatable) | `focus_ids` | Replaces the whole list. |
 | `--tests <directory>` (repeatable) | `tests` | Replaces the whole list. |
 | `--results <glob>` (repeatable) | `results` | Replaces the whole list. |
+| `--commit <sha>` | — | Commit the results were produced from, recorded in the reports. Defaults to `$GITHUB_SHA`, else `$CI_COMMIT_SHA`; with none of them, the reports carry no commit. |
 | `--exclude <glob>` (repeatable) | `exclude` | Replaces the whole list. |
 | `--no-default-excludes` | `default_excludes: false` | Scans dependency and build directories too. |
 | `--severity <category=severity>` (repeatable) | `severities` | Sets one category; repeatable flags apply on top of the config's `severities` map (see precedence). |

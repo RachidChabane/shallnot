@@ -87,6 +87,7 @@ func Run(settings Settings) (Outcome, error) {
 			FocusIDs:     append([]string(nil), settings.FocusIDs...),
 			TestRoots:    testRoots,
 			ResultsFiles: displayPaths(resultsFiles),
+			Commit:       settings.Commit,
 		},
 		Policy:   settings.Policy,
 		Analysis: analysis.Analyze(input),

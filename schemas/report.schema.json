@@ -96,6 +96,10 @@
           "items": {
             "type": "string"
           }
+        },
+        "commit": {
+          "type": "string",
+          "description": "The commit the results were produced from, as given with --commit or by the CI environment. Absent when none was given."
         }
       },
       "required": [

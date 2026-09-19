@@ -13,13 +13,13 @@ an automated pipeline, see [docs/pipeline-gate.md](pipeline-gate.md).
 
 ## Compatibility
 
-- `schema_version` is `"MAJOR.MINOR"` (for example `"1.0"`). A minor bump adds
+- `schema_version` is `"MAJOR.MINOR"` (for example `"1.1"`). A minor bump adds
   properties only; a major bump may remove or change one.
 - Consumers must ignore properties they do not know.
 - `extensions` objects (at the top level and on each requirement) are reserved
   for data contributed by analyses outside the deterministic core (code
   coverage, mutation score, judge answers). They are empty under
-  `schema_version` `"1.0"`; a consumer must tolerate unknown keys inside them
+  `schema_version` `"1.1"`; a consumer must tolerate unknown keys inside them
   and must not treat their absence of content as a finding.
 
 ## Determinism
@@ -34,7 +34,7 @@ GitHub-annotation outputs.
 
 | Property | Type | Meaning |
 |---|---|---|
-| `schema_version` | string | Format version, `"1.0"`. |
+| `schema_version` | string | Format version, `"1.1"`. `run.commit` exists from `"1.1"`. |
 | `tool.name` | string | Always `"shallnot"`. |
 | `tool.version` | string | Version of the binary that produced the report. |
 | `run` | object | What the run was asked to do and what it read. See below. |
@@ -58,6 +58,7 @@ GitHub-annotation outputs.
 | `spec_files` | array of string | Every known spec file read (`--specs` and `--focus` together). |
 | `test_roots` | array of string | Directories scanned for tags (`--tests` / `tests`). |
 | `results_files` | array of string | JUnit XML files read (`--results` / `results`, expanded). |
+| `commit` | string, optional | The commit the results were produced from: the value of `--commit`, else of `GITHUB_SHA`, else of `CI_COMMIT_SHA`. Absent when none is given, as in a working tree with uncommitted changes, where no commit identifies the code under test. The Markdown and terminal reports print it on a `Commit` line under the same condition. |
 
 ### `summary` object
 
@@ -261,7 +262,7 @@ REQUIREMENTS
 
 ```json
 {
-  "schema_version": "1.0",
+  "schema_version": "1.1",
   "tool": {
     "name": "shallnot",
     "version": "dev"

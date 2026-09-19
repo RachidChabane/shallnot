@@ -26,6 +26,7 @@ func (l *stringList) Set(value string) error {
 
 type checkFlags struct {
 	configPath        string
+	commit            string
 	noConfig          bool
 	idPattern         string
 	specs             stringList
@@ -61,6 +62,7 @@ func newCheckFlagSet(command string, flags *checkFlags, stderr io.Writer) *flag.
 	set.Var(&flags.testCommands, "test-command", "command `line` that `gate` runs before checking (repeatable)")
 	set.BoolVar(&flags.noDefaultExcludes, "no-default-excludes", false, "scan dependency and build directories too")
 	set.Var(&flags.severities, "severity", "override as `category=severity` (repeatable)")
+	set.StringVar(&flags.commit, "commit", "", "commit the results were produced from, recorded in the reports (default: $"+strings.Join(commitVariables, ", else $")+")")
 	set.BoolVar(&flags.advisory, "advisory", false, "report everything but always exit 0")
 	set.BoolVar(&flags.strict, "strict", false, "treat untagged tests as errors")
 	set.StringVar(&flags.failOn, "fail-on", "", "lowest blocking `severity`: error, warning or info")
@@ -157,6 +159,7 @@ func resolveSettings(flags checkFlags) (app.Settings, error) {
 	if flags.noDefaultExcludes {
 		settings.UseDefaultExcludes = false
 	}
+	settings.Commit = commitOf(flags.commit, os.Getenv)
 	if flags.advisory {
 		settings.Policy.Advisory = true
 	}
@@ -221,4 +224,20 @@ func writeFile(path string, reporter report.Reporter, outcome app.Outcome) error
 		return err
 	}
 	return file.Close()
+}
+
+// commitVariables are where CI systems name the commit under test, in order of preference.
+var commitVariables = []string{"GITHUB_SHA", "CI_COMMIT_SHA"}
+
+// commitOf returns the commit the caller named, else the one the CI environment names.
+func commitOf(flag string, environment func(string) string) string {
+	if flag != "" {
+		return flag
+	}
+	for _, variable := range commitVariables {
+		if value := environment(variable); value != "" {
+			return value
+		}
+	}
+	return ""
 }

@@ -21,6 +21,9 @@ func (MarkdownReporter) Write(writer io.Writer, outcome app.Outcome) error {
 	out := &errWriter{writer: writer}
 	out.printf("## shallnot: %s\n\n", verdictLine(outcome))
 	out.printf("- **Focus:** %s\n", focusDescription(outcome.Inputs))
+	if outcome.Inputs.Commit != "" {
+		out.printf("- **Commit:** `%s`\n", outcome.Inputs.Commit)
+	}
 	out.printf("- **Requirements:** %d known, %d in focus (%s)\n", summary.Requirements.Known, summary.Requirements.InFocus, coverageCounts(summary.Requirements))
 	out.printf("- **Tests:** %d in results, %d bound, %d untagged\n", summary.Tests.Total, summary.Tests.Bound, summary.Tests.Untagged)
 	out.printf("- **Findings:** %d error, %d warning, %d info (%d blocking)\n\n", summary.Findings.Error, summary.Findings.Warning, summary.Findings.Info, summary.Findings.Blocking)

@@ -18,7 +18,9 @@ type Settings struct {
 	// WorkDir is where test commands run: the config file's directory, or "" for the working directory.
 	WorkDir            string
 	UseDefaultExcludes bool
-	Policy             domain.Policy
+	// Commit identifies the code the results were produced from, when the caller knows it.
+	Commit string
+	Policy domain.Policy
 }
 
 // DefaultSettings returns the options of a run that configures nothing.
@@ -41,6 +43,8 @@ type Inputs struct {
 	FocusIDs     []string
 	TestRoots    []string
 	ResultsFiles []string
+	// Commit is the commit the caller said the results come from, or "".
+	Commit string
 }
 
 // FocusIsEverything reports whether the run demanded coverage of every known requirement.

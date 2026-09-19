@@ -155,6 +155,10 @@ The requirements of shallnot itself, in its own Markdown spec format.
   on the offending file and line.
 - **SN-64~1**: THE SYSTEM SHALL render a terminal report with the verdict,
   the matrix in focus and the findings.
+- **SN-83~1**: WHEN a commit is given with `--commit`, or else by the CI
+  environment in `GITHUB_SHA` or `CI_COMMIT_SHA`, THE SYSTEM SHALL record it in
+  the JSON, Markdown and terminal reports; with none given, the reports SHALL
+  carry no commit.
 - **SN-65~1**: WHEN asked for a schema THE SYSTEM SHALL print the embedded
   JSON Schema of the report, the config file or the YAML spec.
 

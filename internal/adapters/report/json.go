@@ -11,7 +11,7 @@ import (
 
 // SchemaVersion is the version of the JSON report format. The major number
 // changes only when a consumer of an earlier report would break.
-const SchemaVersion = "1.0"
+const SchemaVersion = "1.1"
 
 // Document is the JSON report. Its shape is specified by schemas/report.schema.json.
 type Document struct {
@@ -42,6 +42,8 @@ type RunInfo struct {
 	SpecFiles    []string        `json:"spec_files"`
 	TestRoots    []string        `json:"test_roots"`
 	ResultsFiles []string        `json:"results_files"`
+	// Commit is absent when the caller named none.
+	Commit string `json:"commit,omitempty"`
 }
 
 type FocusInfo struct {
@@ -153,6 +155,7 @@ func BuildDocument(outcome app.Outcome) Document {
 			SpecFiles:    orEmpty(outcome.Inputs.SpecFiles),
 			TestRoots:    orEmpty(outcome.Inputs.TestRoots),
 			ResultsFiles: orEmpty(outcome.Inputs.ResultsFiles),
+			Commit:       outcome.Inputs.Commit,
 		},
 		Verdict:      outcome.Analysis.Verdict,
 		ExitCode:     outcome.ExitCode(),

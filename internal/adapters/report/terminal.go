@@ -17,6 +17,9 @@ func (TerminalReporter) Write(writer io.Writer, outcome app.Outcome) error {
 	out := &errWriter{writer: writer}
 	out.printf("shallnot: %s\n", verdictLine(outcome))
 	out.printf("focus: %s\n", focusDescription(outcome.Inputs))
+	if outcome.Inputs.Commit != "" {
+		out.printf("commit: %s\n", outcome.Inputs.Commit)
+	}
 	out.printf("requirements: %d known, %d in focus (%s)\n", summary.Requirements.Known, summary.Requirements.InFocus, coverageCounts(summary.Requirements))
 	out.printf("tests: %d in results, %d bound, %d untagged\n", summary.Tests.Total, summary.Tests.Bound, summary.Tests.Untagged)
 	out.printf("findings: %d error, %d warning, %d info (%d blocking)\n\n", summary.Findings.Error, summary.Findings.Warning, summary.Findings.Info, summary.Findings.Blocking)
