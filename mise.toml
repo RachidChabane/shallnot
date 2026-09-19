@@ -27,5 +27,5 @@ description = "Re-run the real test runners of the fixture projects"
 run = "script/regen-fixtures"
 
 [tasks.demo]
-description = "Record build/demo.gif with vhs"
+description = "Record a real agent session as a GIF"
 run = "script/demo"

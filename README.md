@@ -9,9 +9,14 @@ verify a requirement that does not exist.
 It is a single static binary. It makes no network access and calls no model:
 the same inputs give the same output, byte for byte.
 
-![A requirement without a test blocks the gate; adding a tagged, passing test turns the verdict to PASS](https://raw.githubusercontent.com/RachidChabane/shallnot-demo/main/media/demo.gif)
+![An agent is asked for a feature and nothing else. It finds the requirement in the spec, tags the tests it writes, runs the shallnot gate on its own, and reports the result](https://raw.githubusercontent.com/RachidChabane/shallnot-demo/main/media/session.gif)
 
-The first half of that run, as text:
+The request in that session is "Passwords that contain the account's username
+should be rejected. Can you add that?". Nobody mentions shallnot: the
+repository is equipped by `shallnot init`, so the agent knows the convention
+and cannot end its turn on a blocked gate.
+
+What the gate prints when a requirement has no test:
 
 ```text
 $ shallnot check --specs spec.md --tests tests --results junit.xml
@@ -116,7 +121,7 @@ In GitHub Actions:
 ```yaml
 - run: pytest --junitxml=junit.xml        # your test step, producing JUnit XML
   continue-on-error: true
-- uses: RachidChabane/shallnot@v0.1.1
+- uses: RachidChabane/shallnot@v0.2.0
   with:
     args: --specs specs --tests tests --results junit.xml
 ```
@@ -283,7 +288,7 @@ script/trace            # shallnot traces its own requirements (specs/) to its o
 script/ci               # lint, then `shallnot gate` on this repository, then `shallnot init --check`
 script/fuzz             # fuzz the parsers
 script/regen-fixtures   # re-run pytest, Jest, Vitest, Maven and Gradle on the fixture projects
-script/demo             # record build/demo.gif with vhs
+script/demo             # record a real agent session (needs a capture-session script)
 ```
 
 `make <verb>` runs the same scripts. `shallnot` gates itself: its

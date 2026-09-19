@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# Record build/demo.gif: the quickstart project going from FAIL to PASS.
-# The README shows the copy published in the shallnot-demo repository (media/demo.gif).
-# Needs vhs (https://github.com/charmbracelet/vhs) and python3.
+# Record build/session.gif and build/session.png: a real agent session in a
+# project equipped by `shallnot init`, given a plain feature request.
+# CAPTURE_SESSION is the path of a capture-session script taking
+# --cwd --prep --prompt --until --out --gif (it drives a terminal window and
+# records the screen). Needs the claude CLI and shallnot on PATH.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
+capture="${CAPTURE_SESSION:?set CAPTURE_SESSION to the path of a capture-session script}"
 script/build
-demo_dir="$(mktemp -d)"
-trap 'rm -rf "$demo_dir"' EXIT
-cp -R examples/quickstart/. "$demo_dir/"
-rm -rf "$demo_dir/.venv" "$demo_dir/junit.xml" "$demo_dir/.pytest_cache"
-python3 -m venv "$demo_dir/.venv"
-"$demo_dir/.venv/bin/pip" install --quiet pytest
-
 mkdir -p build
-DEMO_DIR="$demo_dir" DEMO_BIN="$PWD/bin" vhs script/demo.d/demo.tape
-echo "wrote build/demo.gif"
+"$capture" \
+  --cwd "$HOME/.cache/shallnot-demo/password-policy" \
+  --prep script/demo.d/session-prep.sh \
+  --prompt "Passwords that contain the account's username should be rejected. Can you add that?" \
+  --until "shallnot|gate" \
+  --out build/session.png --gif build/session.gif
