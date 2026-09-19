@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build the project a recorded agent session starts from: the quickstart
-# project with PWD-2~1 untested, equipped by `shallnot init`.
+# project with every requirement covered, equipped by `shallnot init`.
 # Usage: session-prep.sh [directory]   (default: ~/.cache/shallnot-demo/password-policy)
 set -euo pipefail
 
@@ -19,6 +19,7 @@ cat > "$target/.claude/settings.json" <<'SETTINGS'
 }
 SETTINGS
 touch "$target/pytest.ini"
+(cd "$target" && patch -p1 -s < "$repo/examples/quickstart/username-rule.patch")
 "$repo/bin/shallnot" init --dir "$target" > /dev/null
 find "$target" -name __pycache__ -prune -exec rm -rf {} +
 echo "$target"

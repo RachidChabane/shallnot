@@ -13,6 +13,6 @@ mkdir -p build
 "$capture" \
   --cwd "$HOME/.cache/shallnot-demo/password-policy" \
   --prep script/demo.d/session-prep.sh \
-  --prompt "Passwords that contain the account's username should be rejected. Can you add that?" \
-  --until "shallnot|gate" \
+  --prompt "Passwords should also have to contain at least one digit. Can you add that?" \
+  --until "PWD-4" \
   --out build/session.png --gif build/session.gif
