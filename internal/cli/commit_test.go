@@ -16,14 +16,14 @@ func TestMain(m *testing.M) {
 }
 
 func TestCommit(t *testing.T) {
-	quickstart := []string{"check", "--no-config", "--specs", "examples/quickstart/spec.md", "--tests", "examples/quickstart/tests", "--results", "examples/quickstart/junit.xml"}
+	cart := []string{"check", "--no-config", "--advisory", "--specs", "fixtures/cart/spec", "--tests", "fixtures/cart/pytest/tests", "--results", "fixtures/cart/pytest/results/junit.xml"}
 	reportedCommit := func(t *testing.T, args ...string) (string, bool) {
 		t.Helper()
 		var document struct {
 			SchemaVersion string `json:"schema_version"`
 			Run           map[string]any
 		}
-		result := shallnot(t, append(append([]string{}, quickstart...), append(args, "--format", "json")...)...)
+		result := shallnot(t, append(append([]string{}, cart...), append(args, "--format", "json")...)...)
 		if err := json.Unmarshal([]byte(result.stdout), &document); err != nil {
 			t.Fatalf("%v in %+v", err, result)
 		}
@@ -39,7 +39,7 @@ func TestCommit(t *testing.T) {
 			t.Fatalf("got %q", commit)
 		}
 		for _, format := range []string{"terminal", "markdown"} {
-			result := shallnot(t, append(append([]string{}, quickstart...), "--commit", "feedbee", "--format", format)...)
+			result := shallnot(t, append(append([]string{}, cart...), "--commit", "feedbee", "--format", format)...)
 			if !strings.Contains(result.stdout, "feedbee") {
 				t.Errorf("no commit in the %s report:\n%s", format, result.stdout)
 			}
@@ -63,7 +63,7 @@ func TestCommit(t *testing.T) {
 		if commit, present := reportedCommit(t); present {
 			t.Fatalf("got %q", commit)
 		}
-		if result := shallnot(t, quickstart...); strings.Contains(result.stdout, "commit") {
+		if result := shallnot(t, cart...); strings.Contains(result.stdout, "commit") {
 			t.Fatalf("got:\n%s", result.stdout)
 		}
 	})
