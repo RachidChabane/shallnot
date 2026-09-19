@@ -73,9 +73,12 @@ next step naming `tests`, `results` and `test_commands` to set by hand.
   exist or was empty).
 - **`CLAUDE.md`**: an `@AGENTS.md` import line is appended, unless a line
   that is exactly `@AGENTS.md` is already present anywhere in the file.
-- **`.claude/skills/<name>/SKILL.md`**: one file per packaged skill
-  (`shallnot-plan`, `shallnot`, `shallnot-review`), copied verbatim, so Claude
-  Code discovers each as a project skill independently of `AGENTS.md`.
+- **`.agents/skills/<name>/SKILL.md`** and **`.claude/skills/<name>/SKILL.md`**:
+  one file per packaged skill (`shallnot-plan`, `shallnot`, `shallnot-review`)
+  under each root, copied verbatim, so a harness discovers each as a project
+  skill independently of `AGENTS.md`. `.agents/skills` is the directory the
+  harnesses in the [skills column](#hook-and-instruction-coverage) share;
+  `.claude/skills` is Claude Code's own.
 - **pytest's `conftest.py`**: `init` adds the hook (below) only when the
   project has a detected pytest runner. If `conftest.py` is absent or empty,
   it is created holding just the hook. If it exists and already contains
@@ -85,27 +88,30 @@ next step naming `tests`, `results` and `test_commands` to set by hand.
   to write it**, exits with a tool failure, and says to merge the hook by
   hand; it never overwrites a hook function the project already defines.
   Otherwise, the hook is appended to the existing content.
-- **`.claude/settings.json`**: the Stop hook is merged into the existing JSON
-  object, keeping every other key (`permissions`, other hooks, and so on)
-  untouched. It reads the file as a JSON object (or starts from `{}` if
-  absent or empty), and if no command anywhere under `hooks` already equals
-  `shallnot hook claude-stop`, it appends one more entry to the `hooks.Stop`
-  array: `{"hooks": [{"type": "command", "command": "shallnot hook
-  claude-stop", "timeout": 600}]}`. Existing entries in `hooks.Stop` are kept
-  in place and this one is added after them.
-- **`.cursor/hooks.json`**: the same merge for Cursor's `stop` hook. If the
-  file has no `version` key yet, `version: 1` is set. If no command under
-  `hooks` already equals `shallnot hook cursor-stop`, one more entry,
-  `{"command": "shallnot hook cursor-stop"}`, is appended to `hooks.stop`.
+- **The end-of-turn hook configuration of each selected harness**: for every
+  harness named by `--hooks` (see below), `init` merges that harness's hook
+  into its configuration file, keeping every other key and every other hook
+  entry untouched. The file, the event name and the exact command for each
+  harness are in the table under
+  [End-of-turn hooks](#end-of-turn-hooks). Two harnesses need more than a
+  merged hook entry: installing Gemini CLI's hook also adds `AGENTS.md` to
+  `context.fileName` in `.gemini/settings.json`, ahead of the names already
+  configured, because Gemini CLI otherwise reads only `GEMINI.md`; installing
+  Goose's hook writes a project plugin under `.agents/plugins/shallnot/`
+  (`plugin.json` plus `hooks/hooks.json`) rather than editing a shared
+  settings file.
 
 ### Flags
 
 - `--dir <directory>` — the project directory to equip (default `.`).
 - `--hooks <list>` — which harnesses get an end-of-turn hook:
-  - `auto` (default): installs the Claude Code hook always, and the Cursor
-    hook only when the project already has a `.cursor` directory.
+  - `auto` (default): installs the Claude Code hook always, plus every other
+    harness whose configuration the project already shows a sign of — see
+    the "Detected by" column of the
+    [End-of-turn hooks](#end-of-turn-hooks) table for each harness's markers.
   - `none`: installs no hook.
-  - a comma-separated list of harness names (`claude`, `cursor`): installs
+  - a comma-separated list of harness names (`claude`, `codex`, `copilot`,
+    `cursor`, `factory`, `gemini`, `goose`, `opencode`, `qwen`): installs
     exactly those, regardless of what exists on disk. An unknown name is a
     tool failure.
 - `--check` — changes nothing on disk. Prints the same per-file plan as a
@@ -123,56 +129,114 @@ already-correct `conftest.py`), so the second run's plan has no `create` or
 
 ## End-of-turn hooks
 
-`shallnot hook <harness>` answers one harness's end-of-turn hook call. Two
-harnesses are implemented: `claude-stop` (Claude Code's `Stop` hook) and
-`cursor-stop` (Cursor's `stop` hook). Both share the same protocol:
+`shallnot hook <name>` answers one harness's end-of-turn hook call. Two
+protocols are implemented:
 
-1. **Read the event.** `claude-stop` reads a JSON object from standard input
-   with `session_id` and `cwd`; `cursor-stop` reads one with
-   `conversation_id`, `workspace_roots` and `loop_count`.
-2. **Resolve the project directory.** `claude-stop` uses the
-   `CLAUDE_PROJECT_DIR` environment variable if set, otherwise the input's
-   `cwd`, and changes into it. `cursor-stop` uses the first entry of
-   `workspace_roots`, if any.
-3. **Stay silent without a `shallnot.yaml`.** If the resolved directory has
-   no `shallnot.yaml`, the hook exits `0` printing nothing on either stream:
-   an ungated project is none of its business.
-4. **Gate the project.** If `shallnot.yaml` sets `test_commands`, the hook
+- **The exit-code protocol**, defined by Claude Code's `Stop` hook and shared
+  by every harness whose hook events read that way: it reads a JSON object
+  from standard input holding `session_id` and `cwd`, resolves the project
+  directory as the first non-empty of the environment variables
+  `CLAUDE_PROJECT_DIR`, `GEMINI_PROJECT_DIR`, `QWEN_PROJECT_DIR`,
+  `FACTORY_PROJECT_DIR`, else the input's `cwd`, blocks by exiting `2` with
+  the reason on standard error, gives up by exiting `1` with the reason on
+  standard error, and announces a pass with `{"systemMessage": "<message>"}`
+  on standard output. `shallnot hook stop` and `shallnot hook claude-stop`
+  are the same adapter under two names: `stop` is what a harness's own
+  configuration names; `claude-stop` is the name Claude Code configurations
+  use.
+- **A harness-specific protocol**, one per harness whose hook input or
+  output differs from the exit-code protocol: `shallnot hook copilot-stop`
+  answers GitHub Copilot's `agentStop` hook (input `sessionId`, `cwd`; it
+  blocks by printing `{"decision":"block","reason":"<message>"}` on standard
+  output and exiting `0`, and gives up or announces a pass by writing the
+  message to standard error and exiting `0`); `shallnot hook cursor-stop`
+  answers Cursor's `stop` hook (input `conversation_id`, `workspace_roots`,
+  `loop_count`; it blocks by printing `{"followup_message": "<message>"}` on
+  standard output and exiting `0`, and gives up or announces a pass by
+  writing the message to standard error and exiting `0`).
+
+Every hook, whichever protocol it speaks, follows the same steps once it has
+read the event:
+
+1. **Find the project to gate.** Starting from the resolved project
+   directory, the hook looks upward through parent directories for the
+   nearest one holding a `shallnot.yaml`. If none holds one, the hook exits
+   `0` printing nothing on either stream: an ungated project is none of its
+   business.
+2. **Gate the project.** If `shallnot.yaml` sets `test_commands`, the hook
    runs `shallnot gate` (it runs the test commands, then checks their
    results). Otherwise it runs a plain check (`shallnot check`'s behavior)
    against whatever results files are already on disk.
-5. **Decide.** A `pass` verdict, or a run in advisory mode, lets the turn end
+3. **Decide.** A `pass` verdict, or a run in advisory mode, lets the turn end
    silently, with one exception: when the hook has sent the agent back
    earlier in the same session, the passing turn ends with one line for the
    user, `shallnot: gate passed: N requirement(s) in focus covered by passing
-   tests, M non-testable, no blocking finding.` (Claude Code: a
-   `systemMessage` on standard output; Cursor: standard error). A `fail`
-   verdict, or a run that produced no verdict at all
-   (missing or stale results, bad config), sends the agent back to work with
-   the blocking findings (or the failure reason) in the message.
-6. **Answer in the harness's own protocol.** Claude Code: the hook exits
-   with status `2` and writes the message to standard error, which is how a
-   Claude Code hook holds the turn open and shows the agent why. Cursor: the
-   hook writes `{"followup_message": "<message>"}` as JSON on standard
-   output and exits `0`, which Cursor resubmits as the next turn.
-7. **Give up after three attempts.** The hook counts, per session, how many
+   tests, M non-testable, no blocking finding.`, rendered as that protocol's
+   pass announcement. A `fail` verdict, or a run that produced no verdict at
+   all (missing or stale results, bad config), sends the agent back to work
+   with the blocking findings (or the failure reason) in the message,
+   rendered as that protocol's block.
+4. **Give up after three attempts.** The hook counts, per session, how many
    times in a row it has sent the same session back. Cursor reports this
-   count itself (`loop_count`); for Claude Code, which does not, the hook
-   keeps a small counter file per session under the OS temporary directory.
-   On the attempt that would be the fourth consecutive block, the hook
-   instead lets the turn end and tells the user the gate is still blocked
-   (`shallnot: the gate is still blocked after 3 attempts; run \`shallnot
-   gate\` to see why.`), then resets the counter. The next call after that
-   starts counting from zero again.
-8. **It is advisory, never blocking by force.** The hook can only ask a
+   count itself (`loop_count`); every other hook keeps a small counter file
+   per session under the OS temporary directory. On the attempt that would
+   be the fourth consecutive block, the hook instead lets the turn end and
+   tells the user the gate is still blocked (`shallnot: the gate is still
+   blocked after 3 attempts; run \`shallnot gate\` to see why.`), then resets
+   the counter. The next call after that starts counting from zero again.
+5. **It is advisory, never blocking by force.** The hook can only ask a
    harness to continue the turn; it has no way to prevent an agent or a user
    from stopping regardless, and a harness without hook enforcement receives
    none of this.
-9. **The hook's own failures never hold up the agent.** If the hook itself
-   fails for reasons unrelated to the gate's verdict — an unknown harness
-   name, unreadable standard input, input that is not valid JSON — it exits
-   `1`, not the harness's own "block" exit code, so a broken hook lets the
-   turn end instead of getting stuck.
+6. **The hook's own failures never hold up the agent.** If the hook itself
+   fails for reasons unrelated to the gate's verdict — an unknown hook name,
+   unreadable standard input, input that is not valid JSON — it exits `1`,
+   not the harness's own "block" exit code, so a broken hook lets the turn
+   end instead of getting stuck.
+
+### Hooks `shallnot init` can install
+
+| Harness | Detected by | File written | Event | Hook command | Timeout |
+|---|---|---|---|---|---|
+| Claude Code | always selected | `.claude/settings.json` | `Stop` | `shallnot hook claude-stop` | 600 seconds |
+| Codex CLI | `.codex` | `.codex/hooks.json` | `Stop` | `shallnot hook stop` | 600 seconds |
+| GitHub Copilot | `.github/copilot-instructions.md`, `.github/hooks`, `.github/skills`, or `.github/instructions` | `.github/hooks/shallnot.json` | `agentStop` | `shallnot hook copilot-stop` | 600 seconds (`timeoutSec`) |
+| Cursor | `.cursor` | `.cursor/hooks.json` | `stop` | `shallnot hook cursor-stop` | none (Cursor's `stop` hook takes no timeout key) |
+| Factory Droid | `.factory` | `.factory/hooks.json` | `Stop` | `shallnot hook stop` | 600 seconds |
+| Gemini CLI | `.gemini` or `GEMINI.md` | `.gemini/settings.json` | `AfterAgent` | `shallnot hook stop` | 600000 milliseconds |
+| Goose | `.goosehints`, `.goose`, or `.agents/plugins` | `.agents/plugins/shallnot/plugin.json` and `.agents/plugins/shallnot/hooks/hooks.json` | `Stop` | `shallnot hook stop` | 600 seconds |
+| OpenCode | `.opencode`, `opencode.json`, or `opencode.jsonc` | `.opencode/plugins/shallnot.js` | `session.idle` (a generated plugin) | `shallnot hook stop` (run by the plugin) | none |
+| Qwen Code | `.qwen` or `QWEN.md` | `.qwen/settings.json` | `Stop` | `shallnot hook stop` | 600 seconds |
+
+Notes on individual harnesses:
+
+- Codex CLI, Factory Droid, Gemini CLI, Goose and Qwen Code all speak the
+  exit-code protocol through the same `stop` command; each gets its own
+  table row because each writes to a different configuration file with its
+  own layout.
+- Factory Droid's `hooks.json` has the event names at the top level, with no
+  `hooks` wrapper object around them.
+- Gemini CLI's entry also carries a `"name": "shallnot"` field, and its
+  timeout is in milliseconds rather than seconds. Installing the hook also
+  adds `AGENTS.md` to `context.fileName` in `.gemini/settings.json`, ahead of
+  the names already configured, so that Gemini CLI reads it: by default,
+  Gemini CLI reads only `GEMINI.md`.
+- GitHub Copilot's hook file carries both a `bash` and a `powershell` key
+  holding the same command, so the hook runs under either shell.
+- Goose's hook is a project plugin (`.agents/plugins/shallnot/plugin.json`
+  and `hooks/hooks.json`) rather than an entry merged into a shared settings
+  file.
+- OpenCode has no blocking end-of-turn hook. `init` instead writes a
+  JavaScript plugin, `.opencode/plugins/shallnot.js`, that runs `shallnot
+  hook stop` when a top-level session goes idle (`session.idle`) and, if
+  that exits with code `2`, prompts the session again with the message on
+  standard error. This holds the agent in the terminal interface and under
+  `opencode serve`; `opencode run` exits at the first idle, before the new
+  prompt is answered.
+- Codex CLI needs one more step that `init` cannot take for the project:
+  hooks must be enabled with `hooks = true` under `[features]` in Codex's
+  `config.toml`, and the project must be trusted. `init` prints this as a
+  next step.
 
 ### Captured transcript
 
@@ -264,17 +328,47 @@ against the same agent working unaided. It needs the `claude` CLI, `python3`,
 network access for `pip`, and `shallnot` on `PATH`, and it spends model
 tokens.
 
-## Coverage by harness
+## Hook and instruction coverage
 
-| Harness | Knowledge (`AGENTS.md`, the skills) | Enforcement (end-of-turn hook) |
-|---|---|---|
-| Claude Code | yes, via `AGENTS.md`/`CLAUDE.md` and the project skills | yes: `claude-stop` |
-| Cursor | yes, via `AGENTS.md` | yes: `cursor-stop` |
-| Any other harness that reads `AGENTS.md` | yes | no — `shallnot` implements no hook for it |
+Coverage falls into four groups: a harness whose end-of-turn hook `init`
+installs directly; a harness that has no hook of its own but reads a file
+another harness's hook was installed into; a harness whose blocking hook
+exists only in user-level configuration that `init` cannot write inside a
+repository; and a harness with no way to hold the end of a turn, for which
+the CI gate is the enforcement.
 
-An agent running in a harness with no implemented hook still has the
-knowledge half: it can read `AGENTS.md` and choose to run `shallnot gate`.
-Nothing in that harness enforces it.
+| Harness | Coverage | Reads `AGENTS.md` | Reads `.agents/skills` | Reads `.claude/skills` |
+|---|---|---|---|---|
+| Claude Code | hook installed by `init`: `Stop` | yes | no | yes |
+| Codex CLI | hook installed by `init`: `Stop` | yes | yes | no |
+| GitHub Copilot (CLI and cloud agent) | hook installed by `init`: `agentStop` | yes | yes | yes |
+| Cursor | hook installed by `init`: `stop` | yes | no | no |
+| Factory Droid | hook installed by `init`: `Stop` | yes | yes | no |
+| Gemini CLI | hook installed by `init`: `AfterAgent` | yes, once `init` adds `AGENTS.md` to `context.fileName` (Gemini CLI otherwise reads only `GEMINI.md`) | yes | no |
+| Goose | hook installed by `init`: `Stop` | yes | yes | no |
+| OpenCode | hook installed by `init`: `session.idle` plugin | yes | yes | yes |
+| Qwen Code | hook installed by `init`: `Stop` | yes | no | no |
+| VS Code Copilot agent mode | covered by another harness's file: it reads hooks from `.claude/settings.json`, so the Claude Code hook also serves it | yes | — | — |
+| JetBrains Junie | user-level configuration only: it reads hooks from `~/.junie/config.json` and ignores project-level hooks; add a `Stop` command hook there running `shallnot hook stop` | yes | — | — |
+| DeepSeek Harness (dsh) | runs Claude-format `Stop` hooks through its `@deepseek-ai/dsh-hooks-claude-code` plugin, whose `configPath` can point at the project's `.claude/settings.json` | yes | yes | — |
+| Windsurf | instructions and skills only; the CI gate is the enforcement | yes | yes | — |
+| Kiro | instructions and skills only (its `AgentStop` hook cannot block); the CI gate is the enforcement | yes | — | — |
+| Amp | instructions and skills only; the CI gate is the enforcement | yes | — | yes |
+| Zed | instructions and skills only; the CI gate is the enforcement | yes | yes | — |
+| Kilo Code | instructions and skills only; the CI gate is the enforcement | yes | yes | yes |
+| Cline | instructions and skills only; the CI gate is the enforcement | yes | — | yes |
+| Aider | instructions and skills only; it reads neither `AGENTS.md` nor a skills directory by default — pass `AGENTS.md` with `--read`; the CI gate is the enforcement | no by default | — | — |
+
+Cursor can also load `.claude/settings.json` hooks when its option for
+third-party configuration is enabled. When it is, keep one of the two
+routes to Cursor's hook, not both — installing `init`'s Cursor hook as well
+as leaving that option on runs the gate twice for the same turn.
+
+An agent running in a harness with no blocking hook still has the
+instructions and skills it reads: it can read `AGENTS.md` (or, for Gemini
+CLI and Aider, the file that harness reads instead) and choose to run
+`shallnot gate`. Nothing in that harness enforces it, which is why these
+repositories also run the gate in CI.
 
 ## Walkthrough
 
@@ -288,6 +382,9 @@ $ shallnot init
 create    shallnot.yaml
 create    AGENTS.md
 create    CLAUDE.md
+create    .agents/skills/shallnot/SKILL.md
+create    .agents/skills/shallnot-plan/SKILL.md
+create    .agents/skills/shallnot-review/SKILL.md
 create    .claude/skills/shallnot/SKILL.md
 create    .claude/skills/shallnot-plan/SKILL.md
 create    .claude/skills/shallnot-review/SKILL.md

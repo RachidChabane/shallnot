@@ -2,6 +2,8 @@ package cli_test
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -130,6 +132,53 @@ func TestHookCommand(t *testing.T) {
 		}
 		if quiet := shallnotWithInput(t, input, "hook", "claude-stop"); quiet.stdout != "" || quiet.stderr != "" {
 			t.Fatalf("a later passing turn was not silent: %+v", quiet)
+		}
+	})
+
+	t.Run("answers harnesses that share the exit-code protocol under the name stop [verifies SN-72~2]", func(t *testing.T) {
+		isolateAttempts(t)
+		t.Chdir(t.TempDir())
+		t.Setenv("CLAUDE_PROJECT_DIR", "")
+		project := gateProjectWithSpec(t, uncoveredSpec, produce)
+		result := shallnotWithInput(t, claudeInput(t, project), "hook", "stop")
+		if result.exit != claudeExitBlock || result.stdout != "" || !strings.Contains(result.stderr, "uncovered_requirement at spec.md:2") {
+			t.Fatalf("got %+v", result)
+		}
+	})
+
+	t.Run("answers a Copilot agent with a block decision on standard output [verifies SN-72~2]", func(t *testing.T) {
+		isolateAttempts(t)
+		t.Chdir(t.TempDir())
+		project := gateProjectWithSpec(t, uncoveredSpec, produce)
+		input, err := json.Marshal(map[string]any{"sessionId": "copilot-1", "cwd": project, "stopReason": "end_turn"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		result := shallnotWithInput(t, string(input), "hook", "copilot-stop")
+		var output struct {
+			Decision string `json:"decision"`
+			Reason   string `json:"reason"`
+		}
+		if err := json.Unmarshal([]byte(result.stdout), &output); err != nil || result.exit != app.ExitClean {
+			t.Fatalf("got %+v (%v)", result, err)
+		}
+		if output.Decision != "block" || !strings.Contains(output.Reason, "uncovered_requirement at spec.md:2") {
+			t.Fatalf("got %+v", output)
+		}
+	})
+
+	t.Run("gates the nearest gated parent of the directory the harness names [verifies SN-81~1]", func(t *testing.T) {
+		isolateAttempts(t)
+		t.Chdir(t.TempDir())
+		t.Setenv("CLAUDE_PROJECT_DIR", "")
+		project := gateProjectWithSpec(t, uncoveredSpec, produce)
+		nested := filepath.Join(project, "src", "deep")
+		if err := os.MkdirAll(nested, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		result := shallnotWithInput(t, claudeInput(t, nested), "hook", "stop")
+		if result.exit != claudeExitBlock || !strings.Contains(result.stderr, "uncovered_requirement at spec.md:2") {
+			t.Fatalf("got %+v", result)
 		}
 	})
 

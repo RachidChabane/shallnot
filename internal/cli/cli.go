@@ -26,7 +26,7 @@ Usage:
   shallnot check [flags]      trace requirements to test results and give a verdict
   shallnot gate [flags]       run the configured test commands, then check their results
   shallnot init [flags]       equip a repository: starter config, agent instructions, end-of-turn hooks
-  shallnot hook <harness>     answer an agent's end-of-turn hook: claude-stop, cursor-stop
+  shallnot hook <harness>     answer an agent's end-of-turn hook: stop, claude-stop, copilot-stop, cursor-stop
   shallnot schema <name>      print a JSON Schema: report, config or spec
   shallnot version            print the version
   shallnot help               print this help

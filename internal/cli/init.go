@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -24,7 +23,7 @@ func runInit(args []string, stdout, stderr io.Writer) app.ExitCode {
 	set.SetOutput(stderr)
 	directory := set.String("dir", ".", "project `directory` to equip")
 	hooks := set.String("hooks", hooksAuto, "end-of-turn hooks to install: a comma-separated `list` of "+strings.Join(scaffold.HookHarnesses(), ", ")+
-		"; \""+hooksAuto+"\" installs claude, and cursor when the project has a .cursor directory; \""+hooksNone+"\" installs none")
+		"; \""+hooksAuto+"\" installs claude and every harness whose configuration the project holds; \""+hooksNone+"\" installs none")
 	check := set.Bool("check", false, "change nothing; exit 1 if init would change a file")
 	if err := set.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
@@ -62,11 +61,7 @@ func hookHarnesses(directory, selection string) []string {
 	case hooksNone:
 		return nil
 	case hooksAuto:
-		harnesses := []string{"claude"}
-		if _, err := os.Stat(filepath.Join(directory, ".cursor")); err == nil {
-			harnesses = append(harnesses, "cursor")
-		}
-		return harnesses
+		return scaffold.DetectHarnesses(directory)
 	default:
 		return strings.Split(selection, ",")
 	}

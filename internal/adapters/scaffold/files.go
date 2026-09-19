@@ -14,7 +14,6 @@ const (
 	specsDirectory = "specs"
 	agentsPath     = "AGENTS.md"
 	claudePath     = "CLAUDE.md"
-	skillsRoot     = ".claude/skills"
 	skillFile      = "SKILL.md"
 	conftestPath   = "conftest.py"
 
@@ -150,15 +149,17 @@ func claudeMemory() provisioner {
 	}}
 }
 
-// claudeSkills installs each skill where Claude Code discovers project skills.
-func claudeSkills() []provisioner {
+// skillsRoots are where harnesses discover project skills: the directory
+// harnesses share, and Claude Code's own.
+var skillsRoots = []string{".agents/skills", ".claude/skills"}
+
+// projectSkills installs each skill in every skills root.
+func projectSkills() []provisioner {
 	var provisioners []provisioner
-	for _, skill := range plugin.Skills() {
-		content := skill.Content
-		provisioners = append(provisioners, provisioner{
-			path:    skillsRoot + "/" + skill.Name + "/" + skillFile,
-			desired: func([]byte) ([]byte, error) { return content, nil },
-		})
+	for _, root := range skillsRoots {
+		for _, skill := range plugin.Skills() {
+			provisioners = append(provisioners, provisioner{path: root + "/" + skill.Name + "/" + skillFile, desired: fixed(string(skill.Content))})
+		}
 	}
 	return provisioners
 }

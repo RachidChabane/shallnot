@@ -57,8 +57,10 @@ type Harness interface {
 }
 
 var harnesses = map[string]Harness{
-	ClaudeStop{}.Name(): ClaudeStop{},
-	CursorStop{}.Name(): CursorStop{},
+	StopName:             ExitCodeStop{HookName: StopName},
+	ClaudeStopName:       ExitCodeStop{HookName: ClaudeStopName},
+	CursorStop{}.Name():  CursorStop{},
+	CopilotStop{}.Name(): CopilotStop{},
 }
 
 // Lookup returns the harness adapter of that name.

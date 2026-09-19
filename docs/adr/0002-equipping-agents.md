@@ -58,15 +58,32 @@ A plugin equips one person's agent. `init` equips the repository, which covers
 every teammate, every harness that reads `AGENTS.md`, and unattended pipeline
 agents. It writes files and nothing else: a starter `shallnot.yaml` (never
 rewritten once it exists), a marked section of `AGENTS.md`, an `@AGENTS.md`
-import in `CLAUDE.md`, the project skills, the pytest `conftest.py` hook, and
-the end-of-turn hook configuration. It is idempotent and has a `--check` mode,
-so a repository can verify in CI that its agent files are current.
+import in `CLAUDE.md`, the project skills copied to `.agents/skills` (the
+directory harnesses other than Claude Code share) and to `.claude/skills`,
+the pytest `conftest.py` hook, and the end-of-turn hook configuration. It is
+idempotent and has a `--check` mode, so a repository can verify in CI that
+its agent files are current.
 
-### One hook command, one adapter per harness
+Hooks are written only for the harnesses `--hooks` selects: Claude Code
+always, plus, by default, every harness whose configuration the project
+already shows a sign of. A repository therefore does not accumulate
+configuration for tools nobody on the project uses.
 
-`shallnot hook <harness>` reads the harness's hook input, gates the project
-and answers in the harness's protocol: exit code 2 with the reason on standard
-error for Claude Code's `Stop`; a `followup_message` for Cursor's `stop`.
+### One hook command, one adapter per protocol
+
+Harnesses converged on the protocol Claude Code's `Stop` hook defined: a JSON
+event on standard input, exit code 2 with the reason on standard error to
+continue the turn. One adapter, `stop`, answers that protocol for every
+harness that speaks it, and adding a harness that does costs one entry in
+`init`'s table — its configuration path, its event name, and, where it
+differs, its timeout unit or wrapper layout — not a new adapter. A separate
+adapter exists only where the protocol itself differs: Cursor's `stop` hook
+answers with a `followup_message` instead of an exit code, and GitHub
+Copilot's `agentStop` hook answers with a `decision` on standard output.
+OpenCode has no blocking end-of-turn hook at all; for it, `init` generates a
+plugin that calls `shallnot hook stop` itself and turns exit code 2 into a
+new prompt to the session.
+
 Adapters exist only for protocols verified against the harness's own
 documentation. Rules common to all adapters:
 
@@ -110,8 +127,13 @@ Code defines where it looks for them.
 ## Consequences
 
 - The tool is still a CLI that any agent can run; nothing requires a plugin.
-- Hook coverage is limited to harnesses with a verified blocking end-of-turn
-  hook. Other harnesses get the instructions only.
+- Hook coverage is limited to harnesses with a verified end-of-turn hook, or
+  one this design can generate a plugin for. Harnesses that read another
+  harness's hook file get covered by it; harnesses whose blocking hook lives
+  only in user-level configuration are documented but not installed by
+  `init`; harnesses with no way to hold the end of a turn get the
+  instructions and skills only, and rely on the CI gate for enforcement. See
+  `docs/agents.md` for the full matrix.
 - The repository dogfoods the mechanism: it is equipped by its own `init`, CI
   runs `shallnot gate` and `shallnot init --check`.
 - Each skill has one source (`plugin/skills/<name>/SKILL.md`); the `AGENTS.md`

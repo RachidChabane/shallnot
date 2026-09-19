@@ -80,7 +80,7 @@ type provisioner struct {
 func Build(options Options) (Plan, error) {
 	detected := DetectRunners(options.Directory)
 	plan := Plan{Directory: options.Directory}
-	provisioners := append([]provisioner{configFile(options.Directory, detected), agentsFile(), claudeMemory()}, claudeSkills()...)
+	provisioners := append([]provisioner{configFile(options.Directory, detected), agentsFile(), claudeMemory()}, projectSkills()...)
 	for _, runner := range detected {
 		if runner.Name == "pytest" {
 			provisioners = append(provisioners, pytestConftest())
@@ -90,11 +90,14 @@ func Build(options Options) (Plan, error) {
 		}
 	}
 	for _, harness := range options.Hooks {
-		hook, known := hookProvisioners[harness]
-		if !known {
-			return Plan{}, fmt.Errorf("unknown hook harness %q (expected %v)", harness, HookHarnesses())
+		hook, err := lookupHarness(harness)
+		if err != nil {
+			return Plan{}, err
 		}
-		provisioners = append(provisioners, hook)
+		provisioners = append(provisioners, hook.provisioners...)
+		if hook.nextStep != "" {
+			plan.NextSteps = append(plan.NextSteps, hook.nextStep)
+		}
 	}
 	if len(detected) == 0 {
 		plan.NextSteps = append(plan.NextSteps, "No known test runner was found: set `tests`, `results` and `test_commands` in shallnot.yaml; see docs/configuration.md.")

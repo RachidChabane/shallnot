@@ -60,7 +60,7 @@ func TestInitCommand(t *testing.T) {
 		}
 	})
 
-	t.Run("installs the agent instructions every harness reads [verifies SN-75~2]", func(t *testing.T) {
+	t.Run("installs the agent instructions every harness reads [verifies SN-75~3]", func(t *testing.T) {
 		directory := t.TempDir()
 		writeFiles(t, directory, map[string]string{"AGENTS.md": "# House rules\n\nBe kind.\n", "CLAUDE.md": "# Claude\n"})
 		shallnot(t, "init", "--dir", directory, "--hooks", "none")
@@ -75,8 +75,10 @@ func TestInitCommand(t *testing.T) {
 			t.Fatalf("got %q", claude)
 		}
 		for _, skill := range plugin.Skills() {
-			if installed := readFile(t, directory, ".claude/skills/"+skill.Name+"/SKILL.md"); installed != string(skill.Content) {
-				t.Fatalf("the installed %s skill differs from the packaged one", skill.Name)
+			for _, root := range []string{".agents/skills", ".claude/skills"} {
+				if installed := readFile(t, directory, root+"/"+skill.Name+"/SKILL.md"); installed != string(skill.Content) {
+					t.Fatalf("the %s skill installed in %s differs from the packaged one", skill.Name, root)
+				}
 			}
 		}
 		for _, heading := range []string{"## Tracing requirements to tests", "## Writing requirements for shallnot", "## Reviewing tests against their requirements"} {
@@ -86,7 +88,7 @@ func TestInitCommand(t *testing.T) {
 		}
 	})
 
-	t.Run("updates its AGENTS.md section in place and leaves the rest alone [verifies SN-75~2]", func(t *testing.T) {
+	t.Run("updates its AGENTS.md section in place and leaves the rest alone [verifies SN-75~3]", func(t *testing.T) {
 		directory := t.TempDir()
 		writeFiles(t, directory, map[string]string{"AGENTS.md": "Before.\n\n<!-- shallnot:begin -->\nold text\n<!-- shallnot:end -->\n\nAfter.\n"})
 		shallnot(t, "init", "--dir", directory, "--hooks", "none")
@@ -167,6 +169,115 @@ func TestInitCommand(t *testing.T) {
 		result := shallnot(t, "init", "--dir", directory, "--hooks", "none")
 		if !strings.Contains(result.stdout, "next: Maven:") || !strings.Contains(result.stdout, "next: Write the requirements in specs/") {
 			t.Fatalf("got:\n%s", result.stdout)
+		}
+	})
+
+	t.Run("installs each harness's hook in that harness's own layout [verifies SN-76~1]", func(t *testing.T) {
+		directory := t.TempDir()
+		writeFiles(t, directory, map[string]string{
+			".factory/hooks.json":   `{"PreToolUse": [{"matcher": "Execute", "hooks": [{"type": "command", "command": "audit"}]}]}`,
+			".gemini/settings.json": `{"hooks": {"AfterAgent": [{"hooks": [{"type": "command", "command": "notify"}]}]}}`,
+		})
+		if result := shallnot(t, "init", "--dir", directory, "--hooks", "codex,copilot,factory,gemini,goose,opencode,qwen"); result.exit != app.ExitClean {
+			t.Fatalf("got %+v", result)
+		}
+		type commandHook struct {
+			Command string `json:"command"`
+			Timeout int    `json:"timeout"`
+		}
+		type group struct {
+			Hooks []commandHook `json:"hooks"`
+		}
+		wrapped := func(path, event string) []group {
+			var file struct {
+				Hooks map[string][]group `json:"hooks"`
+			}
+			if err := json.Unmarshal([]byte(readFile(t, directory, path)), &file); err != nil {
+				t.Fatal(err)
+			}
+			return file.Hooks[event]
+		}
+		for _, path := range []string{".codex/hooks.json", ".qwen/settings.json", ".agents/plugins/shallnot/hooks/hooks.json"} {
+			if stop := wrapped(path, "Stop"); len(stop) != 1 || stop[0].Hooks[0] != (commandHook{Command: "shallnot hook stop", Timeout: 600}) {
+				t.Errorf("%s: got %+v", path, stop)
+			}
+		}
+		if after := wrapped(".gemini/settings.json", "AfterAgent"); len(after) != 2 || after[0].Hooks[0].Command != "notify" || after[1].Hooks[0] != (commandHook{Command: "shallnot hook stop", Timeout: 600000}) {
+			t.Errorf("gemini: got %+v", after)
+		}
+		var factory map[string][]group
+		if err := json.Unmarshal([]byte(readFile(t, directory, ".factory/hooks.json")), &factory); err != nil {
+			t.Fatal(err)
+		}
+		if len(factory["PreToolUse"]) != 1 || len(factory["Stop"]) != 1 || factory["Stop"][0].Hooks[0].Command != "shallnot hook stop" {
+			t.Errorf("factory: got %+v", factory)
+		}
+		var copilot struct {
+			Version int `json:"version"`
+			Hooks   map[string][]struct {
+				Type       string `json:"type"`
+				Bash       string `json:"bash"`
+				PowerShell string `json:"powershell"`
+				TimeoutSec int    `json:"timeoutSec"`
+			} `json:"hooks"`
+		}
+		if err := json.Unmarshal([]byte(readFile(t, directory, ".github/hooks/shallnot.json")), &copilot); err != nil {
+			t.Fatal(err)
+		}
+		if stop := copilot.Hooks["agentStop"]; copilot.Version != 1 || len(stop) != 1 || stop[0].Bash != "shallnot hook copilot-stop" || stop[0].PowerShell != stop[0].Bash || stop[0].Type != "command" || stop[0].TimeoutSec != 600 {
+			t.Errorf("copilot: got %+v", copilot)
+		}
+		if manifest := readFile(t, directory, ".agents/plugins/shallnot/plugin.json"); !strings.Contains(manifest, `"name": "shallnot"`) {
+			t.Errorf("goose: got %s", manifest)
+		}
+		if opencode := readFile(t, directory, ".opencode/plugins/shallnot.js"); !strings.Contains(opencode, `"session.idle"`) || !strings.Contains(opencode, "shallnot hook stop") || !strings.Contains(opencode, "client.session.prompt") {
+			t.Errorf("opencode: got %s", opencode)
+		}
+	})
+
+	t.Run("selects Claude Code and the harnesses the project is configured for [verifies SN-80~1]", func(t *testing.T) {
+		directory := t.TempDir()
+		writeFiles(t, directory, map[string]string{".codex/config.toml": "", "opencode.json": "{}", ".github/workflows/ci.yml": ""})
+		result := shallnot(t, "init", "--dir", directory)
+		if result.exit != app.ExitClean {
+			t.Fatalf("got %+v", result)
+		}
+		for _, expected := range []string{".claude/settings.json", ".codex/hooks.json", ".opencode/plugins/shallnot.js"} {
+			if !strings.Contains(result.stdout, expected) {
+				t.Errorf("%s was not written:\n%s", expected, result.stdout)
+			}
+		}
+		for _, unexpected := range []string{".cursor", ".gemini", ".qwen", ".factory", ".github/hooks", ".agents/plugins"} {
+			if strings.Contains(result.stdout, unexpected) {
+				t.Errorf("%s was written for a harness the project does not use:\n%s", unexpected, result.stdout)
+			}
+		}
+		if !strings.Contains(result.stdout, "next: Codex runs project hooks once") {
+			t.Errorf("no word on enabling Codex hooks:\n%s", result.stdout)
+		}
+	})
+
+	t.Run("makes Gemini CLI read AGENTS.md beside the names it already reads [verifies SN-82~1]", func(t *testing.T) {
+		for name, test := range map[string]struct{ settings, expected string }{
+			"no settings":  {``, `["AGENTS.md","GEMINI.md"]`},
+			"one name":     {`{"context": {"fileName": "CONTEXT.md"}}`, `["AGENTS.md","CONTEXT.md"]`},
+			"several":      {`{"context": {"fileName": ["GEMINI.md", "NOTES.md"]}}`, `["AGENTS.md","GEMINI.md","NOTES.md"]`},
+			"already read": {`{"context": {"fileName": ["GEMINI.md", "AGENTS.md"]}}`, `["GEMINI.md","AGENTS.md"]`},
+		} {
+			directory := t.TempDir()
+			writeFiles(t, directory, map[string]string{".gemini/settings.json": test.settings})
+			shallnot(t, "init", "--dir", directory, "--hooks", "gemini")
+			var settings struct {
+				Context struct {
+					FileName json.RawMessage `json:"fileName"`
+				} `json:"context"`
+			}
+			if err := json.Unmarshal([]byte(readFile(t, directory, ".gemini/settings.json")), &settings); err != nil {
+				t.Fatal(err)
+			}
+			if compact := strings.Join(strings.Fields(string(settings.Context.FileName)), ""); compact != test.expected {
+				t.Errorf("%s: got %s, expected %s", name, compact, test.expected)
+			}
 		}
 	})
 

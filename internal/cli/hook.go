@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/RachidChabane/shallnot/internal/adapters/agenthook"
 	"github.com/RachidChabane/shallnot/internal/adapters/config"
@@ -42,13 +43,15 @@ func runHook(args []string, stdin io.Reader, stdout, stderr io.Writer) app.ExitC
 	if err != nil {
 		return failHook(stderr, err)
 	}
-	if event.ProjectDir != "" {
-		if err := os.Chdir(event.ProjectDir); err != nil {
-			return failHook(stderr, err)
-		}
+	root, gated, err := gatedRoot(event.ProjectDir)
+	if err != nil {
+		return failHook(stderr, err)
 	}
-	if _, err := os.Stat(config.DefaultFileName); errors.Is(err, os.ErrNotExist) {
+	if !gated {
 		return app.ExitClean
+	}
+	if err := os.Chdir(root); err != nil {
+		return failHook(stderr, err)
 	}
 
 	decision, message := decide(event, agenthook.Attempts{Directory: os.TempDir()})
@@ -56,6 +59,27 @@ func runHook(args []string, stdin io.Reader, stdout, stderr io.Writer) app.ExitC
 	fmt.Fprint(stdout, response.Stdout)
 	fmt.Fprint(stderr, response.Stderr)
 	return app.ExitCode(response.ExitCode)
+}
+
+// gatedRoot finds the project to gate: the nearest directory holding a
+// shallnot.yaml, from the one the harness named (else the working directory) upwards.
+func gatedRoot(start string) (string, bool, error) {
+	directory, err := filepath.Abs(start)
+	if err != nil {
+		return "", false, err
+	}
+	for {
+		if _, err := os.Stat(filepath.Join(directory, config.DefaultFileName)); err == nil {
+			return directory, true, nil
+		} else if !errors.Is(err, os.ErrNotExist) {
+			return "", false, err
+		}
+		parent := filepath.Dir(directory)
+		if parent == directory {
+			return "", false, nil
+		}
+		directory = parent
+	}
 }
 
 // decide gates the project and applies the attempt limit.

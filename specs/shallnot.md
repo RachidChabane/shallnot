@@ -119,13 +119,22 @@ The requirements of shallnot itself, in its own Markdown spec format.
 - **SN-74~1**: WHEN asked to equip a repository THE SYSTEM SHALL write a
   starter config for the test runners it detects without rewriting an existing
   one, add the pytest hook to `conftest.py`, and list what remains to be done.
-- **SN-75~2**: WHEN asked to equip a repository THE SYSTEM SHALL install every
+- **SN-75~3**: WHEN asked to equip a repository THE SYSTEM SHALL install every
   packaged skill, in reading order, as one marked section of `AGENTS.md`,
-  import it from `CLAUDE.md`, and copy each skill to `.claude/skills`, leaving
-  other content alone.
+  import it from `CLAUDE.md`, and copy each skill to `.agents/skills` and to
+  `.claude/skills`, leaving other content alone.
 - **SN-76~1**: WHEN asked to equip a repository THE SYSTEM SHALL add the
   end-of-turn hook to each selected harness's configuration, keeping the
   settings already there.
+- **SN-80~1**: WHEN asked to equip a repository without a list of harnesses
+  THE SYSTEM SHALL select Claude Code and each harness whose configuration the
+  project holds, and no other.
+- **SN-81~1**: WHEN the directory a harness names in its end-of-turn hook holds
+  no `shallnot.yaml` THE SYSTEM SHALL gate the nearest parent directory that
+  holds one.
+- **SN-82~1**: WHEN installing the Gemini CLI hook THE SYSTEM SHALL add
+  `AGENTS.md` to Gemini CLI's context file names, keeping the names already
+  configured.
 - **SN-77~1**: WHEN equipping a repository that is already equipped THE SYSTEM
   SHALL change nothing, and with `--check` it SHALL write nothing and exit 1 if
   a file would change.
