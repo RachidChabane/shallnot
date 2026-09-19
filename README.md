@@ -139,7 +139,7 @@ Try it on a tiny project: [examples/quickstart](examples/quickstart).
 ```yaml
 - run: pytest --junitxml=junit.xml
   continue-on-error: true
-- uses: RachidChabane/shallnot@v0.4.0
+- uses: RachidChabane/shallnot@v0.4.1
   with:
     args: --specs specs --tests tests --results junit.xml
 ```

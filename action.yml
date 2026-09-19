@@ -1,8 +1,8 @@
-name: shallnot
+name: shallnot traceability gate
 description: Trace spec requirements to passing tests and gate the job on the verdict.
 branding:
   icon: check-square
-  color: gray-dark
+  color: red
 
 inputs:
   version:
