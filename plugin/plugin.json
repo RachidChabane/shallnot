@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "shallnot",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Teaches a coding agent to bind tests to spec requirements with [verifies ID~REV] tags and to pass the shallnot traceability gate before finishing.",
   "author": { "name": "Rachid Chabane" },
   "homepage": "https://github.com/RachidChabane/shallnot",
