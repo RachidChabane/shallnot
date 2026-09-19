@@ -1,0 +1,28 @@
+# shallnot
+
+> A deterministic spec-to-test traceability gate for software written by coding agents. Requirements carry revisioned IDs (`ID~REVISION`); tests carry the tag `[verifies ID~REVISION]`; shallnot joins specs, test sources and JUnit XML results, and fails unless every requirement is cited by a test that ran and passed. Single static Go binary, no network access, no model calls. Works with pytest, Jest, Vitest, JUnit 5 (Maven, Gradle), Go and any runner that writes JUnit XML. Apache-2.0.
+
+Install with `go install github.com/RachidChabane/shallnot/cmd/shallnot@latest` or a binary from the releases page. `shallnot init` equips a repository: config, agent instructions in `AGENTS.md`, skills, and an end-of-turn hook for Claude Code and Cursor. `shallnot gate` runs the project's tests and gives the verdict. Exit codes: 0 clean, 1 blocked, 2 no verdict.
+
+## Docs
+
+- [README](https://raw.githubusercontent.com/RachidChabane/shallnot/main/README.md): what it is, install, first use
+- [Equipping agents](https://raw.githubusercontent.com/RachidChabane/shallnot/main/docs/agents.md): `shallnot init`, end-of-turn hooks, the plugin
+- [Spec format](https://raw.githubusercontent.com/RachidChabane/shallnot/main/docs/spec-format.md): the requirement model, Markdown and YAML specs
+- [Binding tests](https://raw.githubusercontent.com/RachidChabane/shallnot/main/docs/binding.md): where the tag goes for each test runner
+- [Configuration](https://raw.githubusercontent.com/RachidChabane/shallnot/main/docs/configuration.md): `shallnot.yaml`, flags, severities, exit codes
+- [JSON report](https://raw.githubusercontent.com/RachidChabane/shallnot/main/docs/report.md): the versioned report, every field, state and finding category
+- [Pipeline gate](https://raw.githubusercontent.com/RachidChabane/shallnot/main/docs/pipeline-gate.md): gating an unattended agent pipeline, focus, advisory mode, several repositories
+
+## Agent skills
+
+- [shallnot](https://raw.githubusercontent.com/RachidChabane/shallnot/main/plugin/skills/shallnot/SKILL.md): bind tests, run the gate, react to each finding, what never to do
+- [shallnot-plan](https://raw.githubusercontent.com/RachidChabane/shallnot/main/plugin/skills/shallnot-plan/SKILL.md): write a request down as requirements before building it
+- [shallnot-review](https://raw.githubusercontent.com/RachidChabane/shallnot/main/plugin/skills/shallnot-review/SKILL.md): judge whether a tagged test verifies its requirement
+
+## Optional
+
+- [Comparison](https://raw.githubusercontent.com/RachidChabane/shallnot/main/docs/comparison.md): OpenFastTrace, Doorstop, StrictDoc, sphinx-needs
+- [Quickstart project](https://raw.githubusercontent.com/RachidChabane/shallnot/main/examples/quickstart/README.md): a pytest project that goes from FAIL to PASS
+- [JSON Schemas](https://github.com/RachidChabane/shallnot/tree/main/schemas): report, config, YAML spec
+- [Design decisions](https://github.com/RachidChabane/shallnot/tree/main/docs/adr)

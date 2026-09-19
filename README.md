@@ -1,24 +1,98 @@
-# shallnot
+<p align="center">
+  <img src="docs/logo.svg" width="96" alt="shallnot logo">
+</p>
 
-A spec-to-test traceability gate. `shallnot` reads specifications whose
-requirements carry stable IDs, finds the tests that declare which requirement
-they verify, joins that with the **actual test results**, and gives a verdict:
-every requirement has a real, passing test behind it, and no test claims to
-verify a requirement that does not exist.
+<h1 align="center">shallnot</h1>
 
-It is a single static binary. It makes no network access and calls no model:
-the same inputs give the same output, byte for byte.
+<p align="center">
+  A gate that stops a coding agent from saying "done" while a requirement has no passing test.
+</p>
 
-![An agent implements a feature and reports it done with all tests passing. shallnot holds the end of its turn: requirement PWD-2~1 has no bound test. The agent finds it tagged its tests with the wrong requirement, fixes the tags, and the gate passes](https://raw.githubusercontent.com/RachidChabane/shallnot-demo/main/media/catch.gif)
+<p align="center">
+  <a href="https://github.com/RachidChabane/shallnot/actions/workflows/ci.yml"><img src="https://github.com/RachidChabane/shallnot/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/RachidChabane/shallnot/releases/latest"><img src="https://img.shields.io/github/v/release/RachidChabane/shallnot" alt="Latest release"></a>
+  <a href="https://pkg.go.dev/github.com/RachidChabane/shallnot"><img src="https://pkg.go.dev/badge/github.com/RachidChabane/shallnot.svg" alt="Go reference"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/RachidChabane/shallnot" alt="License: Apache-2.0"></a>
+</p>
 
-In that session the agent is asked for a feature and nothing else. It writes
-the code and two tests, sees them pass, and says it is done. The suite is
-green, and the requirement the feature implements still has no test bound to
-it: the agent copied the tag of a neighbouring requirement onto its new tests.
-shallnot holds the end of the turn, names the requirement, and lets the agent
-go only when a passing test really cites it.
+![An agent reports a feature done with all tests passing. shallnot blocks the end of its turn because requirement PWD-2~1 has no bound test. The agent fixes its tags and the gate passes.](https://raw.githubusercontent.com/RachidChabane/shallnot-demo/main/media/catch.gif)
 
-What the gate prints when a requirement has no test:
+Your specs give each requirement an ID. Tests say which requirement they
+verify. shallnot reads the specs, the test sources and the JUnit XML, and
+fails unless every requirement is cited by a test that actually ran and
+passed. Hooked into the agent, it sends the findings back and the agent keeps
+working until the gate is green.
+
+It is one static binary. It never touches the network or a model, so the same
+inputs always give the same report.
+
+## Use it with your agent
+
+Install the binary:
+
+```sh
+go install github.com/RachidChabane/shallnot/cmd/shallnot@latest
+```
+
+or take a prebuilt one from the
+[releases page](https://github.com/RachidChabane/shallnot/releases/latest)
+(Linux, macOS, Windows; amd64 and arm64; `checksums.txt` alongside).
+
+Then, in your project:
+
+```sh
+shallnot init
+```
+
+This writes:
+
+- `shallnot.yaml`, filled in for the test runner it finds (pytest, Jest,
+  Vitest, Maven, Gradle, Go)
+- a section in `AGENTS.md`, a `CLAUDE.md` that imports it, and project skills:
+  how to write a requirement, tag a test, run the gate, review a tagged test
+- an end-of-turn hook for Claude Code, and for Cursor if the project uses it
+
+Commit those files. From then on you ask for features the usual way and never
+mention shallnot. The agent writes the requirement, the code and the tagged
+tests. If it tries to finish on a blocked gate, the hook hands it the findings.
+After three blocks in a row the hook lets go and tells you.
+
+Agents without a hook still read `AGENTS.md`. Details in
+[docs/agents.md](docs/agents.md).
+
+There is also a Claude Code plugin, for using the skills in every project
+without committing anything:
+
+```text
+/plugin marketplace add RachidChabane/shallnot
+/plugin install shallnot@shallnot
+```
+
+## What it looks like
+
+A requirement in a Markdown (or YAML) spec, as `ID~REVISION`:
+
+```markdown
+- **PWD-2~1**: WHEN a password contains the account's username THE SYSTEM
+  SHALL reject it.
+```
+
+A test bound to it. The tag goes wherever the runner will report it:
+
+```python
+@pytest.mark.verifies("PWD-2~1")                      # pytest
+```
+```js
+it("rejects the username [verifies PWD-2~1]", ...)    // Jest, Vitest
+```
+```java
+@DisplayName("rejects the username [verifies PWD-2~1]")   // JUnit 5
+```
+```go
+t.Run("rejects the username [verifies PWD-2~1]", ...)     // Go
+```
+
+The gate:
 
 ```text
 $ shallnot check --specs spec.md --tests tests --results junit.xml
@@ -39,275 +113,60 @@ FINDINGS
   error  uncovered_requirement  spec.md:5  requirement PWD-2~1 has no bound test
 ```
 
-## Why
+A tag only counts if it shows up in the results file, so a tag in a comment
+or on a test that never ran binds nothing. When the meaning of a requirement
+changes, bump its revision: every test citing the old one fails the gate
+until someone re-checks it.
 
-When coding agents write both the code and the tests, nobody re-derives from a
-diff whether the implementation does what was asked. The tests become the only
-ground truth about whether a requirement is met, and that truth is worth
-something only if a machine guarantees the mapping between requirements and
-passing tests. With that guarantee, three reviewers stop doing each other's
-job: whoever owns intent reviews the spec, whoever owns verification reviews
-the rigour of the tests, and `shallnot` enforces the mapping between the two.
-
-Requiring an agent to cite a requirement ID on every line of generated code
-makes invented requirements mechanically detectable, but measurably reduces
-the consistency of the agent's output
-([arXiv 2606.30689](https://arxiv.org/abs/2606.30689)). `shallnot` moves the
-citation from the code line to the test, where its placement is unambiguous:
-the citation belongs on the test that verifies the requirement. A cited ID
-that no spec declares is an `orphan_tag` finding.
-
-`shallnot` serves three readers: a CI pipeline (exit code, job summary,
-annotations), an engineer at a terminal, and an orchestrator of coding agents
-that consumes the JSON report with no human in the loop.
-
-**What a pass proves, and what it does not.** A pass proves that every
-requirement in focus is cited by at least one test that ran and passed, at the
-requirement's current revision, and that every citation resolves. It does not
-prove that the test's assertions actually verify the requirement. A tag is
-necessary evidence, not sufficient evidence; the rigour of the test remains a
-review concern.
-
-## How it works
-
-1. **Specs** in Markdown or YAML declare requirements: `ID~REVISION: statement`.
-   IDs take whatever shape the project uses (`REQ-042`, `ABC-101.AC3`), set by
-   a regular expression. See [docs/spec-format.md](docs/spec-format.md).
-2. **Tests** carry the tag `[verifies ID~REVISION]` where the test runner
-   reports it: the test title (Jest, Vitest), `@DisplayName` (JUnit 5), a
-   `verifies` property (pytest). See [docs/binding.md](docs/binding.md).
-3. **Results** are JUnit XML, which pytest, Jest, Vitest, Maven, Gradle and
-   most other runners can emit. A tag binds a test only if it appears in the
-   results file, so the link between a tag and an outcome is read, never
-   assumed. A scan of the test sources adds file and line, and catches tagged
-   tests that never ran.
-4. **The verdict** classifies every gap as a finding with a category, a
-   configurable severity, a file and a line. A requirement is *covered* when at
-   least one bound test passed; *failed*, *skipped*, *not run* and *uncovered*
-   are distinct states. Bumping a requirement's revision invalidates every tag
-   citing the old one, which forces the tests to be re-verified when the
-   meaning of a requirement changes.
+`shallnot gate` runs your test commands and then checks. `shallnot check`
+only reads results that already exist.
 
 | Exit code | Meaning |
 |---|---|
-| `0` | Clean: no finding reached the blocking severity (or the run is advisory). |
-| `1` | Blocked: at least one finding reached the blocking severity. |
-| `2` | Tool failure: no verdict was produced. Never a statement about coverage. |
+| `0` | clean |
+| `1` | blocked: some requirement lacks a passing test, or a tag is wrong |
+| `2` | no verdict (missing results, bad config). Says nothing about coverage. |
 
-## Install
+Try it on a tiny project: [examples/quickstart](examples/quickstart).
 
-Download the archive for your platform from the
-[releases page](https://github.com/RachidChabane/shallnot/releases), verify it
-against `checksums.txt`, and put the binary on your `PATH`:
-
-```sh
-os=linux arch=amd64   # linux|darwin|windows, amd64|arm64
-base=https://github.com/RachidChabane/shallnot/releases/latest/download
-curl -fsSLO "$base/shallnot_${os}_${arch}.tar.gz"
-curl -fsSL "$base/checksums.txt" | grep " shallnot_${os}_${arch}.tar.gz\$" | sha256sum -c -
-tar -xzf "shallnot_${os}_${arch}.tar.gz" shallnot
-sudo install shallnot /usr/local/bin/
-```
-
-On macOS, replace `sha256sum -c -` with `shasum -a 256 -c -`. On Windows,
-download `shallnot_windows_amd64.zip` or `shallnot_windows_arm64.zip`.
-
-Or build from source with Go:
-
-```sh
-go install github.com/RachidChabane/shallnot/cmd/shallnot@latest
-```
-
-In GitHub Actions:
+## In CI
 
 ```yaml
-- run: pytest --junitxml=junit.xml        # your test step, producing JUnit XML
+- run: pytest --junitxml=junit.xml
   continue-on-error: true
 - uses: RachidChabane/shallnot@v0.3.1
   with:
     args: --specs specs --tests tests --results junit.xml
 ```
 
-The action downloads the binary, runs `shallnot check`, writes the Markdown
-summary to the job summary, and annotates the offending lines.
+The action writes a job summary and annotates the offending lines.
+[shallnot-demo](https://github.com/RachidChabane/shallnot-demo) is a small
+repository gated this way.
 
-## Five-minute example
+## What a pass does not prove
 
-The project in [`examples/quickstart`](examples/quickstart) has a spec, one
-module and its pytest tests.
-
-`spec.md` declares three requirements:
-
-```markdown
-- **PWD-1~1**: WHEN a password is shorter than 12 characters THE SYSTEM SHALL
-  reject it.
-- **PWD-2~1**: WHEN a password contains the account's username THE SYSTEM
-  SHALL reject it.
-- **PWD-3~1**: THE password form SHALL feel welcoming.
-  - Non-testable: judged in moderated usability sessions.
-```
-
-`tests/test_password.py` binds two tests to `PWD-1~1`:
-
-```python
-@pytest.mark.verifies("PWD-1~1")
-def test_short_passwords_are_rejected():
-    assert not is_acceptable("short", username="ada")
-```
-
-`conftest.py` makes pytest write the marker into its JUnit XML (five lines of
-project code, no plugin to install):
-
-```python
-def pytest_collection_modifyitems(items):
-    for item in items:
-        for marker in item.iter_markers(name="verifies"):
-            item.user_properties.append(("verifies", ", ".join(marker.args)))
-```
-
-Run the tests, then the gate:
-
-```sh
-cd examples/quickstart
-python -m pytest --junitxml=junit.xml
-shallnot check --specs spec.md --tests tests --results junit.xml
-```
-
-The output is the report at the top of this page, with exit code `1`:
-`PWD-2~1` has no test. Write one, tag it `PWD-2~1`, fix `password.py` until it
-passes, and the verdict turns to `PASS`. `username-rule.patch` holds that
-change:
-
-```sh
-patch -p1 < username-rule.patch
-python -m pytest --junitxml=junit.xml
-shallnot check --specs spec.md --tests tests --results junit.xml   # PASS, exit code 0
-```
-
-[shallnot-demo](https://github.com/RachidChabane/shallnot-demo) is the same
-project gated in GitHub Actions on Linux, macOS and Windows; its Actions
-history shows the blocked run and the passing one. Change the meaning of `PWD-1` and
-bump it to `PWD-1~2`: both existing tags become `revision_mismatch` findings
-until the tests are re-verified and cite `PWD-1~2`.
-
-For a machine reader, add `--format json` or `--json-out report.json`; for a
-configuration file instead of flags, see
-[docs/configuration.md](docs/configuration.md).
-
-## Agents use it without being asked
-
-The person asking an agent for a feature does not care about traceability,
-and should not have to mention it. A repository equipped with one command
-tells every agent that works in it what to do, and holds the end of the
-agent's turn until the gate passes:
-
-```sh
-shallnot init
-```
-
-`init` writes a starter `shallnot.yaml` for the test runners it finds, the
-agent instructions (`AGENTS.md`, a `CLAUDE.md` import, project skills), and
-an end-of-turn hook for Claude Code, and for Cursor when the project uses it.
-The instructions are three skills, one per step of the work:
-
-| Skill | The agent learns to |
-|---|---|
-| [`shallnot-plan`](plugin/skills/shallnot-plan/SKILL.md) | write the requested behaviour down as a requirement, with an ID and a revision, before building it |
-| [`shallnot`](plugin/skills/shallnot/SKILL.md) | tag the tests it writes, run `shallnot gate` before it says it is done, and react to each finding |
-| [`shallnot-review`](plugin/skills/shallnot-review/SKILL.md) | judge whether a tagged test really verifies its requirement, the half the gate cannot check |
-
-With that in place, a request as plain as "passwords should need a digit"
-leads the agent to add the requirement to the spec, implement it, tag its
-tests, and run the gate; if it tries to finish on a blocked gate, the hook
-hands it the blocking findings and sends it back to work. See
-[docs/agents.md](docs/agents.md).
-
-The same skills ship as a plugin in [`plugin/`](plugin): an
-[Agent Plugins](https://github.com/agentplugins/agent-plugins-spec) package
-and a Claude Code plugin in one directory.
-
-```text
-/plugin marketplace add RachidChabane/shallnot
-/plugin install shallnot@shallnot
-```
+A pass means every requirement is cited by a test that ran and passed. It
+does not mean the test is any good. A tagged test that asserts nothing still
+passes the gate. Judging that is a review job, and the `shallnot-review`
+skill tells the agent how to do it.
 
 ## Documentation
 
-| Document | Content |
-|---|---|
-| [docs/spec-format.md](docs/spec-format.md) | The requirement model; the Markdown and YAML spec formats. |
-| [docs/binding.md](docs/binding.md) | The tag convention and its syntax for pytest, Jest, Vitest, JUnit 5 (Java, Kotlin; Maven, Gradle), Go and other runners. |
-| [docs/report.md](docs/report.md) | The JSON report: a versioned public API, with every field, state and finding category. |
-| [docs/configuration.md](docs/configuration.md) | `shallnot.yaml`, every flag, severities, exit codes. |
-| [docs/pipeline-gate.md](docs/pipeline-gate.md) | Using `shallnot` as a gate in an automated agent pipeline: focus, advisory mode, several repositories, exit codes. |
-| [docs/agents.md](docs/agents.md) | Equipping coding agents: `shallnot init`, the end-of-turn hooks, the plugin package. |
-| [plugin/skills](plugin/skills) | The agent skills: writing requirements, binding tests and passing the gate, reviewing tests against requirements; and what an agent must never do to get a green report. |
-| [plugin/evals](plugin/evals) | The eval suite run by `claude plugin eval`, with the plugin and without it. |
-| [schemas/](schemas) | JSON Schemas of the report, the config file and the YAML spec; also printed by `shallnot schema report\|config\|spec`. |
+- [docs/agents.md](docs/agents.md): `init`, the hooks, the plugin
+- [docs/spec-format.md](docs/spec-format.md): requirements in Markdown and YAML
+- [docs/binding.md](docs/binding.md): tagging tests, per runner
+- [docs/configuration.md](docs/configuration.md): `shallnot.yaml`, flags, severities
+- [docs/report.md](docs/report.md): the JSON report, every field and finding category
+- [docs/pipeline-gate.md](docs/pipeline-gate.md): gating an unattended agent pipeline, several repositories
+- [docs/comparison.md](docs/comparison.md): OpenFastTrace, Doorstop, StrictDoc, sphinx-needs
+- [schemas/](schemas): JSON Schemas for the report, the config and YAML specs
+- [llms.txt](llms.txt): the same index, for agents
 
-## Relation to other tools
+## Contributing
 
-Requirement tracing is an established field. `shallnot` exists because of one
-combination that the existing tools do not offer: a tag bound to a specific
-test and joined with that test's actual result, in a dependency-free binary
-with a JSON report designed for programs.
+Bug reports and pull requests are welcome. [CONTRIBUTING.md](CONTRIBUTING.md)
+has the build and test commands. Security issues: [SECURITY.md](SECURITY.md).
 
-| | Spec format | How coverage is declared | Uses test results | Runtime | Licence |
-|---|---|---|---|---|---|
-| **shallnot** | Markdown or YAML, IDs of any shape, revisions | Tag surfaced by the test runner into JUnit XML | Yes: a requirement is covered only by a test that ran and passed | None (static binary) | Apache-2.0 |
-| [OpenFastTrace](https://github.com/itsallcode/openfasttrace) | Markdown/RST items `type~name~revision` with `Needs`/`Covers` | Comment tags `[utest->req~login~1]` found by a language-agnostic source scan | No: a tag in a file counts whether or not any test runs or passes | JVM | GPL-3.0 |
-| [Doorstop](https://github.com/doorstop-dev/doorstop) | One YAML file per item, in a VCS tree | Explicit links between items | No | Python | LGPL-3.0 |
-| [StrictDoc](https://github.com/strictdoc-project/strictdoc) | Its own `.sdoc` document format | `@relation` markers in source files | Partly: JUnit XML import into its documentation model | Python | Apache-2.0 |
-| [sphinx-needs](https://github.com/useblocks/sphinx-needs) | Sphinx directives | Links between need objects | Through the separate sphinx-test-reports extension, as linkable objects in a Sphinx build | Python + Sphinx | MIT |
-
-**Why this is not a contribution to OpenFastTrace.** OpenFastTrace is the
-closest relative, and `shallnot` borrows two of its ideas deliberately: the
-revision carried in every reference, so that a change of meaning invalidates
-the coverage that cites the old revision; and tag discovery by a
-language-agnostic scan, which costs no code per framework. The differences are
-structural rather than incremental:
-
-- OpenFastTrace traces *static* links across artifact types (requirement →
-  design → implementation → test). Whether a test runs, passes, or is skipped
-  is outside its model. `shallnot`'s model is the join between a tag and a
-  test outcome; without that join it has nothing to say.
-- OpenFastTrace requires a JVM and integrates through Maven and Gradle.
-  `shallnot` is one static binary, usable alike in a Python, JavaScript or JVM
-  project, and in a container that holds nothing else.
-- `shallnot`'s primary output is a versioned JSON report consumed by programs
-  and agents, with exit codes that separate a verdict from a tool failure.
-- `shallnot` has an explicit, justified non-testable status, and accepts
-  requirement IDs in whatever shape the project already uses rather than
-  `type~name~revision`.
-
-OpenFastTrace remains the better tool for multi-level tracing across
-artifact types, which `shallnot` does not attempt. StrictDoc and sphinx-needs
-are documentation systems: adopting them means authoring requirements in
-their formats and building their documents, which suits a documentation-led
-process and not a gate that reads the Markdown plan an agent wrote an hour
-ago. [ReqToCode](https://arxiv.org/abs/2603.13999) embeds requirements as
-language-native code elements validated at build time; it gives stronger
-structural guarantees inside one language, where `shallnot` stays outside the
-language and works from what every test runner can already emit.
-
-## Development
-
-```sh
-script/build            # bin/shallnot
-script/test             # all tests, writes build/test-results/go.xml
-script/trace            # shallnot traces its own requirements (specs/) to its own tests
-script/ci               # lint, then `shallnot gate` on this repository, then `shallnot init --check`
-script/fuzz             # fuzz the parsers
-script/regen-fixtures   # re-run pytest, Jest, Vitest, Maven and Gradle on the fixture projects
-script/eval-plugin      # claude plugin eval on the plugin, with and without it (spends tokens)
-script/demo             # record a real agent session (needs a capture-session script)
-```
-
-`make <verb>` runs the same scripts. `shallnot` gates itself: its
-requirements are in [specs/shallnot.md](specs/shallnot.md), its Go tests carry
-the tags in their subtest names, CI fails if a requirement loses its passing
-test, and the repository is equipped by its own `shallnot init`. The design decisions are recorded in [docs/adr](docs/adr).
-
-## Licence
+## License
 
 [Apache-2.0](LICENSE)
