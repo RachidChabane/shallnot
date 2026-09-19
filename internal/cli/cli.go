@@ -12,6 +12,9 @@ import (
 
 const (
 	commandCheck   = "check"
+	commandGate    = "gate"
+	commandHook    = "hook"
+	commandInit    = "init"
 	commandSchema  = "schema"
 	commandVersion = "version"
 	commandHelp    = "help"
@@ -21,11 +24,14 @@ const usage = `shallnot - a spec-to-test traceability gate
 
 Usage:
   shallnot check [flags]      trace requirements to test results and give a verdict
+  shallnot gate [flags]       run the configured test commands, then check their results
+  shallnot init [flags]       equip a repository: starter config, agent instructions, end-of-turn hooks
+  shallnot hook <harness>     answer an agent's end-of-turn hook: claude-stop, cursor-stop
   shallnot schema <name>      print a JSON Schema: report, config or spec
   shallnot version            print the version
   shallnot help               print this help
 
-Run "shallnot check --help" for the flags of a check.
+Run "shallnot check --help" for the flags; gate takes the same ones.
 
 Exit codes:
   0  clean: no finding reached the blocking severity (or the run is advisory)
@@ -40,7 +46,7 @@ var schemasByName = map[string][]byte{
 }
 
 // Main runs the command line and returns the process exit code.
-func Main(args []string, stdout, stderr io.Writer) app.ExitCode {
+func Main(args []string, stdin io.Reader, stdout, stderr io.Writer) app.ExitCode {
 	if len(args) == 0 {
 		fmt.Fprint(stderr, usage)
 		return app.ExitToolFailure
@@ -48,6 +54,12 @@ func Main(args []string, stdout, stderr io.Writer) app.ExitCode {
 	switch args[0] {
 	case commandCheck:
 		return runCheck(args[1:], stdout, stderr)
+	case commandGate:
+		return runGate(args[1:], stdout, stderr)
+	case commandInit:
+		return runInit(args[1:], stdout, stderr)
+	case commandHook:
+		return runHook(args[1:], stdin, stdout, stderr)
 	case commandSchema:
 		return runSchema(args[1:], stdout, stderr)
 	case commandVersion, "--version":

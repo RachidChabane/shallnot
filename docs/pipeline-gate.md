@@ -5,9 +5,20 @@ pipeline that ships code with no human review: a coding agent implements a
 ticket, a test runner produces JUnit XML, and an orchestrator decides,
 without a person in the loop, whether the result is allowed to proceed.
 
-See [docs/report.md](report.md) for the JSON report this guide reads, and
+When `test_commands` is configured in `shallnot.yaml` (or passed as
+`--test-command`), `shallnot gate` is the single entry point: it runs the
+test commands, then checks the results they produced, in one invocation.
+`shallnot check` remains the right command for a pipeline whose test runner
+is a separate job or step from the traceability check — it only reads
+results files that already exist. This guide otherwise applies equally to
+both: substitute `gate` for `check` wherever this repository's own test
+runner has not already produced the results.
+
+See [docs/report.md](report.md) for the JSON report this guide reads,
 [docs/configuration.md](configuration.md) for every flag and config key used
-below.
+below, and [docs/agents.md](agents.md) for equipping the implementing agent
+itself — the skill it reads and the end-of-turn hook that enforces the gate
+before its turn ends.
 
 ## Contract
 
@@ -213,7 +224,7 @@ stands for:
   test, or edit a results file, to change the verdict.
 - Never tag a test with a requirement its assertions do not check.
 
-The agent skill in [skill/shallnot/SKILL.md](../skill/shallnot/SKILL.md)
+The agent skill in [plugin/skills/shallnot/SKILL.md](../plugin/skills/shallnot/SKILL.md)
 states the same rules for the implementing agent. When a requirement cannot
 be met or tested as written, the correct outcome is a blocked run with the
 reason reported, not a green one.

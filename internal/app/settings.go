@@ -6,13 +6,17 @@ import "github.com/RachidChabane/shallnot/internal/domain"
 
 // Settings are the fully resolved options of one run.
 type Settings struct {
-	IDPattern          string
-	Specs              []string
-	Focus              []string
-	FocusIDs           []string
-	Tests              []string
-	Results            []string
-	Exclude            []string
+	IDPattern string
+	Specs     []string
+	Focus     []string
+	FocusIDs  []string
+	Tests     []string
+	Results   []string
+	Exclude   []string
+	// TestCommands are the command lines `gate` runs before checking, in WorkDir.
+	TestCommands []string
+	// WorkDir is where test commands run: the config file's directory, or "" for the working directory.
+	WorkDir            string
 	UseDefaultExcludes bool
 	Policy             domain.Policy
 }

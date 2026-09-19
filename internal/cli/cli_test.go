@@ -37,8 +37,13 @@ type run struct {
 
 func shallnot(t *testing.T, args ...string) run {
 	t.Helper()
+	return shallnotWithInput(t, "", args...)
+}
+
+func shallnotWithInput(t *testing.T, stdin string, args ...string) run {
+	t.Helper()
 	var stdout, stderr bytes.Buffer
-	exit := cli.Main(args, &stdout, &stderr)
+	exit := cli.Main(args, strings.NewReader(stdin), &stdout, &stderr)
 	return run{exit: exit, stdout: stdout.String(), stderr: stderr.String()}
 }
 

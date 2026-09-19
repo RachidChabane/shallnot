@@ -25,13 +25,10 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - name: Lint
-        run: script/lint
-      - name: Test
-        run: script/test
-      - name: Trace shallnot's own requirements
+      - name: Lint, gate (tests and self-trace), agent files
         run: |
-          script/trace --github-annotations --json-out build/shallnot-report.json --markdown-out build/shallnot-summary.md
+          mkdir -p build
+          script/ci --github-annotations --json-out build/shallnot-report.json --markdown-out build/shallnot-summary.md
       - name: Publish the summary
         if: always()
         run: |

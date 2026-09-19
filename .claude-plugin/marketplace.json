@@ -1,0 +1,17 @@
+{
+  "name": "shallnot",
+  "owner": {
+    "name": "Rachid Chabane",
+    "url": "https://github.com/RachidChabane"
+  },
+  "metadata": {
+    "description": "The shallnot plugin: requirement-to-test traceability for coding agents."
+  },
+  "plugins": [
+    {
+      "name": "shallnot",
+      "source": "./plugin",
+      "description": "Requirement-to-test traceability for coding agents: the convention as a skill, and an end-of-turn hook that holds the turn until the shallnot gate passes."
+    }
+  ]
+}

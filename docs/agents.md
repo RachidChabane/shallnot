@@ -1,0 +1,311 @@
+# Equipping coding agents
+
+This is the reference for making coding agents that work in a repository use
+`shallnot` without being asked. It covers `shallnot init`, the two end-of-turn
+hooks, and the plugin package.
+
+See also [docs/spec-format.md](spec-format.md) for how requirements are
+declared, [docs/binding.md](binding.md) for tagging tests, [docs/report.md](report.md)
+for the report a gate produces, and [docs/configuration.md](configuration.md)
+and [docs/pipeline-gate.md](pipeline-gate.md) for the gate itself.
+
+## Two halves
+
+Equipping a repository for agents has two independent halves, and an agent
+that only gets one of them is only half equipped:
+
+- **Knowledge**: the agent skill teaches the `[verifies ID~REVISION]`
+  convention, when to run `shallnot gate`, and how to react to each finding
+  category. An agent that reads it knows to use shallnot even when nobody
+  mentions it, but nothing forces it to actually run the gate before it stops.
+- **Enforcement**: an end-of-turn hook runs the gate itself, before the
+  agent's turn ends, and sends the agent back to work when the gate is
+  blocked. This holds even if the agent never read the skill, forgot to run
+  the gate, or decided on its own that the work was done.
+
+A harness that only reads `AGENTS.md` (knowledge, no hook support) relies on
+the agent choosing to run the gate. A harness with hook support additionally
+enforces it. Both halves are installed by `shallnot init` in one pass.
+
+## `shallnot init`
+
+`shallnot init` inspects a project and writes or updates the files an agent
+needs, without ever rewriting a file the project already owns the content of.
+
+### Detected test runners
+
+| Runner | Detection signal | Test command written | Results path | Test roots | Remaining manual step |
+|---|---|---|---|---|---|
+| pytest | `pytest.ini`, `conftest.py` or `tox.ini` present, or `pyproject.toml`/`setup.cfg`/`requirements.txt` mentions `pytest` | `pytest -o junit_family=xunit1 --junitxml=test-results/pytest.xml` | `test-results/pytest.xml` | `tests`, `test` (whichever exist) | none |
+| vitest | `package.json` mentions `"vitest"` | `npx vitest run --reporter=default --reporter=junit --outputFile.junit=test-results/vitest.xml` | `test-results/vitest.xml` | `src`, `test`, `tests`, `__tests__` (whichever exist) | none |
+| jest | `package.json` mentions `"jest"` | `npx jest --reporters=default --reporters=jest-junit` | `junit.xml` | `src`, `test`, `tests`, `__tests__` (whichever exist) | install the reporter with `npm install --save-dev jest-junit`; it writes `junit.xml` in the project root |
+| maven | `pom.xml` present | `mvn -B test` | `target/surefire-reports/*.xml` | `src/test` | make Surefire report display names, or a `@DisplayName` tag never reaches the results (see the Maven Surefire section of [docs/binding.md](binding.md)) |
+| gradle | `build.gradle` or `build.gradle.kts` present | `./gradlew test` | `build/test-results/test/*.xml` | `src/test` | none |
+| go | `go.mod` present | `go run gotest.tools/gotestsum@latest --junitfile test-results/go.xml ./...` | `test-results/go.xml` | `.` | none |
+
+More than one runner can be detected in the same project; each contributes
+its own `test_commands` and `results` entries, and their test roots are
+merged without duplicates. When no runner is detected, `shallnot init` adds a
+next step naming `tests`, `results` and `test_commands` to set by hand.
+
+### Files it writes
+
+- **`shallnot.yaml`**: created only when absent, with `version: 1`, `specs:
+  [specs]`, the detected runners' `tests`, `results` and `test_commands`.
+  When the file already exists, `init` leaves its content untouched — the
+  project owns its configuration once written.
+- **`AGENTS.md`**: the skill is written as a section between two exact
+  markers, `<!-- shallnot:begin -->` and `<!-- shallnot:end -->`. On a repeat
+  run, only the text between the markers is replaced; everything before and
+  after is left alone. On a first run, the section is appended to the end of
+  the file (or the file is created holding only the section, if it did not
+  exist or was empty).
+- **`CLAUDE.md`**: an `@AGENTS.md` import line is appended, unless a line
+  that is exactly `@AGENTS.md` is already present anywhere in the file.
+- **`.claude/skills/shallnot/SKILL.md`**: the packaged skill, copied
+  verbatim, so Claude Code discovers it as a project skill independently of
+  `AGENTS.md`.
+- **pytest's `conftest.py`**: `init` adds the hook (below) only when the
+  project has a detected pytest runner. If `conftest.py` is absent or empty,
+  it is created holding just the hook. If it exists and already contains
+  `item.iter_markers(name="verifies")`, nothing changes — the hook is already
+  there. If it exists and defines its own `pytest_configure` or
+  `pytest_collection_modifyitems` but not that marker check, `init` **refuses
+  to write it**, exits with a tool failure, and says to merge the hook by
+  hand; it never overwrites a hook function the project already defines.
+  Otherwise, the hook is appended to the existing content.
+- **`.claude/settings.json`**: the Stop hook is merged into the existing JSON
+  object, keeping every other key (`permissions`, other hooks, and so on)
+  untouched. It reads the file as a JSON object (or starts from `{}` if
+  absent or empty), and if no command anywhere under `hooks` already equals
+  `shallnot hook claude-stop`, it appends one more entry to the `hooks.Stop`
+  array: `{"hooks": [{"type": "command", "command": "shallnot hook
+  claude-stop", "timeout": 600}]}`. Existing entries in `hooks.Stop` are kept
+  in place and this one is added after them.
+- **`.cursor/hooks.json`**: the same merge for Cursor's `stop` hook. If the
+  file has no `version` key yet, `version: 1` is set. If no command under
+  `hooks` already equals `shallnot hook cursor-stop`, one more entry,
+  `{"command": "shallnot hook cursor-stop"}`, is appended to `hooks.stop`.
+
+### Flags
+
+- `--dir <directory>` — the project directory to equip (default `.`).
+- `--hooks <list>` — which harnesses get an end-of-turn hook:
+  - `auto` (default): installs the Claude Code hook always, and the Cursor
+    hook only when the project already has a `.cursor` directory.
+  - `none`: installs no hook.
+  - a comma-separated list of harness names (`claude`, `cursor`): installs
+    exactly those, regardless of what exists on disk. An unknown name is a
+    tool failure.
+- `--check` — changes nothing on disk. Prints the same per-file plan as a
+  normal run, then exits `1` (blocked) if applying it would create or update
+  at least one file, or `0` (clean) if every file is already as `init` wants
+  it.
+
+### Idempotence
+
+Running `shallnot init` twice with the same flags changes nothing on the
+second run: every file it writes is derived deterministically from the
+project's current state (or left untouched, for `shallnot.yaml` and an
+already-correct `conftest.py`), so the second run's plan has no `create` or
+`update` entries and `--check` exits `0`.
+
+## End-of-turn hooks
+
+`shallnot hook <harness>` answers one harness's end-of-turn hook call. Two
+harnesses are implemented: `claude-stop` (Claude Code's `Stop` hook) and
+`cursor-stop` (Cursor's `stop` hook). Both share the same protocol:
+
+1. **Read the event.** `claude-stop` reads a JSON object from standard input
+   with `session_id` and `cwd`; `cursor-stop` reads one with
+   `conversation_id`, `workspace_roots` and `loop_count`.
+2. **Resolve the project directory.** `claude-stop` uses the
+   `CLAUDE_PROJECT_DIR` environment variable if set, otherwise the input's
+   `cwd`, and changes into it. `cursor-stop` uses the first entry of
+   `workspace_roots`, if any.
+3. **Stay silent without a `shallnot.yaml`.** If the resolved directory has
+   no `shallnot.yaml`, the hook exits `0` printing nothing on either stream:
+   an ungated project is none of its business.
+4. **Gate the project.** If `shallnot.yaml` sets `test_commands`, the hook
+   runs `shallnot gate` (it runs the test commands, then checks their
+   results). Otherwise it runs a plain check (`shallnot check`'s behavior)
+   against whatever results files are already on disk.
+5. **Decide.** A `pass` verdict, or a run in advisory mode, lets the turn end
+   silently. A `fail` verdict, or a run that produced no verdict at all
+   (missing or stale results, bad config), sends the agent back to work with
+   the blocking findings (or the failure reason) in the message.
+6. **Answer in the harness's own protocol.** Claude Code: the hook exits
+   with status `2` and writes the message to standard error, which is how a
+   Claude Code hook holds the turn open and shows the agent why. Cursor: the
+   hook writes `{"followup_message": "<message>"}` as JSON on standard
+   output and exits `0`, which Cursor resubmits as the next turn.
+7. **Give up after three attempts.** The hook counts, per session, how many
+   times in a row it has sent the same session back. Cursor reports this
+   count itself (`loop_count`); for Claude Code, which does not, the hook
+   keeps a small counter file per session under the OS temporary directory.
+   On the attempt that would be the fourth consecutive block, the hook
+   instead lets the turn end and tells the user the gate is still blocked
+   (`shallnot: the gate is still blocked after 3 attempts; run \`shallnot
+   gate\` to see why.`), then resets the counter. The next call after that
+   starts counting from zero again.
+8. **It is advisory, never blocking by force.** The hook can only ask a
+   harness to continue the turn; it has no way to prevent an agent or a user
+   from stopping regardless, and a harness without hook enforcement receives
+   none of this.
+9. **The hook's own failures never hold up the agent.** If the hook itself
+   fails for reasons unrelated to the gate's verdict — an unknown harness
+   name, unreadable standard input, input that is not valid JSON — it exits
+   `1`, not the harness's own "block" exit code, so a broken hook lets the
+   turn end instead of getting stuck.
+
+### Captured transcript
+
+Project (`shallnot.yaml` names no `test_commands`, so the hook runs a plain
+check against the results already on disk):
+
+`shallnot.yaml`:
+```yaml
+version: 1
+specs: [spec.md]
+results: [junit.xml]
+```
+
+`spec.md`:
+```markdown
+- **REQ-1~1**: THE SYSTEM SHALL work.
+- **REQ-2~1**: THE SYSTEM SHALL also do this.
+```
+
+`junit.xml`:
+```xml
+<testsuite name="s"><testcase classname="c" name="works [verifies REQ-1~1]"/></testsuite>
+```
+
+Invocation, with `CLAUDE_PROJECT_DIR` set to that directory:
+
+```
+$ echo '{"session_id":"session-demo","cwd":"<project>","hook_event_name":"Stop"}' \
+    | shallnot hook claude-stop
+shallnot: the traceability gate is blocked by 1 finding(s). Resolve them before finishing:
+- uncovered_requirement at spec.md:2: requirement REQ-2~1 has no bound test
+Never delete or alter a tag, mark a requirement non-testable, skip a test or weaken an assertion to clear a finding. If a requirement cannot be met or tested as written, stop and say so.
+$ echo $?
+2
+```
+
+Standard output was empty; the message above is exactly what was written to
+standard error.
+
+## The plugin package
+
+`plugin/` is one directory holding two packages at once:
+
+- An [Agent Plugins 1.0.0](https://github.com/agentplugins/agent-plugins-spec)
+  package: `plugin.json` (the package manifest) and
+  `skills/shallnot/SKILL.md` (the same skill `init` installs). Any client
+  that implements the specification loads the skill from these two files
+  alone.
+- A Claude Code plugin: `.claude-plugin/plugin.json` (Claude Code's own
+  manifest), the same `skills/shallnot/SKILL.md`, and `hooks/hooks.json`,
+  which registers a `SessionStart` hook (`hooks/session-start.sh`) and a
+  `Stop` hook (`hooks/stop.sh`). `plugin/README.md` documents the package as
+  a whole.
+
+Both manifests carry the same package name and version. The hooks hold no
+logic of their own: `hooks/stop.sh` runs `shallnot hook claude-stop` and
+`hooks/session-start.sh` checks whether the `shallnot` binary is on `PATH`.
+
+Install in Claude Code:
+
+```text
+/plugin marketplace add RachidChabane/shallnot
+/plugin install shallnot@shallnot
+```
+
+The plugin needs the `shallnot` binary on `PATH`. When it is missing:
+`hooks/session-start.sh` prints a message telling the agent (and, through it,
+the user) that the project is gated by `shallnot.yaml` but the binary is not
+installed, with a link to the install instructions; `hooks/stop.sh` exits `0`
+without running anything, so a project without the binary is never held back
+by a hook that cannot run.
+
+## Coverage by harness
+
+| Harness | Knowledge (`AGENTS.md`, the skill) | Enforcement (end-of-turn hook) |
+|---|---|---|
+| Claude Code | yes, via `AGENTS.md`/`CLAUDE.md` and the project skill | yes: `claude-stop` |
+| Cursor | yes, via `AGENTS.md` | yes: `cursor-stop` |
+| Any other harness that reads `AGENTS.md` | yes | no — `shallnot` implements no hook for it |
+
+An agent running in a harness with no implemented hook still has the
+knowledge half: it can read `AGENTS.md` and choose to run `shallnot gate`.
+Nothing in that harness enforces it.
+
+## Walkthrough
+
+Starting from a copy of [examples/quickstart](../examples/quickstart) (a
+password policy spec, its test file, and pytest's `conftest.py`/`pytest.ini`
+already in place) in a scratch directory, with `spec.md` moved into
+`specs/spec.md` to match the location `shallnot init` configures:
+
+```
+$ shallnot init
+create    shallnot.yaml
+create    AGENTS.md
+create    CLAUDE.md
+create    .claude/skills/shallnot/SKILL.md
+unchanged conftest.py
+create    .claude/settings.json
+```
+
+`conftest.py` is reported `unchanged` because the example already carries the
+verifies-marker hook. The resulting `shallnot.yaml`:
+
+```yaml
+version: 1
+specs:
+  - specs
+tests:
+  - tests
+results:
+  - test-results/pytest.xml
+test_commands:
+  - pytest -o junit_family=xunit1 --junitxml=test-results/pytest.xml
+```
+
+Running the gate:
+
+```
+$ shallnot gate
+shallnot: running pytest -o junit_family=xunit1 --junitxml=test-results/pytest.xml
+============================= test session starts ==============================
+platform darwin -- Python 3.13.14, pytest-9.1.1, pluggy-1.6.0
+collected 2 items
+
+tests/test_password.py ..                                                [100%]
+
+- generated xml file: <project>/test-results/pytest.xml -
+============================== 2 passed in 0.02s ===============================
+shallnot: "pytest -o junit_family=xunit1 --junitxml=test-results/pytest.xml" exited with status 0
+shallnot: FAIL
+focus: every known requirement
+requirements: 3 known, 3 in focus (1 covered, 0 failed, 0 skipped, 0 not run, 1 uncovered, 1 non-testable)
+tests: 2 in results, 2 bound, 0 untagged
+findings: 1 error, 0 warning, 0 info (1 blocking)
+
+REQUIREMENTS
+  PWD-1~1  covered  specs/spec.md:3
+      passed  tests.test_password › test_long_passwords_are_accepted   tests/test_password.py:11
+      passed  tests.test_password › test_short_passwords_are_rejected  tests/test_password.py:6
+  PWD-2~1  uncovered  specs/spec.md:5
+  PWD-3~1  non_testable  specs/spec.md:7
+
+FINDINGS
+  error  uncovered_requirement  specs/spec.md:5  requirement PWD-2~1 has no bound test
+$ echo $?
+1
+```
+
+`PWD-2~1` (username-in-password rejection) has no bound test yet: only
+`PWD-1~1` (minimum length) is covered. [examples/quickstart/username-rule.patch](../examples/quickstart/username-rule.patch)
+shows the implementation and the tests that close this finding.

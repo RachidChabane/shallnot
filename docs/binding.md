@@ -132,6 +132,27 @@ markers =
     verifies: link a test to one or more requirement IDs in the form ID~REV
 ```
 
+`shallnot init` writes an equivalent `conftest.py` for a project it detects
+as using pytest, and registers the marker from `conftest.py` itself instead
+of `pytest.ini`, through a `pytest_configure` hook alongside
+`pytest_collection_modifyitems`:
+
+```python
+def pytest_configure(config):
+    config.addinivalue_line("markers", "verifies(*refs): requirements the test verifies, as ID~REVISION")
+
+
+def pytest_collection_modifyitems(items):
+    for item in items:
+        for marker in item.iter_markers(name="verifies"):
+            item.user_properties.append(("verifies", ", ".join(marker.args)))
+```
+
+Either form works; `shallnot check`/`gate` reads the results the same way
+regardless of which one registered the marker. See
+[docs/agents.md](agents.md#shallnot-init) for when `init` writes this file
+and when it refuses to.
+
 Without a `conftest.py` at all, `record_property("verifies", "ID~REV")` as
 the first line of a test works too — no marker registration needed — but a
 test skipped by a marker never executes its body, so nothing is recorded for

@@ -31,6 +31,7 @@ directory.
 | `strict` | boolean | `false` | Treat `untagged_test` as `error` instead of its default `info`. Equivalent to `severities: {untagged_test: error}` but does not prevent a further explicit override (see precedence below). |
 | `fail_on` | string | `error` | Lowest blocking severity: `info`, `warning` or `error`. `off` is rejected: use `advisory` to never block. |
 | `severities` | map of category to severity | `{}` | Per-category severity override. Keys are the finding categories of [docs/report.md](report.md#finding-categories); values are `off`, `info`, `warning` or `error`. |
+| `test_commands` | array of string | `[]` | Command lines `shallnot gate` runs, in order, before checking. See [Gate, init and hook](#gate-init-and-hook) below. |
 
 At least one of `specs` or `focus` must resolve to files across config and
 flags combined, and `results` must resolve to at least one file: their
@@ -63,6 +64,7 @@ Every flag has a config-file equivalent, except `--config` and `--no-config`
 | `--json-out <file>` | — | Also writes the JSON report to this file. |
 | `--markdown-out <file>` | — | Also writes the Markdown summary to this file. |
 | `--github-annotations` | — | Also prints GitHub Actions workflow-command annotations on stdout, in addition to `--format`. |
+| `--test-command <line>` (repeatable) | `test_commands` | Replaces the whole list; see precedence. Used by `gate`, ignored by `check`. |
 
 Flags with `directory`/`glob`/`file`/`expression` argument descriptions above
 are as `flag` prints them in `--help`; run `shallnot check --help` for the
@@ -143,6 +145,32 @@ touch any other category.
 | `0` | Clean: no finding reached the blocking severity, or the run is advisory. |
 | `1` | Blocked: at least one finding reached the blocking severity, and the run is not advisory. |
 | `2` | Tool failure: no verdict was produced (bad flags, bad or missing config, unreadable or unmatched input, invalid spec document). Nothing is printed on stdout; the message goes to stderr; any file at `--json-out`/`--markdown-out` is deleted at the start of the run, so a stale report from an earlier run can never be mistaken for this run's verdict. |
+
+## Gate, init and hook
+
+- `shallnot gate` takes the same flags as `shallnot check`, plus
+  `--test-command`. It runs every `test_commands` command line (config or
+  `--test-command`) in order, in the configuration file's directory, through
+  the platform shell (`sh -c` on Unix, `cmd /C` on Windows), sending each
+  command's own stdout and stderr to `shallnot`'s standard error. A
+  command's own exit status is logged but never affects the verdict —
+  a test runner that exits non-zero because tests failed is a result for the
+  check to report, not a reason to stop early. With no `test_commands`
+  configured or passed, `gate` is a tool failure (exit 2) before running
+  anything.
+- **Freshness rule**: after the commands run, `gate` requires every file
+  matched by `results` to exist and to have a modification time different
+  from the one it had (or its absence) before the commands ran. A results
+  file that the test commands left untouched, or that still does not exist,
+  is a tool failure (exit 2): `gate` never checks a stale or missing report
+  as if it were this run's verdict.
+- `shallnot init` equips a repository with a starter `shallnot.yaml`, agent
+  instructions and end-of-turn hooks. See
+  [docs/agents.md](agents.md#shallnot-init) for the full reference: every
+  file it writes, its flags, and its idempotence guarantee.
+- `shallnot hook <harness>` answers an agent harness's end-of-turn hook by
+  gating the project and replying in that harness's protocol. See
+  [docs/agents.md](agents.md#end-of-turn-hooks) for the full protocol.
 
 ## Other commands
 

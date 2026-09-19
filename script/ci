@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-# Everything CI runs: lint, test, self-trace.
+# Everything CI runs: lint, then the gate (tests and self-trace), then the check
+# that the repository's own agent files are what `shallnot init` writes.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 script/lint
-script/test
-script/trace "$@"
+script/build
+mkdir -p build/test-results
+bin/shallnot gate "$@"
+bin/shallnot init --check

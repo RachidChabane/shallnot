@@ -55,6 +55,13 @@
         "type": "string"
       }
     },
+    "test_commands": {
+      "type": "array",
+      "description": "Command lines that `shallnot gate` runs through the platform shell, in order, in the config file's directory, before checking. Their exit status does not affect the verdict; every results file must be written by that run.",
+      "items": {
+        "type": "string"
+      }
+    },
     "default_excludes": {
       "type": "boolean",
       "description": "Whether dependency and build directories are ignored by the scan. Default true."

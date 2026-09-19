@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": "shallnot hook claude-stop",
+            "timeout": 600,
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  }
+}

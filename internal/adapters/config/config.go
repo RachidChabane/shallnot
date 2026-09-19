@@ -31,6 +31,7 @@ type File struct {
 	Tests           []string          `yaml:"tests"`
 	Results         []string          `yaml:"results"`
 	Exclude         []string          `yaml:"exclude"`
+	TestCommands    []string          `yaml:"test_commands"`
 	DefaultExcludes *bool             `yaml:"default_excludes"`
 	Advisory        bool              `yaml:"advisory"`
 	Strict          bool              `yaml:"strict"`
@@ -78,6 +79,10 @@ func (f File) settings(baseDirectory string) (app.Settings, error) {
 	settings.Results = rebase(baseDirectory, f.Results)
 	settings.FocusIDs = f.FocusIDs
 	settings.Exclude = f.Exclude
+	settings.TestCommands = f.TestCommands
+	if baseDirectory != "." {
+		settings.WorkDir = baseDirectory
+	}
 	if f.DefaultExcludes != nil {
 		settings.UseDefaultExcludes = *f.DefaultExcludes
 	}

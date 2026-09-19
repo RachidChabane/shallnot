@@ -98,6 +98,37 @@ The requirements of shallnot itself, in its own Markdown spec format.
 - **SN-54~1**: WHEN a run fails THE SYSTEM SHALL leave no report file of an
   earlier run at the requested output paths.
 
+- **SN-70~1**: WHEN asked to gate THE SYSTEM SHALL run the configured test
+  commands in the config file's directory, whatever their exit status, then
+  check the results they produced.
+- **SN-71~1**: WHEN a results file is absent after the test commands, or was
+  left untouched by them, THE SYSTEM SHALL exit 2 without a verdict.
+
+## Agents
+
+- **SN-72~1**: WHEN an agent harness calls its end-of-turn hook in a project
+  with a `shallnot.yaml` THE SYSTEM SHALL gate the project and, if it is
+  blocked or gives no verdict, send the agent back to work with the reason in
+  the harness's own protocol; otherwise, and in a project without a
+  `shallnot.yaml` or in advisory mode, it SHALL stay silent.
+- **SN-73~1**: WHEN a hook has sent the agent back three times in a row THE
+  SYSTEM SHALL let the turn end and tell the user the gate is still blocked.
+- **SN-74~1**: WHEN asked to equip a repository THE SYSTEM SHALL write a
+  starter config for the test runners it detects without rewriting an existing
+  one, add the pytest hook to `conftest.py`, and list what remains to be done.
+- **SN-75~1**: WHEN asked to equip a repository THE SYSTEM SHALL install the
+  packaged skill as a marked section of `AGENTS.md`, import it from
+  `CLAUDE.md`, and copy it to `.claude/skills`, leaving other content alone.
+- **SN-76~1**: WHEN asked to equip a repository THE SYSTEM SHALL add the
+  end-of-turn hook to each selected harness's configuration, keeping the
+  settings already there.
+- **SN-77~1**: WHEN equipping a repository that is already equipped THE SYSTEM
+  SHALL change nothing, and with `--check` it SHALL write nothing and exit 1 if
+  a file would change.
+- **SN-78~1**: THE plugin package SHALL be a conformant Agent Plugins
+  package and a Claude Code plugin carrying the same skill and version, whose
+  hooks only call the binary.
+
 ## Reports
 
 - **SN-60~1**: THE JSON report SHALL conform to the published JSON Schema,

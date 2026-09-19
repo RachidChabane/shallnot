@@ -187,6 +187,35 @@ For a machine reader, add `--format json` or `--json-out report.json`; for a
 configuration file instead of flags, see
 [docs/configuration.md](docs/configuration.md).
 
+## Agents use it without being asked
+
+The person asking an agent for a feature does not care about traceability,
+and should not have to mention it. A repository equipped with one command
+tells every agent that works in it what to do, and holds the end of the
+agent's turn until the gate passes:
+
+```sh
+shallnot init
+```
+
+`init` writes a starter `shallnot.yaml` for the test runners it finds, the
+agent instructions (`AGENTS.md`, a `CLAUDE.md` import, a project skill), and
+an end-of-turn hook for Claude Code, and for Cursor when the project uses it.
+With that in place, a request as plain as "reject passwords that contain the
+username" leads the agent to find the requirement in the spec, tag the tests
+it writes, and run `shallnot gate`; if it tries to finish on a blocked gate,
+the hook hands it the blocking findings and sends it back to work. See
+[docs/agents.md](docs/agents.md).
+
+The same skill ships as a plugin in [`plugin/`](plugin): an
+[Agent Plugins](https://github.com/agentplugins/agent-plugins-spec) package
+and a Claude Code plugin in one directory.
+
+```text
+/plugin marketplace add RachidChabane/shallnot
+/plugin install shallnot@shallnot
+```
+
 ## Documentation
 
 | Document | Content |
@@ -196,7 +225,8 @@ configuration file instead of flags, see
 | [docs/report.md](docs/report.md) | The JSON report: a versioned public API, with every field, state and finding category. |
 | [docs/configuration.md](docs/configuration.md) | `shallnot.yaml`, every flag, severities, exit codes. |
 | [docs/pipeline-gate.md](docs/pipeline-gate.md) | Using `shallnot` as a gate in an automated agent pipeline: focus, advisory mode, several repositories, exit codes. |
-| [skill/shallnot/SKILL.md](skill/shallnot/SKILL.md) | An agent skill teaching a coding agent the convention, and [an `AGENTS.md` snippet](skill/AGENTS.snippet.md) with the same content. |
+| [docs/agents.md](docs/agents.md) | Equipping coding agents: `shallnot init`, the end-of-turn hooks, the plugin package. |
+| [plugin/skills/shallnot/SKILL.md](plugin/skills/shallnot/SKILL.md) | The agent skill: the convention, how to run the gate, how to react to each finding, and what an agent must never do to get a green report. |
 | [schemas/](schemas) | JSON Schemas of the report, the config file and the YAML spec; also printed by `shallnot schema report\|config\|spec`. |
 
 ## Relation to other tools
@@ -250,16 +280,16 @@ language and works from what every test runner can already emit.
 script/build            # bin/shallnot
 script/test             # all tests, writes build/test-results/go.xml
 script/trace            # shallnot traces its own requirements (specs/) to its own tests
-script/ci               # lint + test + trace
+script/ci               # lint, then `shallnot gate` on this repository, then `shallnot init --check`
 script/fuzz             # fuzz the parsers
 script/regen-fixtures   # re-run pytest, Jest, Vitest, Maven and Gradle on the fixture projects
 script/demo             # record build/demo.gif with vhs
 ```
 
-`make <verb>` runs the same scripts. `shallnot` traces itself: its
+`make <verb>` runs the same scripts. `shallnot` gates itself: its
 requirements are in [specs/shallnot.md](specs/shallnot.md), its Go tests carry
-the tags in their subtest names, and CI fails if a requirement loses its
-passing test. The design decisions are recorded in [docs/adr](docs/adr).
+the tags in their subtest names, CI fails if a requirement loses its passing
+test, and the repository is equipped by its own `shallnot init`. The design decisions are recorded in [docs/adr](docs/adr).
 
 ## Licence
 

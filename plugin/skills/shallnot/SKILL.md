@@ -1,6 +1,6 @@
 ---
 name: shallnot
-description: Bind tests to spec requirements with `[verifies ID~REV]` tags and check the mapping with the `shallnot` CLI. Use when implementing or changing behaviour in a repository that has a `shallnot.yaml` or specs with requirement IDs, when writing or editing tests there, and when a `shallnot` report or CI check has findings.
+description: Requirement-to-test traceability with the `shallnot` CLI. Use in any repository that has a `shallnot.yaml`, whenever you write or change code or tests there, before you report work as done, and whenever a `shallnot` report, hook or CI check shows findings. The user does not need to mention shallnot. Covers how to bind a test to a requirement with a `[verifies ID~REV]` tag, how to run the gate, and how to react to each finding.
 ---
 
 # Tracing requirements to tests with shallnot
@@ -10,6 +10,17 @@ the JUnit XML test results, and fails unless every requirement in focus is
 cited by at least one test that ran and passed. You write the tests and the
 tags; the tool checks the mapping. It cannot be argued with and it does not
 read intent: only requirement IDs, tags and test outcomes.
+
+A repository with a `shallnot.yaml` is gated. Nobody has to ask you to use
+shallnot there: the person you work for cares about their feature, and the
+gate is part of doing that work properly. Whenever you add or change
+behaviour:
+
+1. Find the requirement the work implements in the specs listed in
+   `shallnot.yaml`.
+2. Bind the tests you write to it with a tag.
+3. Run `shallnot gate` before you say the work is done, and resolve what it
+   reports.
 
 ## Requirements
 
@@ -47,24 +58,29 @@ test results file. One test per behaviour, tagged with the requirement whose
 statement its assertions check. A test that verifies no stated requirement
 carries no tag; do not invent one.
 
-## Running the check
+## Running the gate
 
-1. Run the project's tests so that they write JUnit XML (the project's test
-   command or CI configuration says how). The gate reads results; it does not
-   run tests.
-2. Run `shallnot check --json-out shallnot-report.json` from the directory
-   holding `shallnot.yaml`. Without a config file, pass the inputs:
-   `shallnot check --specs <specs> --tests <test dir> --results <junit.xml> --json-out shallnot-report.json`.
-3. Read the exit code first:
+1. Run `shallnot gate --json-out shallnot-report.json` from the directory
+   holding `shallnot.yaml`. It runs the project's test commands
+   (`test_commands` in `shallnot.yaml`), then checks the results they wrote.
+   When the config names no test command, run the project's tests so that they
+   write JUnit XML, then run `shallnot check --json-out shallnot-report.json`.
+2. Read the exit code first:
    - `0`: clean. Nothing to do.
    - `1`: blocked. Read the report.
-   - `2`: the tool could not run (missing results file, bad config). This is
-     not a verdict about your code. Read the message on standard error, fix
-     the invocation or produce the missing results, and run again.
-4. In `shallnot-report.json`, read `findings` where `blocking` is `true`. Each
+   - `2`: no verdict (a results file is missing or was not rewritten by the
+     test run, the config is wrong). This says nothing about your code. Read
+     the message on standard error and fix the cause: usually the tests did
+     not run to the point of writing their report. If the specs themselves
+     are missing, stop and tell the user; never write requirements yourself
+     to satisfy the gate.
+3. In `shallnot-report.json`, read `findings` where `blocking` is `true`. Each
    has a `category`, a `message`, a `location` (`file`, `line`) and usually a
    `requirement_id`. `requirements[]` holds the full matrix: each requirement's
    `coverage` and its `tests` with their `outcome`.
+
+Some projects install an end-of-turn hook that runs the gate for you and hands
+you the blocking findings. Treat that message exactly like a blocked gate.
 
 ## Reacting to findings
 

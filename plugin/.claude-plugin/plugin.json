@@ -1,0 +1,9 @@
+{
+  "name": "shallnot",
+  "version": "0.2.0",
+  "description": "Teaches Claude to bind tests to spec requirements with [verifies ID~REV] tags, and holds the end of a turn until the shallnot traceability gate passes.",
+  "author": { "name": "Rachid Chabane" },
+  "homepage": "https://github.com/RachidChabane/shallnot",
+  "repository": "https://github.com/RachidChabane/shallnot",
+  "license": "Apache-2.0"
+}

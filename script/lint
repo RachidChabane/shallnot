@@ -3,11 +3,10 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
-unformatted="$(gofmt -l cmd internal schemas)"
+unformatted="$(gofmt -l cmd internal schemas plugin)"
 if [ -n "$unformatted" ]; then
   echo "gofmt needed on:" >&2
   echo "$unformatted" >&2
   exit 1
 fi
 go vet ./...
-script/sync-agents-snippet --check

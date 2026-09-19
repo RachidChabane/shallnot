@@ -10,6 +10,7 @@ import (
 
 	"github.com/RachidChabane/shallnot/internal/adapters/config"
 	"github.com/RachidChabane/shallnot/internal/adapters/report"
+	"github.com/RachidChabane/shallnot/internal/adapters/testrun"
 	"github.com/RachidChabane/shallnot/internal/app"
 )
 
@@ -33,6 +34,7 @@ type checkFlags struct {
 	tests             stringList
 	results           stringList
 	exclude           stringList
+	testCommands      stringList
 	severities        stringList
 	noDefaultExcludes bool
 	advisory          bool
@@ -44,8 +46,8 @@ type checkFlags struct {
 	githubAnnotations bool
 }
 
-func newCheckFlagSet(flags *checkFlags, stderr io.Writer) *flag.FlagSet {
-	set := flag.NewFlagSet("shallnot check", flag.ContinueOnError)
+func newCheckFlagSet(command string, flags *checkFlags, stderr io.Writer) *flag.FlagSet {
+	set := flag.NewFlagSet("shallnot "+command, flag.ContinueOnError)
 	set.SetOutput(stderr)
 	set.StringVar(&flags.configPath, "config", "", "configuration `file` (default: "+config.DefaultFileName+" in the working directory, if present)")
 	set.BoolVar(&flags.noConfig, "no-config", false, "ignore "+config.DefaultFileName+" in the working directory")
@@ -56,6 +58,7 @@ func newCheckFlagSet(flags *checkFlags, stderr io.Writer) *flag.FlagSet {
 	set.Var(&flags.tests, "tests", "test source root `directory` scanned for tags (repeatable)")
 	set.Var(&flags.results, "results", "JUnit XML results: a file, directory or `glob` (repeatable)")
 	set.Var(&flags.exclude, "exclude", "`glob` of source paths the scan ignores (repeatable)")
+	set.Var(&flags.testCommands, "test-command", "command `line` that `gate` runs before checking (repeatable)")
 	set.BoolVar(&flags.noDefaultExcludes, "no-default-excludes", false, "scan dependency and build directories too")
 	set.Var(&flags.severities, "severity", "override as `category=severity` (repeatable)")
 	set.BoolVar(&flags.advisory, "advisory", false, "report everything but always exit 0")
@@ -68,9 +71,24 @@ func newCheckFlagSet(flags *checkFlags, stderr io.Writer) *flag.FlagSet {
 	return set
 }
 
+// verdictFunc produces the outcome of a command that ends in a verdict.
+type verdictFunc func(settings app.Settings, log io.Writer) (app.Outcome, error)
+
 func runCheck(args []string, stdout, stderr io.Writer) app.ExitCode {
+	return runVerdict(commandCheck, args, stdout, stderr, func(settings app.Settings, _ io.Writer) (app.Outcome, error) {
+		return app.Run(settings)
+	})
+}
+
+func runGate(args []string, stdout, stderr io.Writer) app.ExitCode {
+	return runVerdict(commandGate, args, stdout, stderr, func(settings app.Settings, log io.Writer) (app.Outcome, error) {
+		return app.Gate(settings, testrun.Shell{}, log)
+	})
+}
+
+func runVerdict(command string, args []string, stdout, stderr io.Writer, verdict verdictFunc) app.ExitCode {
 	var flags checkFlags
-	set := newCheckFlagSet(&flags, stderr)
+	set := newCheckFlagSet(command, &flags, stderr)
 	if err := set.Parse(args); err != nil {
 		if errors.Is(err, flag.ErrHelp) {
 			return app.ExitClean
@@ -91,7 +109,7 @@ func runCheck(args []string, stdout, stderr io.Writer) app.ExitCode {
 	if err != nil {
 		return fail(stderr, err)
 	}
-	outcome, err := app.Run(settings)
+	outcome, err := verdict(settings, stderr)
 	if err != nil {
 		return fail(stderr, err)
 	}
@@ -135,6 +153,7 @@ func resolveSettings(flags checkFlags) (app.Settings, error) {
 	override(&settings.Tests, flags.tests)
 	override(&settings.Results, flags.results)
 	override(&settings.Exclude, flags.exclude)
+	override(&settings.TestCommands, flags.testCommands)
 	if flags.noDefaultExcludes {
 		settings.UseDefaultExcludes = false
 	}
