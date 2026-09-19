@@ -13,6 +13,10 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
+# Playback speed relative to real time: slow enough to read the hook's message.
+SPEED=1.5
+HOLD_SECONDS=4
+
 capture="${CAPTURE_SESSION:?set CAPTURE_SESSION to the path of a capture-session script}"
 mkdir -p build
 "$capture" \
@@ -20,10 +24,10 @@ mkdir -p build
   --prep script/demo.d/catch-prep.sh \
   --prompt "Passwords that contain the account's username should be rejected. Can you add that?" \
   --until "gate passed" \
-  --out build/catch.png --gif build/catch.gif
+  --out build/catch.png --gif build/catch.gif --speed "$SPEED"
 
-# A README-sized copy.
-ffmpeg -v error -y -i build/catch.gif \
-  -vf "fps=10,scale=1200:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4" \
+# A README-sized copy that holds its last frame, where the verdict is.
+ffmpeg -v error -y -i build/catch.gif -fps_mode vfr \
+  -vf "tpad=stop_mode=clone:stop_duration=$HOLD_SECONDS,scale=1200:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4" \
   build/catch-small.gif
 echo "wrote build/catch.gif and build/catch-small.gif"
