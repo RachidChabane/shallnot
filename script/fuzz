@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
-# Fuzz each parser for FUZZTIME (default 20s).
+# Fuzz each parser for FUZZTIME (default 20s). Minimising an interesting input
+# is bounded, so that it cannot outlast the fuzzing budget and fail the run.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 FUZZTIME="${FUZZTIME:-20s}"
-go test ./internal/domain -run '^$' -fuzz FuzzFindBracketTags -fuzztime "$FUZZTIME"
-go test ./internal/adapters/spec -run '^$' -fuzz FuzzMarkdown -fuzztime "$FUZZTIME"
-go test ./internal/adapters/junitxml -run '^$' -fuzz FuzzReader -fuzztime "$FUZZTIME"
+MINIMIZE_TIME=2s
+go test ./internal/domain -run '^$' -fuzz FuzzFindBracketTags -fuzztime "$FUZZTIME" -fuzzminimizetime "$MINIMIZE_TIME"
+go test ./internal/adapters/spec -run '^$' -fuzz FuzzMarkdown -fuzztime "$FUZZTIME" -fuzzminimizetime "$MINIMIZE_TIME"
+go test ./internal/adapters/junitxml -run '^$' -fuzz FuzzReader -fuzztime "$FUZZTIME" -fuzzminimizetime "$MINIMIZE_TIME"
