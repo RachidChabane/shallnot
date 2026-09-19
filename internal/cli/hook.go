@@ -60,32 +60,41 @@ func runHook(args []string, stdin io.Reader, stdout, stderr io.Writer) app.ExitC
 
 // decide gates the project and applies the attempt limit.
 func decide(event agenthook.Event, attempts agenthook.Attempts) (agenthook.Decision, string) {
-	message, blocked := gateMessage()
-	if !blocked {
-		attempts.Reset(event.SessionID)
-		return agenthook.DecisionAllow, ""
-	}
 	prior := event.PriorBlocks
 	if !event.CountsBlocks {
 		prior = attempts.Count(event.SessionID)
 	}
+	verdict := gateVerdict()
+	if !verdict.blocked {
+		attempts.Reset(event.SessionID)
+		if prior > 0 {
+			return agenthook.DecisionAnnouncePass, verdict.message
+		}
+		return agenthook.DecisionAllow, ""
+	}
 	if prior >= agenthook.MaxAttempts {
 		attempts.Reset(event.SessionID)
-		return agenthook.DecisionGiveUp, agenthook.GiveUpMessage(prior, message)
+		return agenthook.DecisionGiveUp, agenthook.GiveUpMessage(prior, verdict.message)
 	}
 	if !event.CountsBlocks {
 		// A counter that cannot be written only makes the hook more insistent; the harness's own limits still apply.
 		_ = attempts.Record(event.SessionID, prior+1)
 	}
-	return agenthook.DecisionBlock, message
+	return agenthook.DecisionBlock, verdict.message
 }
 
-// gateMessage runs the gate of the working directory's shallnot.yaml. It
+// hookVerdict is what the gate concluded, worded for the agent or the user.
+type hookVerdict struct {
+	blocked bool
+	message string
+}
+
+// gateVerdict runs the gate of the working directory's shallnot.yaml. It
 // checks existing results when the project configures no test command.
-func gateMessage() (message string, blocked bool) {
+func gateVerdict() hookVerdict {
 	settings, err := config.Load(config.DefaultFileName)
 	if err != nil {
-		return agenthook.FailureMessage(err), true
+		return hookVerdict{blocked: true, message: agenthook.FailureMessage(err)}
 	}
 	var outcome app.Outcome
 	if len(settings.TestCommands) > 0 {
@@ -94,10 +103,20 @@ func gateMessage() (message string, blocked bool) {
 		outcome, err = app.Run(settings)
 	}
 	if err != nil {
-		return agenthook.FailureMessage(err), true
+		return hookVerdict{blocked: true, message: agenthook.FailureMessage(err)}
 	}
 	if outcome.Analysis.Verdict == domain.VerdictFail && !outcome.Policy.Advisory {
-		return agenthook.BlockedMessage(outcome.Analysis.Findings), true
+		return hookVerdict{blocked: true, message: agenthook.BlockedMessage(outcome.Analysis.Findings)}
 	}
-	return "", false
+	covered, nonTestable := 0, 0
+	for _, row := range outcome.Analysis.Rows {
+		switch {
+		case !row.InFocus:
+		case row.Coverage == domain.CoverageCovered:
+			covered++
+		case row.Coverage == domain.CoverageNonTestable:
+			nonTestable++
+		}
+	}
+	return hookVerdict{message: agenthook.PassedMessage(covered, nonTestable)}
 }

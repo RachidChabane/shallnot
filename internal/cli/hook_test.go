@@ -44,7 +44,7 @@ func cursorInput(t *testing.T, projectDir string, loopCount int) string {
 func TestHookCommand(t *testing.T) {
 	produce := copyCommand("prepared.xml", "junit.xml")
 
-	t.Run("stays silent in a project without a shallnot.yaml [verifies SN-72~1]", func(t *testing.T) {
+	t.Run("stays silent in a project without a shallnot.yaml [verifies SN-72~2]", func(t *testing.T) {
 		t.Chdir(t.TempDir())
 		t.Setenv("CLAUDE_PROJECT_DIR", "")
 		result := shallnotWithInput(t, claudeInput(t, t.TempDir()), "hook", "claude-stop")
@@ -53,7 +53,7 @@ func TestHookCommand(t *testing.T) {
 		}
 	})
 
-	t.Run("lets a Claude Code turn end when the gate passes [verifies SN-72~1]", func(t *testing.T) {
+	t.Run("lets a Claude Code turn end when the gate passes [verifies SN-72~2]", func(t *testing.T) {
 		isolateAttempts(t)
 		t.Chdir(t.TempDir())
 		t.Setenv("CLAUDE_PROJECT_DIR", gateProject(t, produce))
@@ -63,7 +63,7 @@ func TestHookCommand(t *testing.T) {
 		}
 	})
 
-	t.Run("sends a Claude Code agent back to work with the blocking findings [verifies SN-72~1]", func(t *testing.T) {
+	t.Run("sends a Claude Code agent back to work with the blocking findings [verifies SN-72~2]", func(t *testing.T) {
 		isolateAttempts(t)
 		t.Chdir(t.TempDir())
 		t.Setenv("CLAUDE_PROJECT_DIR", "")
@@ -79,7 +79,7 @@ func TestHookCommand(t *testing.T) {
 		}
 	})
 
-	t.Run("sends the agent back when the test commands produce no results [verifies SN-72~1]", func(t *testing.T) {
+	t.Run("sends the agent back when the test commands produce no results [verifies SN-72~2]", func(t *testing.T) {
 		isolateAttempts(t)
 		t.Chdir(t.TempDir())
 		t.Setenv("CLAUDE_PROJECT_DIR", gateProject(t, "exit 0"))
@@ -108,7 +108,32 @@ func TestHookCommand(t *testing.T) {
 		}
 	})
 
-	t.Run("submits the findings to a Cursor agent as a follow-up message [verifies SN-72~1]", func(t *testing.T) {
+	t.Run("tells the user the gate passed once it had held the agent in the session [verifies SN-79~1]", func(t *testing.T) {
+		isolateAttempts(t)
+		t.Chdir(t.TempDir())
+		t.Setenv("CLAUDE_PROJECT_DIR", "")
+		project := gateProjectWithSpec(t, uncoveredSpec, produce)
+		input := claudeInput(t, project)
+		if blocked := shallnotWithInput(t, input, "hook", "claude-stop"); blocked.exit != claudeExitBlock {
+			t.Fatalf("got %+v", blocked)
+		}
+		writeFiles(t, project, map[string]string{"spec.md": coveredSpec})
+		passed := shallnotWithInput(t, input, "hook", "claude-stop")
+		var output struct {
+			SystemMessage string `json:"systemMessage"`
+		}
+		if err := json.Unmarshal([]byte(passed.stdout), &output); err != nil || passed.exit != app.ExitClean {
+			t.Fatalf("got %+v (%v)", passed, err)
+		}
+		if !strings.Contains(output.SystemMessage, "gate passed: 1 requirement(s) in focus covered") {
+			t.Fatalf("got %q", output.SystemMessage)
+		}
+		if quiet := shallnotWithInput(t, input, "hook", "claude-stop"); quiet.stdout != "" || quiet.stderr != "" {
+			t.Fatalf("a later passing turn was not silent: %+v", quiet)
+		}
+	})
+
+	t.Run("submits the findings to a Cursor agent as a follow-up message [verifies SN-72~2]", func(t *testing.T) {
 		t.Chdir(t.TempDir())
 		project := gateProjectWithSpec(t, uncoveredSpec, produce)
 		result := shallnotWithInput(t, cursorInput(t, project, 0), "hook", "cursor-stop")
@@ -132,7 +157,7 @@ func TestHookCommand(t *testing.T) {
 		}
 	})
 
-	t.Run("an advisory project never holds the agent back [verifies SN-72~1]", func(t *testing.T) {
+	t.Run("an advisory project never holds the agent back [verifies SN-72~2]", func(t *testing.T) {
 		isolateAttempts(t)
 		t.Chdir(t.TempDir())
 		t.Setenv("CLAUDE_PROJECT_DIR", "")
@@ -143,7 +168,7 @@ func TestHookCommand(t *testing.T) {
 		}
 	})
 
-	t.Run("a hook that fails for its own reasons never holds the agent [verifies SN-72~1]", func(t *testing.T) {
+	t.Run("a hook that fails for its own reasons never holds the agent [verifies SN-72~2]", func(t *testing.T) {
 		if result := shallnotWithInput(t, "", "hook", "vim-stop"); result.exit != claudeExitNotice {
 			t.Fatalf("unknown harness: %+v", result)
 		}

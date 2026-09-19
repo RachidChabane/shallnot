@@ -45,7 +45,7 @@ func (CursorStop) Respond(decision Decision, message string) Response {
 			return Response{Stderr: err.Error()}
 		}
 		return Response{Stdout: string(output) + "\n"}
-	case DecisionGiveUp:
+	case DecisionGiveUp, DecisionAnnouncePass:
 		return Response{Stderr: message}
 	default:
 		return Response{}

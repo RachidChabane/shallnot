@@ -106,13 +106,16 @@ The requirements of shallnot itself, in its own Markdown spec format.
 
 ## Agents
 
-- **SN-72~1**: WHEN an agent harness calls its end-of-turn hook in a project
+- **SN-72~2**: WHEN an agent harness calls its end-of-turn hook in a project
   with a `shallnot.yaml` THE SYSTEM SHALL gate the project and, if it is
   blocked or gives no verdict, send the agent back to work with the reason in
-  the harness's own protocol; otherwise, and in a project without a
-  `shallnot.yaml` or in advisory mode, it SHALL stay silent.
+  the harness's own protocol; in a project without a `shallnot.yaml`, in
+  advisory mode, and on a gate that passes without having held the agent in
+  the session, it SHALL stay silent.
 - **SN-73~1**: WHEN a hook has sent the agent back three times in a row THE
   SYSTEM SHALL let the turn end and tell the user the gate is still blocked.
+- **SN-79~1**: WHEN the gate passes after the hook had sent the agent back in
+  the same session THE SYSTEM SHALL tell the user so in one line.
 - **SN-74~1**: WHEN asked to equip a repository THE SYSTEM SHALL write a
   starter config for the test runners it detects without rewriting an existing
   one, add the pytest hook to `conftest.py`, and list what remains to be done.

@@ -35,6 +35,8 @@ const (
 	DecisionBlock
 	// DecisionGiveUp lets the turn end and tells the user the gate is still blocked.
 	DecisionGiveUp
+	// DecisionAnnouncePass lets the turn end and tells the user the gate passed, after it had blocked earlier in the session.
+	DecisionAnnouncePass
 )
 
 // Response is what the hook process prints and returns.

@@ -9,13 +9,14 @@ verify a requirement that does not exist.
 It is a single static binary. It makes no network access and calls no model:
 the same inputs give the same output, byte for byte.
 
-![An agent is asked for a feature and nothing else. It writes the requirement into the spec, implements it, tags the tests it writes, and runs the shallnot gate on its own](https://raw.githubusercontent.com/RachidChabane/shallnot-demo/main/media/session.gif)
+![An agent implements a feature and reports it done with all tests passing. shallnot holds the end of its turn: requirement PWD-2~1 has no bound test. The agent finds it tagged its tests with the wrong requirement, fixes the tags, and the gate passes](https://raw.githubusercontent.com/RachidChabane/shallnot-demo/main/media/catch.gif)
 
-The request in that session is "Passwords should also have to contain at least
-one digit. Can you add that?". Nobody mentions shallnot: the repository is
-equipped by `shallnot init`, so the agent writes the requirement down first
-(`PWD-4~1`), implements it, tags its tests, and cannot end its turn on a
-blocked gate.
+In that session the agent is asked for a feature and nothing else. It writes
+the code and two tests, sees them pass, and says it is done. The suite is
+green, and the requirement the feature implements still has no test bound to
+it: the agent copied the tag of a neighbouring requirement onto its new tests.
+shallnot holds the end of the turn, names the requirement, and lets the agent
+go only when a passing test really cites it.
 
 What the gate prints when a requirement has no test:
 
@@ -122,7 +123,7 @@ In GitHub Actions:
 ```yaml
 - run: pytest --junitxml=junit.xml        # your test step, producing JUnit XML
   continue-on-error: true
-- uses: RachidChabane/shallnot@v0.3.0
+- uses: RachidChabane/shallnot@v0.3.1
   with:
     args: --specs specs --tests tests --results junit.xml
 ```

@@ -38,3 +38,8 @@ func FailureMessage(err error) string {
 func GiveUpMessage(attempts int, last string) string {
 	return fmt.Sprintf("shallnot: the gate is still blocked after %d attempts; run `shallnot gate` to see why.\n%s", attempts, last)
 }
+
+// PassedMessage tells the user that the gate passes, once it had held the agent earlier in the session.
+func PassedMessage(covered, nonTestable int) string {
+	return fmt.Sprintf("shallnot: gate passed: %d requirement(s) in focus covered by passing tests, %d non-testable, no blocking finding.\n", covered, nonTestable)
+}

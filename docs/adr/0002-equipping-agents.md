@@ -79,6 +79,8 @@ documentation. Rules common to all adapters:
 - After three consecutive blocks the turn is allowed to end and the user is
   told. The count is the harness's own when it provides one, otherwise a
   per-session counter file in the temporary directory.
+- A gate that passes is silent, except once after it has held the agent in
+  the same session: the user then sees one line saying the gate passed.
 - The hook's own failures exit 1, never 2: harnesses read 2 as "hold the
   agent", and a broken hook must fail open.
 

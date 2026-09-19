@@ -1,18 +1,29 @@
 #!/usr/bin/env bash
-# Record build/session.gif and build/session.png: a real agent session in a
-# project equipped by `shallnot init`, given a plain feature request.
+# Record build/catch.gif and build/catch.png: a real agent session in a project
+# gated by the end-of-turn hook. The agent is given a plain feature request,
+# reports it done, and is sent back by shallnot until the requirement has a
+# passing test bound to it.
+#
 # CAPTURE_SESSION is the path of a capture-session script taking
 # --cwd --prep --prompt --until --out --gif (it drives a terminal window and
-# records the screen). Needs the claude CLI and shallnot on PATH.
+# records the screen). It must start the agent with only the project's
+# settings (`claude --setting-sources project,local`), so that nothing from the
+# recording machine's own configuration appears in the session.
+# Needs the claude CLI, pytest and shallnot on PATH, and ffmpeg.
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 capture="${CAPTURE_SESSION:?set CAPTURE_SESSION to the path of a capture-session script}"
-script/build
 mkdir -p build
 "$capture" \
-  --cwd "$HOME/.cache/shallnot-demo/password-policy" \
-  --prep script/demo.d/session-prep.sh \
-  --prompt "Passwords should also have to contain at least one digit. Can you add that?" \
-  --until "PWD-4" \
-  --out build/session.png --gif build/session.gif
+  --cwd "$HOME/.cache/shallnot-demo/catch" \
+  --prep script/demo.d/catch-prep.sh \
+  --prompt "Passwords that contain the account's username should be rejected. Can you add that?" \
+  --until "gate passed" \
+  --out build/catch.png --gif build/catch.gif
+
+# A README-sized copy.
+ffmpeg -v error -y -i build/catch.gif \
+  -vf "fps=10,scale=1200:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=4" \
+  build/catch-small.gif
+echo "wrote build/catch.gif and build/catch-small.gif"

@@ -142,7 +142,12 @@ harnesses are implemented: `claude-stop` (Claude Code's `Stop` hook) and
    results). Otherwise it runs a plain check (`shallnot check`'s behavior)
    against whatever results files are already on disk.
 5. **Decide.** A `pass` verdict, or a run in advisory mode, lets the turn end
-   silently. A `fail` verdict, or a run that produced no verdict at all
+   silently, with one exception: when the hook has sent the agent back
+   earlier in the same session, the passing turn ends with one line for the
+   user, `shallnot: gate passed: N requirement(s) in focus covered by passing
+   tests, M non-testable, no blocking finding.` (Claude Code: a
+   `systemMessage` on standard output; Cursor: standard error). A `fail`
+   verdict, or a run that produced no verdict at all
    (missing or stale results, bad config), sends the agent back to work with
    the blocking findings (or the failure reason) in the message.
 6. **Answer in the harness's own protocol.** Claude Code: the hook exits

@@ -16,6 +16,11 @@ const (
 // ClaudeStop speaks the protocol of Claude Code's Stop hook.
 type ClaudeStop struct{}
 
+// claudeStopOutput is the JSON a Stop hook may print; systemMessage is shown to the user.
+type claudeStopOutput struct {
+	SystemMessage string `json:"systemMessage"`
+}
+
 type claudeStopInput struct {
 	SessionID string `json:"session_id"`
 	Cwd       string `json:"cwd"`
@@ -46,6 +51,12 @@ func (ClaudeStop) Respond(decision Decision, message string) Response {
 		return Response{Stderr: message, ExitCode: claudeExitBlock}
 	case DecisionGiveUp:
 		return Response{Stderr: message, ExitCode: claudeExitNotice}
+	case DecisionAnnouncePass:
+		output, err := json.Marshal(claudeStopOutput{SystemMessage: message})
+		if err != nil {
+			return Response{}
+		}
+		return Response{Stdout: string(output) + "\n"}
 	default:
 		return Response{}
 	}
