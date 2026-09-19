@@ -89,9 +89,11 @@ documentation. Rules common to all adapters:
 A hook needs fresh results. `test_commands` in the config names how to produce
 them; `gate` runs them through the platform shell in the config's directory,
 ignores their exit status (failing tests are a result), and then checks. A
-results file that the commands left untouched, compared with its state before
-the run, is a tool failure: a runner that crashed before writing its report
-must not leave an earlier verdict in place. `check` runs nothing and remains
+results file that the commands did not rewrite is a tool failure: a runner
+that crashed before writing its report must not leave an earlier verdict in
+place. Rewriting is detected by stamping existing results files with a fixed
+old modification time before the run, because tools that preserve file times
+can rewrite a file and leave its time unchanged. `check` runs nothing and remains
 the entry point for pipelines that run tests in another job.
 
 ### The plugin is packaging with no logic

@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/RachidChabane/shallnot/internal/app"
 	"github.com/RachidChabane/shallnot/internal/domain"
@@ -84,6 +85,25 @@ func TestGateCommand(t *testing.T) {
 		result := shallnot(t, "gate", "--config", filepath.Join(directory, "shallnot.yaml"))
 		if result.exit != app.ExitToolFailure || result.stdout != "" || !strings.Contains(result.stderr, "not written by this run") {
 			t.Fatalf("exit %d\nstdout %q\nstderr %q", result.exit, result.stdout, result.stderr)
+		}
+	})
+
+	t.Run("accepts results rewritten by a runner that preserves file times [verifies SN-71~1]", func(t *testing.T) {
+		directory := gateProject(t, produce)
+		old := time.Date(2020, time.March, 1, 0, 0, 0, 0, time.UTC)
+		if err := os.Chtimes(filepath.Join(directory, "prepared.xml"), old, old); err != nil {
+			t.Fatal(err)
+		}
+		preserving := "cp -p prepared.xml junit.xml"
+		if runtime.GOOS == "windows" {
+			preserving = produce
+		}
+		appendToConfig(t, directory, "")
+		config := filepath.Join(directory, "shallnot.yaml")
+		for run := 1; run <= 2; run++ {
+			if result := shallnot(t, "gate", "--config", config, "--test-command", preserving); result.exit != app.ExitClean {
+				t.Fatalf("run %d: exit %d, stderr %s", run, result.exit, result.stderr)
+			}
 		}
 	})
 

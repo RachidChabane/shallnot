@@ -159,8 +159,11 @@ touch any other category.
   configured or passed, `gate` is a tool failure (exit 2) before running
   anything.
 - **Freshness rule**: after the commands run, `gate` requires every file
-  matched by `results` to exist and to have a modification time different
-  from the one it had (or its absence) before the commands ran. A results
+  matched by `results` to exist and to have been rewritten by them. Before
+  running the commands, `gate` sets the modification time of each results file
+  that already exists to 2000-01-01; a file still bearing that time afterwards
+  was not rewritten. (A file it cannot re-time is compared with the
+  modification time it had before the run.) A results
   file that the test commands left untouched, or that still does not exist,
   is a tool failure (exit 2): `gate` never checks a stale or missing report
   as if it were this run's verdict.
