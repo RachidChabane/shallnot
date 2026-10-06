@@ -76,6 +76,100 @@ first declaration, in file path then line order, is kept; every later
 declaration of the same ID — in the same file or another one — is reported
 as `duplicate_id` and does not replace the first.
 
+## Statement digest
+
+The report carries, for every requirement, a `statement_digest`: the SHA-256
+of the requirement's meaning-bearing text in its canonical form. The digest
+lets a consumer notice that a statement changed, and lets a proof bind to one
+exact statement. It is computed from the parsed requirement, so it is the same
+whichever spec format declared it. The version of the canonical form is
+`c1`; the report names it in `run.statement_canonicalization`.
+
+### Canonicalization `c1`
+
+The canonical form of a requirement is four canonical texts, in this order,
+joined by one LF (U+000A):
+
+1. the title (empty when the requirement has none);
+2. the statement;
+3. the status, as its name: `active` or `non_testable`;
+4. the justification (empty when the requirement has none).
+
+The canonical text of a title, statement or justification is obtained by
+these steps, in this order:
+
+1. Replace each maximal run of bytes that is not valid UTF-8 by one U+FFFD.
+2. Normalize to Unicode Normalization Form C (NFC).
+3. Replace each CR LF (U+000D U+000A) and each lone CR by one LF.
+4. Replace each LF by one space (U+0020): continuation lines are joined.
+5. Replace each run of whitespace by one space. Whitespace is exactly these
+   code points, the Unicode `White_Space` property:
+
+   | Code points | |
+   |---|---|
+   | U+0009 to U+000D | tab, line feed, vertical tab, form feed, carriage return |
+   | U+0020 | space |
+   | U+0085 | next line |
+   | U+00A0 | no-break space |
+   | U+1680 | Ogham space mark |
+   | U+2000 to U+200A | en quad to hair space |
+   | U+2028, U+2029 | line and paragraph separators |
+   | U+202F | narrow no-break space |
+   | U+205F | medium mathematical space |
+   | U+3000 | ideographic space |
+
+   No other code point is whitespace: the zero-width space U+200B and the
+   separators U+001C to U+001F are kept.
+6. Remove the leading and trailing space.
+
+A canonical text holds no line feed, so the join of the four texts is
+unambiguous: moving a word from the title to the statement changes the form.
+The digest is the SHA-256 of the canonical form encoded as UTF-8, written as
+64 lowercase hexadecimal digits. The ID, the revision and the location are not
+part of it: a revision bump alone does not change the digest.
+
+Reformatting that keeps the meaning, namely line wrapping, indentation, runs
+of spaces, CRLF endings and NFD instead of NFC, keeps the digest. Any other
+edit of the text changes it, including case and punctuation. Text that the
+parser does not put into the title, statement, status or justification (a
+glossary, a referenced document) is not in the digest.
+
+The same requirement declared as a Markdown list item, as a Markdown
+heading with the same title, or in YAML with a folded `>` or a literal `|`
+scalar has the same digest, because every form joins the lines of a statement
+before the digest sees it. A list item has no title; a heading has one.
+
+Two test vectors, for an implementation of `c1` to check itself against.
+
+The requirement with title `Percentage discount codes`, statement `WHEN a
+customer applies a percentage discount code THE SYSTEM SHALL reduce the total
+by that percentage.`, status `active` and no justification has the canonical
+form below (the last line, the justification, is empty):
+
+```
+Percentage discount codes
+WHEN a customer applies a percentage discount code THE SYSTEM SHALL reduce the total by that percentage.
+active
+
+```
+
+and the digest `1640b763e3b155b4799bedb9a66384bfe5dc9d52030bf3c68d14aaa1b2c89478`.
+
+The requirement with title `Cafe` followed by U+0301, statement
+`THE  checkout<TAB>page<CR><LF>SHALL<U+00A0>feel   uncluttered.` (two spaces
+after `THE`, three after `feel`), status `non_testable` and justification
+`judged in<LF>review` has the canonical form
+
+```
+Café
+THE checkout page SHALL feel uncluttered.
+non_testable
+judged in review
+```
+
+(with the é as the single code point U+00E9) and the digest
+`fb5d98a4e05198d766d7221961a6c0b2b37645dbc57a0e52a44f46a74ce56c3c`.
+
 ## Markdown spec
 
 A Markdown spec is prose. Requirements are embedded as **declarations**: a

@@ -167,6 +167,20 @@ The requirements of shallnot itself, in its own Markdown spec format.
 - **SN-65~1**: WHEN asked for a schema THE SYSTEM SHALL print the embedded
   JSON Schema of the report, the config file or the YAML spec.
 
+## Proof gate
+
+- **SN-86~1**: WHEN a requirement's text is reformatted without changing its
+  words, by wrapping lines, changing indentation or whitespace, using CRLF
+  endings or decomposing characters, THE SYSTEM SHALL compute the same
+  statement digest, the SHA-256 of the canonical form `c1` of its title,
+  statement, status and justification.
+- **SN-87~1**: WHEN the title, the statement, the status or the justification
+  of a requirement changes in any other way THE SYSTEM SHALL compute another
+  statement digest.
+- **SN-88~1**: WHEN a requirement is declared as a Markdown list item, as a
+  Markdown heading, or in YAML with a folded or a literal scalar, THE SYSTEM
+  SHALL give the same requirement the same statement digest.
+
 ## Architecture
 
 - **SN-66~1**: THE binary SHALL link no networking package.
