@@ -214,6 +214,14 @@
             "warning",
             "error"
           ]
+        },
+        "detached_example": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
         }
       },
       "additionalProperties": false

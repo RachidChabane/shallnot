@@ -195,6 +195,11 @@ The requirements of shallnot itself, in its own Markdown spec format.
   SHALL report a `malformed_example` finding at the requirement's
   declaration, a warning unless configured otherwise, and keep the other
   examples of the statement.
+- **SN-93~1**: WHEN a Markdown line reads as an example, after an optional
+  list bullet, and no statement absorbs it, because it follows a blank line,
+  a non-testable justification or an out-of-scope declaration, or sits
+  outside every requirement, THE SYSTEM SHALL report a `detached_example`
+  finding at the line, a warning unless configured otherwise.
 - **SN-95~1**: WHEN a Markdown line outside a fenced code block reads
   `Out of scope (DIMENSION): REASON`, with an optional list marker or
   emphasis, THE SYSTEM SHALL record the dimension, the reason and the line as

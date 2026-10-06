@@ -210,6 +210,7 @@ go to the pipeline.
 | `duplicate_id` | Spec owner | Give one of the requirements another ID. |
 | `malformed_requirement` | Spec owner | Fix the declaration (revision, statement, YAML keys). |
 | `malformed_example` | Spec owner | Rewrite the example in the [example grammar](spec-format.md#inline-examples), or move the text after its outcome out of the statement's examples. |
+| `detached_example` | Spec owner | Move the example into the statement it belongs to: directly under the statement, with no blank line, and before any `Non-testable:` line. |
 | `unknown_dimension` | Spec owner | Name one of the dimensions of [the closed list](spec-format.md#out-of-scope-declarations), or remove the declaration. |
 | `untagged_test` (blocking under `strict`) | Implementing agent | Tag the test with the requirement it verifies. A test that verifies no stated requirement is a sign of work outside the spec: report it rather than inventing a citation. |
 

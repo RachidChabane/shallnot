@@ -204,6 +204,7 @@ are the defaults.
 | `malformed_requirement` | error | the offending line | no | A spec declaration is invalid: bad revision, empty statement (Markdown), or an invalid key/value (YAML). |
 | `untagged_test` | info | the results file | no | A test case in the results carries no `[verifies ...]` tag and no `verifies` property. |
 | `malformed_example` | warning | requirement declaration | no | A segment after an `Example:` marker of a requirement's statement is outside the [example grammar](spec-format.md#inline-examples), or holds text after its outcome. The segment is not an example. |
+| `detached_example` | warning | the example line | no | A Markdown line that reads as an example, `Example:` after an optional list bullet, is part of no requirement's statement: it follows a blank line, a `Non-testable:` line or an out-of-scope declaration, or sits outside every requirement. |
 | `unknown_dimension` | warning | the out-of-scope declaration | no | An out-of-scope declaration names a dimension outside the closed list of [spec-format.md](spec-format.md#out-of-scope-declarations). The declaration is still recorded. |
 
 What to do about each category, and who owns the action, is specified once, in the

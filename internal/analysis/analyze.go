@@ -18,12 +18,13 @@ type FocusedRequirement struct {
 
 // Input is everything a run has collected.
 type Input struct {
-	Requirements []FocusedRequirement
-	SpecProblems []domain.SpecProblem
-	OutOfScope   []domain.OutOfScope
-	SourceTags   []domain.SourceTag
-	TestCases    []domain.TestCase
-	Policy       domain.Policy
+	Requirements     []FocusedRequirement
+	SpecProblems     []domain.SpecProblem
+	OutOfScope       []domain.OutOfScope
+	DetachedExamples []domain.DetachedExample
+	SourceTags       []domain.SourceTag
+	TestCases        []domain.TestCase
+	Policy           domain.Policy
 }
 
 type analyzer struct {
@@ -43,6 +44,7 @@ func Analyze(input Input) domain.Analysis {
 	rows := a.indexRequirements()
 	a.reportSpecProblems()
 	outOfScope := a.settleOutOfScope()
+	a.reportDetachedExamples()
 	matchedSources := a.bindTestCases()
 	a.bindUnmatchedSourceTags(matchedSources)
 	for index := range rows {
@@ -126,6 +128,16 @@ func (a *analyzer) reportSpecProblems() {
 			Category: domain.CategoryMalformedRequirement,
 			Location: problem.Location,
 			Message:  problem.Message,
+		})
+	}
+}
+
+func (a *analyzer) reportDetachedExamples() {
+	for _, detached := range a.input.DetachedExamples {
+		a.report(domain.Finding{
+			Category: domain.CategoryDetachedExample,
+			Location: detached.Location,
+			Message:  fmt.Sprintf("this example belongs to no requirement's statement (it follows a blank line or a non-testable justification, or no requirement): %s", detached.Text),
 		})
 	}
 }

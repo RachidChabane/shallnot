@@ -442,7 +442,8 @@
             "malformed_requirement",
             "untagged_test",
             "unknown_dimension",
-            "malformed_example"
+            "malformed_example",
+            "detached_example"
           ]
         },
         "severity": {

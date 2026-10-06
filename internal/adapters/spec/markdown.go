@@ -21,6 +21,7 @@ var (
 	heading          = regexp.MustCompile(`^\s*#{1,6}\s`)
 	nonTestableLine  = regexp.MustCompile(`(?i)^\s*(?:[-*+]\s+)?(?:\*\*|__)?non[-_ ]testable(?:\*\*|__)?\s*:?\s*(?:\*\*|__)?\s*(.*)$`)
 	trailingEmphasis = regexp.MustCompile(`^(?:\*\*|__)\s*`)
+	exampleLine      = regexp.MustCompile(`^\s*(?:[-*+]\s+)?` + regexp.QuoteMeta(domain.ExampleMarker) + `\s*(.*)$`)
 	outOfScopeLine   = regexp.MustCompile(`(?i)^\s*(?:[-*+]\s+)?(?:\*\*|__)?out[ _-]of[ _-]scope\s*\(([^()]*)\)\s*(?:\*\*|__)?\s*:\s*(?:\*\*|__)?\s*(.*)$`)
 )
 
@@ -117,8 +118,12 @@ func (p MarkdownParser) Parse(reader io.Reader, displayPath string) (Document, e
 			flush()
 			continue
 		}
-		if current != nil {
-			current.absorb(line)
+		absorbed := current != nil && current.absorb(line)
+		if !absorbed && exampleLine.MatchString(line) {
+			document.DetachedExamples = append(document.DetachedExamples, domain.DetachedExample{
+				Location: domain.Location{File: displayPath, Line: lineNumber},
+				Text:     strings.TrimSpace(line),
+			})
 		}
 	}
 	flush()
@@ -186,12 +191,13 @@ func (b *markdownBlock) endText() {
 	b.statementEnded, b.inJustification = true, false
 }
 
-func (b *markdownBlock) absorb(line string) {
+// absorb takes a line into the block and reports whether it joined the statement.
+func (b *markdownBlock) absorb(line string) bool {
 	if groups := nonTestableLine.FindStringSubmatch(line); groups != nil {
 		b.requirement.Status = domain.StatusNonTestable
 		b.justification = strings.Fields(groups[1])
 		b.statementEnded, b.inJustification = true, true
-		return
+		return false
 	}
 	text := strings.TrimSpace(line)
 	switch {
@@ -202,7 +208,9 @@ func (b *markdownBlock) absorb(line string) {
 		b.justification = append(b.justification, text)
 	case !b.statementEnded:
 		b.statement = append(b.statement, text)
+		return true
 	}
+	return false
 }
 
 func (b *markdownBlock) finish() domain.Requirement {

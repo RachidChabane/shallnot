@@ -59,3 +59,28 @@ func TestExamples(t *testing.T) {
 		}
 	})
 }
+
+func TestDetachedExamples(t *testing.T) {
+	detached := []domain.DetachedExample{{Location: domain.Location{File: specFile, Line: 12}, Text: "- Example: quote(a=1) => 0.00"}}
+
+	t.Run("a detached example is a warning at its line [verifies SN-93~1]", func(t *testing.T) {
+		result := analysis.Analyze(analysis.Input{Policy: defaultPolicy(), DetachedExamples: detached})
+		finding := expectOne(t, result, domain.CategoryDetachedExample)
+		if finding.Severity != domain.SeverityWarning || finding.Blocking || finding.Location != detached[0].Location ||
+			!strings.Contains(finding.Message, detached[0].Text) {
+			t.Fatalf("got %+v", finding)
+		}
+	})
+
+	t.Run("the severity of detached_example is configurable [verifies SN-93~1]", func(t *testing.T) {
+		policy := defaultPolicy()
+		policy.Severities[domain.CategoryDetachedExample] = domain.SeverityError
+		if result := analysis.Analyze(analysis.Input{Policy: policy, DetachedExamples: detached}); result.Verdict != domain.VerdictFail {
+			t.Fatalf("got %+v", result.Findings)
+		}
+		policy.Severities[domain.CategoryDetachedExample] = domain.SeverityOff
+		if result := analysis.Analyze(analysis.Input{Policy: policy, DetachedExamples: detached}); len(result.Findings) != 0 {
+			t.Fatalf("got %+v", result.Findings)
+		}
+	})
+}

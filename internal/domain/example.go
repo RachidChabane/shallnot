@@ -132,6 +132,12 @@ type ExampleSet struct {
 	Malformed []MalformedExample
 }
 
+// DetachedExample is a line that reads as an example but that no statement absorbed.
+type DetachedExample struct {
+	Location Location
+	Text     string
+}
+
 // markerPattern finds a marker, with its optional list bullet, at the start of
 // the statement or after whitespace.
 var markerPattern = regexp.MustCompile(`(?:^|\s)(?:[-*+]\s+)?` + regexp.QuoteMeta(ExampleMarker))

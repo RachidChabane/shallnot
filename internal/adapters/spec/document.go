@@ -19,7 +19,9 @@ const (
 type Document struct {
 	Requirements []domain.Requirement
 	OutOfScope   []domain.OutOfScope
-	Problems     []domain.SpecProblem
+	// DetachedExamples are example lines that no statement absorbed.
+	DetachedExamples []domain.DetachedExample
+	Problems         []domain.SpecProblem
 }
 
 // Format is a spec file format.
