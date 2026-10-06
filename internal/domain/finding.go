@@ -47,6 +47,7 @@ const (
 	CategoryDuplicateID
 	CategoryMalformedRequirement
 	CategoryUntaggedTest
+	CategoryUnknownDimension
 )
 
 var categoryNames = []string{
@@ -64,6 +65,7 @@ var categoryNames = []string{
 	"duplicate_id",
 	"malformed_requirement",
 	"untagged_test",
+	"unknown_dimension",
 }
 
 var categoryDefaultSeverities = map[Category]Severity{
@@ -81,6 +83,7 @@ var categoryDefaultSeverities = map[Category]Severity{
 	CategoryDuplicateID:            SeverityError,
 	CategoryMalformedRequirement:   SeverityError,
 	CategoryUntaggedTest:           SeverityInfo,
+	CategoryUnknownDimension:       SeverityWarning,
 }
 
 const categoryKind = "category"

@@ -84,8 +84,9 @@ type TestTotals struct {
 
 // Analysis is the full outcome of a run.
 type Analysis struct {
-	Rows     []Row
-	Findings []Finding
-	Tests    TestTotals
-	Verdict  Verdict
+	Rows       []Row
+	OutOfScope []OutOfScope
+	Findings   []Finding
+	Tests      TestTotals
+	Verdict    Verdict
 }

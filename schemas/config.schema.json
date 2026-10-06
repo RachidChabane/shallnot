@@ -198,6 +198,14 @@
             "warning",
             "error"
           ]
+        },
+        "unknown_dimension": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
         }
       },
       "additionalProperties": false

@@ -201,6 +201,11 @@ The requirements of shallnot itself, in its own Markdown spec format.
   declaration at its line, report each unreadable one as a
   `malformed_requirement` finding without failing the run, and publish the
   key in the YAML spec schema.
+- **SN-97~1**: WHEN an out-of-scope declaration names a dimension outside the
+  closed list of error handling, boundaries, permissions, concurrency,
+  compatibility, input validation, time and locale, and state and
+  persistence THE SYSTEM SHALL report an `unknown_dimension` finding at its
+  line, a warning unless configured otherwise.
 
 ## Architecture
 

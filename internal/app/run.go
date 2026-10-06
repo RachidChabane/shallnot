@@ -48,6 +48,7 @@ func Run(settings Settings) (Outcome, error) {
 			return Outcome{}, err
 		}
 		input.SpecProblems = append(input.SpecProblems, document.Problems...)
+		input.OutOfScope = append(input.OutOfScope, document.OutOfScope...)
 		for _, requirement := range document.Requirements {
 			input.Requirements = append(input.Requirements, analysis.FocusedRequirement{
 				Requirement: requirement,

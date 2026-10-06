@@ -5,6 +5,7 @@ package analysis
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/RachidChabane/shallnot/internal/domain"
 )
@@ -19,6 +20,7 @@ type FocusedRequirement struct {
 type Input struct {
 	Requirements []FocusedRequirement
 	SpecProblems []domain.SpecProblem
+	OutOfScope   []domain.OutOfScope
 	SourceTags   []domain.SourceTag
 	TestCases    []domain.TestCase
 	Policy       domain.Policy
@@ -40,6 +42,7 @@ func Analyze(input Input) domain.Analysis {
 	}
 	rows := a.indexRequirements()
 	a.reportSpecProblems()
+	outOfScope := a.settleOutOfScope()
 	matchedSources := a.bindTestCases()
 	a.bindUnmatchedSourceTags(matchedSources)
 	for index := range rows {
@@ -47,10 +50,11 @@ func Analyze(input Input) domain.Analysis {
 	}
 	sortFindings(a.findings)
 	return domain.Analysis{
-		Rows:     rows,
-		Findings: a.findings,
-		Tests:    a.testTotals(),
-		Verdict:  verdictOf(a.findings),
+		Rows:       rows,
+		OutOfScope: outOfScope,
+		Findings:   a.findings,
+		Tests:      a.testTotals(),
+		Verdict:    verdictOf(a.findings),
 	}
 }
 
@@ -105,6 +109,24 @@ func (a *analyzer) reportSpecProblems() {
 			Message:  problem.Message,
 		})
 	}
+}
+
+// settleOutOfScope orders the out-of-scope declarations and reports those naming a dimension outside the closed list.
+func (a *analyzer) settleOutOfScope() []domain.OutOfScope {
+	declared := append([]domain.OutOfScope(nil), a.input.OutOfScope...)
+	sort.SliceStable(declared, func(i, j int) bool { return locationLess(declared[i].Location, declared[j].Location) })
+	for _, declaration := range declared {
+		if domain.IsKnownDimension(declaration.Dimension) {
+			continue
+		}
+		a.report(domain.Finding{
+			Category: domain.CategoryUnknownDimension,
+			Location: declaration.Location,
+			Message: fmt.Sprintf("out-of-scope dimension %q is not one of %s",
+				declaration.Dimension, strings.Join(domain.Dimensions(), ", ")),
+		})
+	}
+	return declared
 }
 
 // bindTestCases binds every results test case to the requirements it validly

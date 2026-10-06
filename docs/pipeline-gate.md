@@ -209,6 +209,7 @@ go to the pipeline.
 | `unjustified_non_testable` | Spec owner | Write the justification, or make the requirement `active`. |
 | `duplicate_id` | Spec owner | Give one of the requirements another ID. |
 | `malformed_requirement` | Spec owner | Fix the declaration (revision, statement, YAML keys). |
+| `unknown_dimension` | Spec owner | Name one of the dimensions of [the closed list](spec-format.md#out-of-scope-declarations), or remove the declaration. |
 | `untagged_test` (blocking under `strict`) | Implementing agent | Tag the test with the requirement it verifies. A test that verifies no stated requirement is a sign of work outside the spec: report it rather than inventing a citation. |
 
 **Prohibitions, whatever the category.** Each of these turns the report green

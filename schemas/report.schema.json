@@ -440,7 +440,8 @@
             "bound_non_testable",
             "duplicate_id",
             "malformed_requirement",
-            "untagged_test"
+            "untagged_test",
+            "unknown_dimension"
           ]
         },
         "severity": {
