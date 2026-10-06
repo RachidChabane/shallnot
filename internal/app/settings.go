@@ -20,7 +20,9 @@ type Settings struct {
 	UseDefaultExcludes bool
 	// Commit identifies the code the results were produced from, when the caller knows it.
 	Commit string
-	Policy domain.Policy
+	// Baseline is the path of an earlier JSON report whose statement digests this run compares against, or "".
+	Baseline string
+	Policy   domain.Policy
 }
 
 // DefaultSettings returns the options of a run that configures nothing.

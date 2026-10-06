@@ -50,6 +50,7 @@ const (
 	CategoryUnknownDimension
 	CategoryMalformedExample
 	CategoryDetachedExample
+	CategoryStatementChanged
 )
 
 var categoryNames = []string{
@@ -70,6 +71,7 @@ var categoryNames = []string{
 	"unknown_dimension",
 	"malformed_example",
 	"detached_example",
+	"statement_changed",
 }
 
 var categoryDefaultSeverities = map[Category]Severity{
@@ -90,6 +92,7 @@ var categoryDefaultSeverities = map[Category]Severity{
 	CategoryUnknownDimension:       SeverityWarning,
 	CategoryMalformedExample:       SeverityWarning,
 	CategoryDetachedExample:        SeverityWarning,
+	CategoryStatementChanged:       SeverityWarning,
 }
 
 const categoryKind = "category"

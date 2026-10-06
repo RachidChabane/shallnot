@@ -27,6 +27,7 @@ func (l *stringList) Set(value string) error {
 type checkFlags struct {
 	configPath        string
 	commit            string
+	baseline          string
 	noConfig          bool
 	idPattern         string
 	specs             stringList
@@ -63,6 +64,7 @@ func newCheckFlagSet(command string, flags *checkFlags, stderr io.Writer) *flag.
 	set.BoolVar(&flags.noDefaultExcludes, "no-default-excludes", false, "scan dependency and build directories too")
 	set.Var(&flags.severities, "severity", "override as `category=severity` (repeatable)")
 	set.StringVar(&flags.commit, "commit", "", "commit the results were produced from, recorded in the reports (default: $"+strings.Join(commitVariables, ", else $")+")")
+	set.StringVar(&flags.baseline, "baseline", "", "earlier JSON report `file`: a requirement whose statement changed since, at the same revision, is reported")
 	set.BoolVar(&flags.advisory, "advisory", false, "report everything but always exit 0")
 	set.BoolVar(&flags.strict, "strict", false, "treat untagged tests as errors")
 	set.StringVar(&flags.failOn, "fail-on", "", "lowest blocking `severity`: error, warning or info")
@@ -160,6 +162,7 @@ func resolveSettings(flags checkFlags) (app.Settings, error) {
 		settings.UseDefaultExcludes = false
 	}
 	settings.Commit = commitOf(flags.commit, os.Getenv)
+	settings.Baseline = flags.baseline
 	if flags.advisory {
 		settings.Policy.Advisory = true
 	}

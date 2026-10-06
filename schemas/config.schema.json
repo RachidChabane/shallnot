@@ -222,6 +222,14 @@
             "warning",
             "error"
           ]
+        },
+        "statement_changed": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
         }
       },
       "additionalProperties": false

@@ -22,9 +22,11 @@ type Input struct {
 	SpecProblems     []domain.SpecProblem
 	OutOfScope       []domain.OutOfScope
 	DetachedExamples []domain.DetachedExample
-	SourceTags       []domain.SourceTag
-	TestCases        []domain.TestCase
-	Policy           domain.Policy
+	// Baseline holds the statement digest of each reference of an earlier report; nil when the run has none.
+	Baseline   map[domain.Ref]string
+	SourceTags []domain.SourceTag
+	TestCases  []domain.TestCase
+	Policy     domain.Policy
 }
 
 type analyzer struct {
@@ -49,6 +51,7 @@ func Analyze(input Input) domain.Analysis {
 	a.bindUnmatchedSourceTags(matchedSources)
 	for index := range rows {
 		a.settleRow(&rows[index])
+		a.reportStatementChange(rows[index].Requirement)
 	}
 	sortFindings(a.findings)
 	return domain.Analysis{
@@ -355,6 +358,30 @@ func (a *analyzer) settleRow(row *domain.Row) {
 	if row.InFocus {
 		a.reportCoverageGap(*row)
 	}
+}
+
+// reportStatementChange reports a requirement whose statement differs from the baseline's under the same reference.
+func (a *analyzer) reportStatementChange(requirement domain.Requirement) {
+	before, inBaseline := a.input.Baseline[requirement.Ref()]
+	now := requirement.StatementDigest()
+	if !inBaseline || before == now {
+		return
+	}
+	a.report(domain.Finding{
+		Category:      domain.CategoryStatementChanged,
+		RequirementID: requirement.ID,
+		Location:      requirement.Location,
+		Message: fmt.Sprintf("the statement of %s changed since the baseline although its revision did not (digest %s, was %s): bump the revision if the meaning changed",
+			requirement.Ref(), abbreviate(now), abbreviate(before)),
+	})
+}
+
+func abbreviate(digest string) string {
+	const shown = 12
+	if len(digest) <= shown {
+		return digest
+	}
+	return digest[:shown]
 }
 
 func (a *analyzer) settleNonTestable(row domain.Row) {

@@ -470,7 +470,8 @@
             "untagged_test",
             "unknown_dimension",
             "malformed_example",
-            "detached_example"
+            "detached_example",
+            "statement_changed"
           ]
         },
         "severity": {

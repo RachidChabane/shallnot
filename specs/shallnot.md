@@ -225,6 +225,12 @@ The requirements of shallnot itself, in its own Markdown spec format.
 - **SN-98~1**: THE JSON report SHALL list the out-of-scope declarations of
   every known spec, with spec file, line, dimension and reason, ordered by
   file and line, an empty list when there are none.
+- **SN-99~1**: WHEN given `--baseline` with an earlier JSON report of schema
+  version 1.2 or later THE SYSTEM SHALL report a `statement_changed` finding
+  for each requirement whose statement digest differs from the baseline's at
+  the same `ID~REVISION`, a warning unless configured otherwise, and SHALL
+  exit 2 without a report when the baseline cannot be read or holds no
+  statement digests.
 
 ## Architecture
 

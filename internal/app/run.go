@@ -8,6 +8,7 @@ import (
 
 	"github.com/bmatcuk/doublestar/v4"
 
+	"github.com/RachidChabane/shallnot/internal/adapters/baseline"
 	"github.com/RachidChabane/shallnot/internal/adapters/junitxml"
 	"github.com/RachidChabane/shallnot/internal/adapters/scan"
 	"github.com/RachidChabane/shallnot/internal/adapters/spec"
@@ -40,6 +41,11 @@ func Run(settings Settings) (Outcome, error) {
 	}
 
 	input := analysis.Input{Policy: settings.Policy}
+	if settings.Baseline != "" {
+		if input.Baseline, err = baseline.Read(settings.Baseline); err != nil {
+			return Outcome{}, err
+		}
+	}
 	focus := focusRule{files: absoluteSet(focusFiles), idPatterns: focusMatchers}
 	loader := spec.NewLoader(ids)
 	for _, file := range specFiles {

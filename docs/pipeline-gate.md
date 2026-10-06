@@ -211,6 +211,7 @@ go to the pipeline.
 | `malformed_requirement` | Spec owner | Fix the declaration (revision, statement, YAML keys). |
 | `malformed_example` | Spec owner | Rewrite the example in the [example grammar](spec-format.md#inline-examples), or move the text after its outcome out of the statement's examples. |
 | `detached_example` | Spec owner | Move the example into the statement it belongs to: directly under the statement, with no blank line, and before any `Non-testable:` line. |
+| `statement_changed` | Spec owner | If the meaning changed, bump the revision so that the tests are re-verified. If only the wording changed, nothing: the finding stays a warning, and the next baseline carries the new digest. |
 | `unknown_dimension` | Spec owner | Name one of the dimensions of [the closed list](spec-format.md#out-of-scope-declarations), or remove the declaration. |
 | `untagged_test` (blocking under `strict`) | Implementing agent | Tag the test with the requirement it verifies. A test that verifies no stated requirement is a sign of work outside the spec: report it rather than inventing a citation. |
 
@@ -327,6 +328,35 @@ FINDINGS
 This is the mechanism by which a spec edit forces re-verification: the
 implementing agent must re-check that the test proves the new statement
 before updating the tag to `~2`, not merely bump the number in the tag.
+
+## Statement edits without a revision bump
+
+A revision bump is a person's claim that the meaning changed. An edit that
+changes the meaning without the bump leaves every tag resolving and every test
+green, so nothing in a single run notices it. Every report carries the
+`statement_digest` of each requirement, and `--baseline` compares a run with
+an earlier report:
+
+```
+$ shallnot check --baseline base-report.json
+...
+FINDINGS
+  warning  statement_changed  plans/ABC-101.md:10  the statement of ABC-101.AC1~1 changed since the baseline although its revision did not (digest 76a9d9bd1a32, was 0c1f5e2a99b4): bump the revision if the meaning changed
+```
+
+The baseline is the report of the commit the change is measured from: in a
+pull request pipeline, the report of the target branch, stored as a build
+artifact. Reformatting (wrapping, indentation, whitespace, line endings) keeps
+the digest, and a requirement whose revision was bumped has no entry at its
+new reference, so neither raises the finding. The finding is a warning by
+default, because a wording fix is legitimate; set
+`severities: {statement_changed: error}` to make an unacknowledged edit block.
+There is no baseline file to commit and no command to acknowledge a change: a
+fresh report of the target branch is the baseline.
+
+A baseline that cannot be read, that is not a shallnot report, or that comes
+from a version before report schema 1.2 (no statement digests) is a tool
+failure (exit 2), never an empty comparison.
 
 ## GitHub Actions
 
