@@ -8,7 +8,7 @@ Install with `go install github.com/RachidChabane/shallnot/cmd/shallnot@latest` 
 
 - [README](https://raw.githubusercontent.com/RachidChabane/shallnot/main/README.md): what it is, install, first use
 - [Equipping agents](https://raw.githubusercontent.com/RachidChabane/shallnot/main/docs/agents.md): `shallnot init`, end-of-turn hooks, the plugin
-- [Spec format](https://raw.githubusercontent.com/RachidChabane/shallnot/main/docs/spec-format.md): the requirement model, Markdown and YAML specs
+- [Spec format](https://raw.githubusercontent.com/RachidChabane/shallnot/main/docs/spec-format.md): the requirement model, statement digest, inline examples, out-of-scope declarations, Markdown and YAML specs
 - [Binding tests](https://raw.githubusercontent.com/RachidChabane/shallnot/main/docs/binding.md): where the tag goes for each test runner
 - [Configuration](https://raw.githubusercontent.com/RachidChabane/shallnot/main/docs/configuration.md): `shallnot.yaml`, flags, severities, exit codes
 - [JSON report](https://raw.githubusercontent.com/RachidChabane/shallnot/main/docs/report.md): the versioned report, every field, state and finding category

@@ -97,6 +97,8 @@ you the blocking findings. Treat that message exactly like a blocked gate.
 | `malformed_tag` | The tag cannot be read. | Write it as `[verifies ID~REVISION]`. |
 | `unjustified_non_testable`, `duplicate_id`, `malformed_requirement` | The spec is defective. | Report it to the spec's owner, or fix the spec if you own it. |
 | `bound_non_testable` | A test cites a requirement marked non-testable. | Report it: either the requirement is testable after all, or the tag is wrong. |
+| `malformed_example`, `detached_example`, `unknown_dimension` | An inline example or an out-of-scope declaration in the spec is unreadable, misplaced or names an unknown dimension. | Report it to the spec's owner, or fix the spec if you own it. |
+| `statement_changed` | A requirement's statement was edited without a revision bump (only under `--baseline`). | Report it to the spec's owner: the meaning changed and the revision must be bumped, or the edit is a wording fix. Never bump the revision yourself to silence it. |
 | `untagged_test` | A test cites no requirement. | Information. Tag it if it verifies a stated requirement; otherwise leave it. |
 
 ### Prohibitions

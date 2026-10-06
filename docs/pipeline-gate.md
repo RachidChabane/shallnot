@@ -213,7 +213,7 @@ go to the pipeline.
 | `detached_example` | Spec owner | Move the example into the statement it belongs to: directly under the statement, with no blank line, and before any `Non-testable:` line. |
 | `statement_changed` | Spec owner | If the meaning changed, bump the revision so that the tests are re-verified. If only the wording changed, nothing: the finding stays a warning, and the next baseline carries the new digest. |
 | `unknown_dimension` | Spec owner | Name one of the dimensions of [the closed list](spec-format.md#out-of-scope-declarations), or remove the declaration. |
-| `untagged_test` (blocking under `strict`) | Implementing agent | Tag the test with the requirement it verifies. A test that verifies no stated requirement is a sign of work outside the spec: report it rather than inventing a citation. |
+| `untagged_test` (blocking in strict mode) | Implementing agent | Tag the test with the requirement it verifies. A test that verifies no stated requirement is a sign of work outside the spec: report it rather than inventing a citation. |
 
 **Prohibitions, whatever the category.** Each of these turns the report green
 without making the software correct, and destroys the evidence the verdict

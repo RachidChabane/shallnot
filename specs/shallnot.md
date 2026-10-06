@@ -231,6 +231,8 @@ The requirements of shallnot itself, in its own Markdown spec format.
   the same `ID~REVISION`, a warning unless configured otherwise, and SHALL
   exit 2 without a report when the baseline cannot be read or holds no
   statement digests.
+- **SN-100~1**: THE documentation SHALL name exactly the finding categories,
+  the out-of-scope dimensions and the `check` flags the code defines.
 
 ## Architecture
 
