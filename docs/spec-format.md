@@ -170,6 +170,65 @@ judged in review
 (with the é as the single code point U+00E9) and the digest
 `fb5d98a4e05198d766d7221961a6c0b2b37645dbc57a0e52a44f46a74ce56c3c`.
 
+## Inline examples
+
+A statement may end with examples: concrete calls and the outcome they must
+give. They are optional. The report lists them in `requirements[].examples`
+(see [report.md](report.md#example-object)); no model reads them.
+
+```markdown
+- **PARK-2~1**: WHEN a stay lasts 15 minutes or less THE SYSTEM SHALL charge 0.00.
+  - Example: quote(entry=2026-03-02T10:00, exit=2026-03-02T10:15) => 0.00
+  - Example: quote(entry=2026-03-02T10:00, exit=2026-03-02T10:00) => 0.00
+```
+
+### Extraction
+
+Examples are read from the joined statement, in every spec format. A
+*marker* is `Example:` at the start of the statement or after whitespace,
+optionally preceded by a list bullet (`-`, `*` or `+`) and a space. The
+statement is split at each marker: the text before the first marker is the
+prose, and the text after each marker, up to the next marker or the end, is
+one example. Examples therefore come last: text after an example's outcome
+belongs to that example, and makes it malformed.
+
+Because the statement is joined first, Markdown sub-bullets, a YAML folded
+scalar (`>`) and a YAML literal scalar (`|`) give the same examples. A string
+literal cannot contain the marker. The statement, and so its digest, is not
+changed by extraction: an example is statement text, and editing one changes
+the digest.
+
+The `index` of an example is its 1-based position among the markers of the
+statement. A malformed segment keeps its position, so the indexes of the
+valid examples do not move when another one is fixed.
+
+### Grammar
+
+```
+example   := call "=>" outcome
+call      := operation "(" [ argument { "," argument } ] ")"
+argument  := name "=" literal
+outcome   := literal | "raises" Name
+literal   := datetime | decimal | integer | "true" | "false" | "null" | string
+```
+
+Spaces and tabs may surround every token. `operation`, `name` and `Name` are
+identifiers: a letter or `_`, then letters, digits or `_`, ASCII only. The
+argument names of one call are distinct.
+
+| Literal | Written as | `type` | `value` in the report |
+|---|---|---|---|
+| datetime | ISO-8601 date and time with a `T`: `2026-03-02T10:00`, optional seconds, fraction and `Z` or `+hh:mm` offset; the date and the time must exist | `datetime` | as written |
+| decimal | optional `-`, digits, `.`, digits: `0.00`, `-12.50` | `decimal` | as written, so `0.00` stays `0.00` |
+| integer | optional `-`, digits | `integer` | as written |
+| boolean | `true` or `false` | `boolean` | as written |
+| null | `null` | `null` | `null` |
+| string | between double quotes; `\"`, `\\`, `\n` and `\t` are the escapes | `string` | the content, unquoted and unescaped |
+
+An outcome of `raises Name` has `kind` `raises` and a `value` of `Name` typed
+`name`; any other outcome has `kind` `returns`. A segment outside the grammar
+is reported as `malformed_example` (a warning); it is never an example.
+
 ## Markdown spec
 
 A Markdown spec is prose. Requirements are embedded as **declarations**: a

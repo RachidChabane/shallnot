@@ -180,6 +180,16 @@ The requirements of shallnot itself, in its own Markdown spec format.
 - **SN-88~1**: WHEN a requirement is declared as a Markdown list item, as a
   Markdown heading, or in YAML with a folded or a literal scalar, THE SYSTEM
   SHALL give the same requirement the same statement digest.
+- **SN-90~1**: WHEN a joined statement holds markers `Example:` THE SYSTEM
+  SHALL take the text before the first marker as the prose and the text
+  after each marker, up to the next, as one example, whichever format
+  declared the statement, and SHALL leave the statement digest computed over
+  the whole statement.
+- **SN-91~1**: WHEN an example is a call of a named operation with typed
+  arguments, followed by `=>` and either a typed value or `raises` and an
+  exception name, THE SYSTEM SHALL read its operation, its arguments and its
+  expected outcome, where the types are datetime, decimal, integer, boolean,
+  null and string.
 
 ## Architecture
 
