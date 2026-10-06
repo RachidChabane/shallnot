@@ -397,8 +397,9 @@ unknown requirement, and a malformed tag) each raise an error finding.
 
 ## YAML spec
 
-A YAML spec is a mapping with one key, `requirements`, a list of mappings.
-Each item accepts these keys:
+A YAML spec is a mapping with the key `requirements`, a list of mappings, and
+optionally the key `out_of_scope` (see [Out-of-scope
+declarations](#out-of-scope-declarations)). Each requirement accepts these keys:
 
 | Key             | Type    | Default   |
 |-----------------|---------|-----------|
@@ -418,10 +419,25 @@ unrecognised `status`, or a missing `id`/`statement`, is not added as a
 requirement: it is reported as a `malformed_requirement` problem at that
 item's line, and the run continues with the rest of the file.
 
+In YAML, an out-of-scope declaration is an item of the top-level `out_of_scope`
+list, a mapping with the keys `dimension` and `reason`, both non-empty
+scalars:
+
+```yaml
+out_of_scope:
+  - dimension: concurrency
+    reason: a cart has one writer
+```
+
+An item that is not a mapping, that has another key, a non-scalar value or a
+missing or empty `dimension` or `reason`, is not recorded: it is reported as a
+`malformed_requirement` problem at that item's line, and so is an
+`out_of_scope` that is not a list. Any top-level key other than
+`requirements` and `out_of_scope` is reported the same way.
+
 A document that fails to parse as YAML, or that parses but is not a mapping
-with a `requirements` list (for example a bare list, or a mapping missing
-that key), is a tool failure: `shallnot check` exits 2 and produces no
-report.
+(for example a bare list), or whose `requirements` is not a list, is a tool
+failure: `shallnot check` exits 2 and produces no report.
 
 ### YAML example
 
@@ -564,6 +580,8 @@ justification too; the line itself is never absorbed into a statement or a
 justification, and the lines after it, up to the next blank line, belong to
 neither. A declaration with an empty dimension or an empty reason is not
 recorded: it is reported as a `malformed_requirement` problem at its line.
+In a YAML spec the same declaration is an item of the top-level
+`out_of_scope` list, described with the [YAML spec](#yaml-spec).
 
 ## Spec paths
 

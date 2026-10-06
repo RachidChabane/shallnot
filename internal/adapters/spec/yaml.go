@@ -20,6 +20,9 @@ const (
 	keyStatement     = "statement"
 	keyStatus        = "status"
 	keyJustification = "justification"
+	keyOutOfScope    = "out_of_scope"
+	keyDimension     = "dimension"
+	keyReason        = "reason"
 )
 
 // YAMLParser reads the YAML spec format.
@@ -49,23 +52,73 @@ func (p YAMLParser) Parse(reader io.Reader, displayPath string) (Document, error
 	mapping := root.Content[0]
 	for index := 0; index+1 < len(mapping.Content); index += 2 {
 		key, value := mapping.Content[index], mapping.Content[index+1]
-		if key.Value != keyRequirements {
-			problem(key, "unknown key %q (a YAML spec has one key, %q)", key.Value, keyRequirements)
-			continue
-		}
-		if value.Kind != yaml.SequenceNode {
-			return Document{}, fmt.Errorf("%s:%d: %q must be a list", displayPath, value.Line, keyRequirements)
-		}
-		for _, item := range value.Content {
-			if requirement, ok := p.parseItem(item, displayPath, problem); ok {
-				document.Requirements = append(document.Requirements, requirement)
+		switch key.Value {
+		case keyRequirements:
+			if value.Kind != yaml.SequenceNode {
+				return Document{}, fmt.Errorf("%s:%d: %q must be a list", displayPath, value.Line, keyRequirements)
 			}
+			for _, item := range value.Content {
+				if requirement, ok := p.parseItem(item, displayPath, problem); ok {
+					document.Requirements = append(document.Requirements, requirement)
+				}
+			}
+		case keyOutOfScope:
+			document.OutOfScope = append(document.OutOfScope, parseOutOfScope(value, displayPath, problem)...)
+		default:
+			problem(key, "unknown key %q (a YAML spec has the keys %q and %q)", key.Value, keyRequirements, keyOutOfScope)
 		}
 	}
 	return document, nil
 }
 
 type problemFunc func(node *yaml.Node, format string, args ...any)
+
+// parseOutOfScope reads the list of out-of-scope declarations, reporting each unreadable item.
+func parseOutOfScope(list *yaml.Node, displayPath string, problem problemFunc) []domain.OutOfScope {
+	if list.Kind != yaml.SequenceNode {
+		problem(list, "%q must be a list", keyOutOfScope)
+		return nil
+	}
+	var declarations []domain.OutOfScope
+	for _, item := range list.Content {
+		if declaration, ok := parseOutOfScopeItem(item, displayPath, problem); ok {
+			declarations = append(declarations, declaration)
+		}
+	}
+	return declarations
+}
+
+func parseOutOfScopeItem(item *yaml.Node, displayPath string, problem problemFunc) (domain.OutOfScope, bool) {
+	if item.Kind != yaml.MappingNode {
+		problem(item, "an out-of-scope declaration must be a mapping")
+		return domain.OutOfScope{}, false
+	}
+	declaration := domain.OutOfScope{Location: domain.Location{File: displayPath, Line: item.Line}}
+	valid := true
+	for index := 0; index+1 < len(item.Content); index += 2 {
+		key, value := item.Content[index], item.Content[index+1]
+		if value.Kind != yaml.ScalarNode {
+			problem(value, "%q must be a scalar", key.Value)
+			valid = false
+			continue
+		}
+		text := strings.Join(strings.Fields(value.Value), " ")
+		switch key.Value {
+		case keyDimension:
+			declaration.Dimension = text
+		case keyReason:
+			declaration.Reason = text
+		default:
+			problem(key, "unknown key %q in an out-of-scope declaration", key.Value)
+			valid = false
+		}
+	}
+	if message := outOfScopeProblem(declaration); valid && message != "" {
+		problem(item, "%s", message)
+		valid = false
+	}
+	return declaration, valid
+}
 
 func (p YAMLParser) parseItem(item *yaml.Node, displayPath string, problem problemFunc) (domain.Requirement, bool) {
 	if item.Kind != yaml.MappingNode {

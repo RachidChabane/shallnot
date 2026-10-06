@@ -196,6 +196,11 @@ The requirements of shallnot itself, in its own Markdown spec format.
   an out-of-scope declaration, end the open statement or justification before
   it, and never absorb it into one; WHEN the dimension or the reason is
   missing it SHALL report a `malformed_requirement` finding at the line.
+- **SN-96~1**: WHEN a YAML spec holds a top-level `out_of_scope` list of
+  dimension and reason pairs THE SYSTEM SHALL record each as an out-of-scope
+  declaration at its line, report each unreadable one as a
+  `malformed_requirement` finding without failing the run, and publish the
+  key in the YAML spec schema.
 
 ## Architecture
 

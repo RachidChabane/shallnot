@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"testing"
@@ -135,6 +136,31 @@ func TestSchemasDescribeTheInputs(t *testing.T) {
 		}
 		if err := validateYAML(t, schemas.Spec, "../internal/adapters/spec/testdata/spec.yaml"); err == nil {
 			t.Error("a spec with unreadable requirements was accepted")
+		}
+	})
+
+	t.Run("the spec schema accepts out-of-scope declarations and refuses unreadable ones [verifies SN-96~1]", func(t *testing.T) {
+		accepted := "requirements:\n  - id: CART-1\n    statement: THE SYSTEM SHALL total.\nout_of_scope:\n  - dimension: concurrency\n    reason: one writer\n"
+		refused := map[string]string{
+			"no reason":    "requirements: []\nout_of_scope:\n  - dimension: concurrency\n",
+			"extra key":    "requirements: []\nout_of_scope:\n  - dimension: concurrency\n    reason: x\n    more: y\n",
+			"not a list":   "requirements: []\nout_of_scope: concurrency\n",
+			"empty reason": "requirements: []\nout_of_scope:\n  - dimension: concurrency\n    reason: ''\n",
+		}
+		write := func(text string) string {
+			path := filepath.Join(t.TempDir(), "spec.yaml")
+			if err := os.WriteFile(path, []byte(text), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			return path
+		}
+		if err := validateYAML(t, schemas.Spec, write(accepted)); err != nil {
+			t.Error(err)
+		}
+		for name, text := range refused {
+			if err := validateYAML(t, schemas.Spec, write(text)); err == nil {
+				t.Errorf("%s was accepted", name)
+			}
 		}
 	})
 }

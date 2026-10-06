@@ -48,6 +48,30 @@
         ],
         "additionalProperties": false
       }
+    },
+    "out_of_scope": {
+      "type": "array",
+      "description": "Aspects of the feature the spec deliberately leaves out.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "dimension": {
+            "type": "string",
+            "description": "A dimension of the completeness checklist: error_handling, boundaries, permissions, concurrency, compatibility, input_validation, time_and_locale or state_and_persistence. Another value is reported as unknown_dimension.",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "description": "Why the dimension is out of scope.",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "dimension",
+          "reason"
+        ],
+        "additionalProperties": false
+      }
     }
   },
   "required": [
