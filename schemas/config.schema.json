@@ -206,6 +206,14 @@
             "warning",
             "error"
           ]
+        },
+        "malformed_example": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
         }
       },
       "additionalProperties": false

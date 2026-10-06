@@ -96,9 +96,28 @@ func (a *analyzer) indexRequirements() []domain.Row {
 			continue
 		}
 		a.known[requirement.ID] = candidate
-		rows = append(rows, domain.Row{Requirement: requirement, InFocus: candidate.InFocus})
+		rows = append(rows, domain.Row{
+			Requirement: requirement,
+			Examples:    a.readExamples(requirement),
+			InFocus:     candidate.InFocus,
+		})
 	}
 	return rows
+}
+
+// readExamples returns the examples of a statement and reports each segment the grammar rejects.
+func (a *analyzer) readExamples(requirement domain.Requirement) []domain.Example {
+	set := domain.ParseExamples(requirement.Statement)
+	for _, malformed := range set.Malformed {
+		a.report(domain.Finding{
+			Category:      domain.CategoryMalformedExample,
+			RequirementID: requirement.ID,
+			Location:      requirement.Location,
+			Message: fmt.Sprintf("requirement %s: example %d is malformed (%s): %s",
+				requirement.ID, malformed.Index, malformed.Reason, malformed.Text),
+		})
+	}
+	return set.Examples
 }
 
 func (a *analyzer) reportSpecProblems() {

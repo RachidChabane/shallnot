@@ -203,6 +203,7 @@ are the defaults.
 | `duplicate_id` | error | the later declaration | no | The same requirement ID is declared more than once across the known specs. |
 | `malformed_requirement` | error | the offending line | no | A spec declaration is invalid: bad revision, empty statement (Markdown), or an invalid key/value (YAML). |
 | `untagged_test` | info | the results file | no | A test case in the results carries no `[verifies ...]` tag and no `verifies` property. |
+| `malformed_example` | warning | requirement declaration | no | A segment after an `Example:` marker of a requirement's statement is outside the [example grammar](spec-format.md#inline-examples), or holds text after its outcome. The segment is not an example. |
 | `unknown_dimension` | warning | the out-of-scope declaration | no | An out-of-scope declaration names a dimension outside the closed list of [spec-format.md](spec-format.md#out-of-scope-declarations). The declaration is still recorded. |
 
 What to do about each category, and who owns the action, is specified once, in the

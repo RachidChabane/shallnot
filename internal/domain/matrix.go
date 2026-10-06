@@ -48,9 +48,11 @@ type BoundTest struct {
 // Row is one line of the coverage matrix.
 type Row struct {
 	Requirement Requirement
-	InFocus     bool
-	Coverage    Coverage
-	Tests       []BoundTest
+	// Examples are the well-formed inline examples of the requirement's statement.
+	Examples []Example
+	InFocus  bool
+	Coverage Coverage
+	Tests    []BoundTest
 }
 
 // Verdict is the gate's decision.

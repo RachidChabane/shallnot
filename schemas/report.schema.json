@@ -441,7 +441,8 @@
             "duplicate_id",
             "malformed_requirement",
             "untagged_test",
-            "unknown_dimension"
+            "unknown_dimension",
+            "malformed_example"
           ]
         },
         "severity": {
