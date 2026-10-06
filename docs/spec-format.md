@@ -527,6 +527,44 @@ The Markdown and YAML specs declare the same requirements, so the two runs
 produce the same coverage matrix and the same findings, differing only in
 the spec file path and line numbers.
 
+## Out-of-scope declarations
+
+A spec may say which aspects of its feature it deliberately leaves out. A
+declaration names one *dimension* of the closed list below and gives a
+reason. The report lists the declarations in `out_of_scope` (see
+[report.md](report.md#out-of-scope-object)); a tool that asks what a spec
+forgot reads them to know what it did not.
+
+| Dimension | Aspect left out |
+|---|---|
+| `error_handling` | Failures, error messages, recovery. |
+| `boundaries` | Limits, minimums, maximums, empty and full cases. |
+| `permissions` | Who may do what. |
+| `concurrency` | Simultaneous use, ordering, races. |
+| `compatibility` | Versions, platforms, formats, older data. |
+| `input_validation` | Malformed or hostile input. |
+| `time_and_locale` | Time zones, clocks, languages, currencies. |
+| `state_and_persistence` | What is stored, kept or lost between runs. |
+
+A dimension outside this list is reported as `unknown_dimension` (a warning);
+the declaration is still recorded.
+
+In Markdown, a declaration is a line that reads, case-insensitively, after
+an optional list marker and optional `**` or `__` emphasis,
+
+```
+Out of scope (<dimension>): <reason>
+```
+
+The reason is the rest of the line, on that line only. Lines inside fenced
+code blocks are never declarations, and a heading is not one. A declaration
+may sit anywhere else: inside a requirement's block or between blocks. Like
+`Non-testable:`, it ends the statement that is open before it, and the
+justification too; the line itself is never absorbed into a statement or a
+justification, and the lines after it, up to the next blank line, belong to
+neither. A declaration with an empty dimension or an empty reason is not
+recorded: it is reported as a `malformed_requirement` problem at its line.
+
 ## Spec paths
 
 `--specs` (known specs) and `--focus` (specs a run demands coverage for) are

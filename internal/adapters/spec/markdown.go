@@ -21,6 +21,7 @@ var (
 	heading          = regexp.MustCompile(`^\s*#{1,6}\s`)
 	nonTestableLine  = regexp.MustCompile(`(?i)^\s*(?:[-*+]\s+)?(?:\*\*|__)?non[-_ ]testable(?:\*\*|__)?\s*:?\s*(?:\*\*|__)?\s*(.*)$`)
 	trailingEmphasis = regexp.MustCompile(`^(?:\*\*|__)\s*`)
+	outOfScopeLine   = regexp.MustCompile(`(?i)^\s*(?:[-*+]\s+)?(?:\*\*|__)?out[ _-]of[ _-]scope\s*\(([^()]*)\)\s*(?:\*\*|__)?\s*:\s*(?:\*\*|__)?\s*(.*)$`)
 )
 
 // MarkdownParser finds requirement declarations embedded in Markdown prose.
@@ -41,6 +42,12 @@ const (
 	groupSeparator
 	groupRevision
 	groupRest
+)
+
+// Out-of-scope line capture groups.
+const (
+	groupOutOfScopeDimension = iota + 1
+	groupOutOfScopeReason
 )
 
 type markdownBlock struct {
@@ -81,6 +88,18 @@ func (p MarkdownParser) Parse(reader io.Reader, displayPath string) (Document, e
 			continue
 		}
 		if inFence {
+			continue
+		}
+		if groups := outOfScopeLine.FindStringSubmatch(line); groups != nil {
+			if current != nil {
+				current.endText()
+			}
+			declaration, problem := newOutOfScope(groups, domain.Location{File: displayPath, Line: lineNumber})
+			if problem != nil {
+				document.Problems = append(document.Problems, *problem)
+			} else {
+				document.OutOfScope = append(document.OutOfScope, declaration)
+			}
 			continue
 		}
 		if groups := p.declaration.FindStringSubmatch(line); groups != nil {
@@ -136,6 +155,35 @@ func newMarkdownBlock(groups []string, location domain.Location) (*markdownBlock
 		block.statement = append(block.statement, rest)
 	}
 	return block, nil
+}
+
+// newOutOfScope reads an out-of-scope line's dimension and reason.
+func newOutOfScope(groups []string, location domain.Location) (domain.OutOfScope, *domain.SpecProblem) {
+	declaration := domain.OutOfScope{
+		Location:  location,
+		Dimension: strings.TrimSpace(groups[groupOutOfScopeDimension]),
+		Reason:    strings.Join(strings.Fields(trailingEmphasisMarker(groups[groupOutOfScopeReason])), " "),
+	}
+	if problem := outOfScopeProblem(declaration); problem != "" {
+		return declaration, &domain.SpecProblem{Location: location, Message: problem}
+	}
+	return declaration, nil
+}
+
+// trailingEmphasisMarker drops one closing emphasis marker that wraps a whole line.
+func trailingEmphasisMarker(text string) string {
+	text = strings.TrimSpace(text)
+	for _, marker := range []string{"**", "__"} {
+		if strings.HasSuffix(text, marker) {
+			return strings.TrimSpace(strings.TrimSuffix(text, marker))
+		}
+	}
+	return text
+}
+
+// endText closes the statement and the justification: what follows is never absorbed.
+func (b *markdownBlock) endText() {
+	b.statementEnded, b.inJustification = true, false
 }
 
 func (b *markdownBlock) absorb(line string) {

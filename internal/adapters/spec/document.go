@@ -18,6 +18,7 @@ const (
 // Document is what one spec file declares.
 type Document struct {
 	Requirements []domain.Requirement
+	OutOfScope   []domain.OutOfScope
 	Problems     []domain.SpecProblem
 }
 
@@ -73,4 +74,15 @@ func (l Loader) LoadFile(path, displayPath string) (Document, error) {
 		return l.yaml.Parse(file, displayPath)
 	}
 	return l.markdown.Parse(file, displayPath)
+}
+
+// outOfScopeProblem says what is wrong with an out-of-scope declaration, or "" when nothing is.
+func outOfScopeProblem(declaration domain.OutOfScope) string {
+	switch {
+	case declaration.Dimension == "":
+		return "an out-of-scope declaration needs a dimension"
+	case declaration.Reason == "":
+		return fmt.Sprintf("the out-of-scope declaration for %s needs a reason", declaration.Dimension)
+	}
+	return ""
 }

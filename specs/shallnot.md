@@ -190,6 +190,12 @@ The requirements of shallnot itself, in its own Markdown spec format.
   exception name, THE SYSTEM SHALL read its operation, its arguments and its
   expected outcome, where the types are datetime, decimal, integer, boolean,
   null and string.
+- **SN-95~1**: WHEN a Markdown line outside a fenced code block reads
+  `Out of scope (DIMENSION): REASON`, with an optional list marker or
+  emphasis, THE SYSTEM SHALL record the dimension, the reason and the line as
+  an out-of-scope declaration, end the open statement or justification before
+  it, and never absorb it into one; WHEN the dimension or the reason is
+  missing it SHALL report a `malformed_requirement` finding at the line.
 
 ## Architecture
 

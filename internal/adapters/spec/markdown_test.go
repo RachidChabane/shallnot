@@ -128,5 +128,10 @@ func FuzzMarkdown(f *testing.F) {
 				t.Fatalf("invalid requirement %+v", requirement)
 			}
 		}
+		for _, declaration := range document.OutOfScope {
+			if declaration.Dimension == "" || declaration.Reason == "" || declaration.Location.Line < 1 {
+				t.Fatalf("invalid out-of-scope declaration %+v", declaration)
+			}
+		}
 	})
 }
