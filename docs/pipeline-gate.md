@@ -355,8 +355,9 @@ There is no baseline file to commit and no command to acknowledge a change: a
 fresh report of the target branch is the baseline.
 
 A baseline that cannot be read, that is not a shallnot report, or that comes
-from a version before report schema 1.2 (no statement digests) is a tool
-failure (exit 2), never an empty comparison.
+from a version before report schema 1.2 (no statement digests), or whose
+`run.statement_canonicalization` differs from the current one, is a tool
+failure (exit 2), never an empty or a wrong comparison.
 
 ## GitHub Actions
 

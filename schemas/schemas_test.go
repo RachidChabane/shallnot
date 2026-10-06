@@ -157,8 +157,13 @@ func TestSchemasDescribeTheInputs(t *testing.T) {
 			}
 			return path
 		}
-		if err := validateYAML(t, schemas.Spec, write(accepted)); err != nil {
-			t.Error(err)
+		for name, text := range map[string]string{
+			"requirements and out_of_scope": accepted,
+			"out_of_scope only":             "out_of_scope:\n  - dimension: concurrency\n    reason: one writer\n",
+		} {
+			if err := validateYAML(t, schemas.Spec, write(text)); err != nil {
+				t.Errorf("%s: %v", name, err)
+			}
 		}
 		for name, text := range refused {
 			if err := validateYAML(t, schemas.Spec, write(text)); err == nil {

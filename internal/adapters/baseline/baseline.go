@@ -21,7 +21,10 @@ const (
 
 type report struct {
 	SchemaVersion *string `json:"schema_version"`
-	Requirements  *[]struct {
+	Run           struct {
+		StatementCanonicalization string `json:"statement_canonicalization"`
+	} `json:"run"`
+	Requirements *[]struct {
 		ID              string `json:"id"`
 		Revision        int    `json:"revision"`
 		StatementDigest string `json:"statement_digest"`
@@ -42,7 +45,8 @@ func Read(path string) (map[domain.Ref]string, error) {
 }
 
 // Parse reads the statement digests of a JSON report. A report that predates
-// digests, or that lacks one, is refused: comparing against it would compare nothing.
+// digests, that lacks one or that computed them with another canonicalization
+// is refused: comparing against it would compare nothing.
 func Parse(content []byte) (map[domain.Ref]string, error) {
 	var parsed report
 	if err := json.Unmarshal(content, &parsed); err != nil {
@@ -53,6 +57,10 @@ func Parse(content []byte) (map[domain.Ref]string, error) {
 	}
 	if err := checkVersion(*parsed.SchemaVersion); err != nil {
 		return nil, err
+	}
+	if canonicalization := parsed.Run.StatementCanonicalization; canonicalization != domain.StatementCanonicalization {
+		return nil, fmt.Errorf("its statement digests use the canonicalization %q, not %q: they cannot be compared",
+			canonicalization, domain.StatementCanonicalization)
 	}
 	digests := make(map[domain.Ref]string, len(*parsed.Requirements))
 	for _, requirement := range *parsed.Requirements {

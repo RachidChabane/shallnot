@@ -229,8 +229,8 @@ The requirements of shallnot itself, in its own Markdown spec format.
   version 1.2 or later THE SYSTEM SHALL report a `statement_changed` finding
   for each requirement whose statement digest differs from the baseline's at
   the same `ID~REVISION`, a warning unless configured otherwise, and SHALL
-  exit 2 without a report when the baseline cannot be read or holds no
-  statement digests.
+  exit 2 without a report when the baseline cannot be read, holds no
+  statement digests, or computed them with another canonicalization.
 - **SN-100~1**: THE documentation SHALL name exactly the finding categories,
   the out-of-scope dimensions and the `check` flags the code defines.
 

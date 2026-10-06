@@ -7,13 +7,18 @@ import (
 	"testing"
 
 	"github.com/RachidChabane/shallnot/internal/adapters/baseline"
+	"github.com/RachidChabane/shallnot/internal/domain"
 	"github.com/RachidChabane/shallnot/internal/testkit"
 )
 
 const digestOne = "1640b763e3b155b4799bedb9a66384bfe5dc9d52030bf3c68d14aaa1b2c89478"
 
+func reportWith(version, canonicalization, requirements string) string {
+	return `{"schema_version": "` + version + `", "run": {"statement_canonicalization": "` + canonicalization + `"}, "requirements": [` + requirements + `]}`
+}
+
 func report(version, requirements string) string {
-	return `{"schema_version": "` + version + `", "requirements": [` + requirements + `]}`
+	return reportWith(version, domain.StatementCanonicalization, requirements)
 }
 
 func TestBaseline(t *testing.T) {
@@ -45,6 +50,8 @@ func TestBaseline(t *testing.T) {
 		"a malformed version":             report("one", ""),
 		"a three-part version":            report("1.2.3", ""),
 		"a requirement without a digest":  report("1.2", `{"id": "A-1", "revision": 1}`),
+		"another canonicalization":        reportWith("1.2", "c2", `{"id": "A-1", "revision": 1, "statement_digest": "abc"}`),
+		"no canonicalization":             `{"schema_version": "1.2", "requirements": []}`,
 		"JSON of another shape":           `{"hello": "world"}`,
 		"a list":                          `[]`,
 		"text that is not JSON":           `requirements:`,
