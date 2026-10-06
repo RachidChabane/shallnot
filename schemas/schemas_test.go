@@ -70,6 +70,9 @@ func TestSchemasAgreeWithTheTypes(t *testing.T) {
 		{"report status", schemas.Report, []string{"$defs", "requirement", "properties", "status"}, domain.StatusNames()},
 		{"report outcomes", schemas.Report, []string{"$defs", "bound_test", "properties", "outcome"}, domain.OutcomeNames()},
 		{"report verdicts", schemas.Report, []string{"properties", "verdict"}, domain.VerdictNames()},
+		{"report example value types", schemas.Report, []string{"$defs", "literal", "properties", "type"}, without(domain.LiteralTypeNames(), domain.LiteralName.String())},
+		{"report outcome value types", schemas.Report, []string{"$defs", "outcome", "properties", "type"}, domain.LiteralTypeNames()},
+		{"report outcome kinds", schemas.Report, []string{"$defs", "outcome", "properties", "kind"}, domain.OutcomeKindNames()},
 		{"config fail_on", schemas.Config, []string{"properties", "fail_on"}, reported},
 		{"spec status", schemas.Spec, []string{"properties", "requirements", "items", "properties", "status"}, domain.StatusNames()},
 	}

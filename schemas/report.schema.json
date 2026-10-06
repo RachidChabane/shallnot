@@ -7,8 +7,8 @@
   "properties": {
     "schema_version": {
       "type": "string",
-      "description": "MAJOR.MINOR version of this format.",
-      "pattern": "^1\\.[0-9]+$"
+      "description": "MAJOR.MINOR version of this format. This schema describes minor version 2 and later of major version 1.",
+      "pattern": "^1\\.([2-9]|[1-9][0-9]+)$"
     },
     "tool": {
       "type": "object",
@@ -100,12 +100,17 @@
         "commit": {
           "type": "string",
           "description": "The commit the results were produced from, as given with --commit or by the CI environment. Absent when none was given."
+        },
+        "statement_canonicalization": {
+          "type": "string",
+          "description": "Version of the canonical form the statement digests are computed over (see docs/spec-format.md)."
         }
       },
       "required": [
         "advisory",
         "fail_on",
         "id_pattern",
+        "statement_canonicalization",
         "focus",
         "spec_files",
         "test_roots",
@@ -256,6 +261,13 @@
         "$ref": "#/$defs/requirement"
       }
     },
+    "out_of_scope": {
+      "type": "array",
+      "description": "Aspects of a feature that the known specs declare out of scope, ordered by file and line.",
+      "items": {
+        "$ref": "#/$defs/out_of_scope"
+      }
+    },
     "findings": {
       "type": "array",
       "description": "Every finding whose severity is not \"off\", ordered by file, line, category, message.",
@@ -277,6 +289,7 @@
     "exit_code",
     "summary",
     "requirements",
+    "out_of_scope",
     "findings",
     "extensions"
   ],
@@ -323,6 +336,11 @@
           "type": "string",
           "description": "The requirement's statement."
         },
+        "statement_digest": {
+          "type": "string",
+          "description": "SHA-256 of the canonical form of the title, statement, status and justification, as 64 lowercase hexadecimal digits.",
+          "pattern": "^[0-9a-f]{64}$"
+        },
         "status": {
           "type": "string",
           "description": "Whether tests are expected to verify the requirement.",
@@ -334,6 +352,13 @@
         "justification": {
           "type": "string",
           "description": "Why the requirement is non-testable."
+        },
+        "examples": {
+          "type": "array",
+          "description": "The inline examples of the statement, ordered by index.",
+          "items": {
+            "$ref": "#/$defs/example"
+          }
         },
         "location": {
           "$ref": "#/$defs/location"
@@ -372,7 +397,9 @@
         "revision",
         "ref",
         "statement",
+        "statement_digest",
         "status",
+        "examples",
         "location",
         "in_focus",
         "coverage",
@@ -500,6 +527,128 @@
         "blocking",
         "message",
         "location"
+      ]
+    },
+    "example": {
+      "type": "object",
+      "description": "One inline example of a statement: a call and the outcome it must give.",
+      "properties": {
+        "index": {
+          "type": "integer",
+          "description": "1-based position among the example markers of the statement.",
+          "minimum": 1
+        },
+        "operation": {
+          "type": "string",
+          "description": "Name of the called operation."
+        },
+        "args": {
+          "type": "object",
+          "description": "The arguments of the call, by name.",
+          "additionalProperties": {
+            "$ref": "#/$defs/literal"
+          }
+        },
+        "expect": {
+          "$ref": "#/$defs/outcome"
+        }
+      },
+      "required": [
+        "index",
+        "operation",
+        "args",
+        "expect"
+      ]
+    },
+    "literal": {
+      "type": "object",
+      "description": "A typed value written in an example.",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Type of the value.",
+          "enum": [
+            "datetime",
+            "decimal",
+            "integer",
+            "boolean",
+            "null",
+            "string"
+          ]
+        },
+        "value": {
+          "type": "string",
+          "description": "The value as written; for a string, its content unquoted and unescaped."
+        }
+      },
+      "required": [
+        "type",
+        "value"
+      ]
+    },
+    "outcome": {
+      "type": "object",
+      "description": "What an example expects.",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "returns: the call gives the value. raises: the call raises the named exception.",
+          "enum": [
+            "returns",
+            "raises"
+          ]
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of the value; name for the exception of a raises outcome.",
+          "enum": [
+            "datetime",
+            "decimal",
+            "integer",
+            "boolean",
+            "null",
+            "string",
+            "name"
+          ]
+        },
+        "value": {
+          "type": "string",
+          "description": "The value as written, or the exception name."
+        }
+      },
+      "required": [
+        "kind",
+        "type",
+        "value"
+      ]
+    },
+    "out_of_scope": {
+      "type": "object",
+      "description": "A spec's declaration that one dimension is not covered.",
+      "properties": {
+        "spec_file": {
+          "type": "string",
+          "description": "Spec file holding the declaration, relative to the working directory, with forward slashes."
+        },
+        "line": {
+          "type": "integer",
+          "description": "1-based line of the declaration.",
+          "minimum": 1
+        },
+        "dimension": {
+          "type": "string",
+          "description": "The declared dimension. Closed list: error_handling, boundaries, permissions, concurrency, compatibility, input_validation, time_and_locale, state_and_persistence; another value raises unknown_dimension."
+        },
+        "reason": {
+          "type": "string",
+          "description": "Why the dimension is out of scope."
+        }
+      },
+      "required": [
+        "spec_file",
+        "line",
+        "dimension",
+        "reason"
       ]
     }
   }

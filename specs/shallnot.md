@@ -180,6 +180,9 @@ The requirements of shallnot itself, in its own Markdown spec format.
 - **SN-88~1**: WHEN a requirement is declared as a Markdown list item, as a
   Markdown heading, or in YAML with a folded or a literal scalar, THE SYSTEM
   SHALL give the same requirement the same statement digest.
+- **SN-89~1**: THE JSON report SHALL be schema version 1.2, name the
+  canonicalization version in `run.statement_canonicalization`, and carry in
+  each requirement its `statement_digest`.
 - **SN-90~1**: WHEN a joined statement holds markers `Example:` THE SYSTEM
   SHALL take the text before the first marker as the prose and the text
   after each marker, up to the next, as one example, whichever format
@@ -200,6 +203,9 @@ The requirements of shallnot itself, in its own Markdown spec format.
   a non-testable justification or an out-of-scope declaration, or sits
   outside every requirement, THE SYSTEM SHALL report a `detached_example`
   finding at the line, a warning unless configured otherwise.
+- **SN-94~1**: THE JSON report SHALL list in each requirement its examples
+  with their index, operation, typed arguments by name and expected outcome,
+  an empty list when the statement holds none.
 - **SN-95~1**: WHEN a Markdown line outside a fenced code block reads
   `Out of scope (DIMENSION): REASON`, with an optional list marker or
   emphasis, THE SYSTEM SHALL record the dimension, the reason and the line as
@@ -216,6 +222,9 @@ The requirements of shallnot itself, in its own Markdown spec format.
   compatibility, input validation, time and locale, and state and
   persistence THE SYSTEM SHALL report an `unknown_dimension` finding at its
   line, a warning unless configured otherwise.
+- **SN-98~1**: THE JSON report SHALL list the out-of-scope declarations of
+  every known spec, with spec file, line, dimension and reason, ordered by
+  file and line, an empty list when there are none.
 
 ## Architecture
 

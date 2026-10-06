@@ -1,0 +1,9 @@
+requirements:
+  - id: PARK-4
+    title: Free first quarter hour
+    statement: >
+      WHEN a stay lasts 15 minutes or less THE SYSTEM SHALL charge 0.00.
+      - Example: quote(minutes=15) => 0.00
+out_of_scope:
+  - dimension: boundaries
+    reason: stays stay under a day

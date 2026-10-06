@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "tool": {
     "name": "shallnot",
     "version": "dev"
@@ -8,6 +8,7 @@
     "advisory": false,
     "fail_on": "error",
     "id_pattern": "[A-Z][A-Z0-9]*-[0-9]+(?:\\.[A-Za-z0-9]+)*",
+    "statement_canonicalization": "c1",
     "focus": {
       "everything": true,
       "files": [],
@@ -55,12 +56,14 @@
       "revision": 1,
       "ref": "CART-1~1",
       "statement": "WHEN a cart holds line items THE SYSTEM SHALL compute the total as the sum of each line item's price times its quantity.",
+      "statement_digest": "c8800867d219f077d2cb09e214d72936dee149e11076184dc2fa9c9689e590f8",
       "status": "active",
       "location": {
         "file": "fixtures/cart/spec/cart.md",
         "line": 8
       },
       "in_focus": true,
+      "examples": [],
       "coverage": "covered",
       "tests": [
         {
@@ -101,12 +104,14 @@
       "revision": 1,
       "ref": "CART-4~1",
       "statement": "WHEN a total has more than two decimals THE SYSTEM SHALL round it to two decimals, half-up.",
+      "statement_digest": "20f2d0712ffd868122f0d8586c3f003fb144768816b3f948d62da9e9e19056c7",
       "status": "active",
       "location": {
         "file": "fixtures/cart/spec/cart.md",
         "line": 11
       },
       "in_focus": true,
+      "examples": [],
       "coverage": "skipped",
       "tests": [
         {
@@ -129,12 +134,14 @@
       "ref": "CART-2~2",
       "title": "Percentage discount codes",
       "statement": "WHEN a customer applies a percentage discount code THE SYSTEM SHALL reduce the total by that percentage.",
+      "statement_digest": "1640b763e3b155b4799bedb9a66384bfe5dc9d52030bf3c68d14aaa1b2c89478",
       "status": "active",
       "location": {
         "file": "fixtures/cart/spec/cart.md",
         "line": 16
       },
       "in_focus": true,
+      "examples": [],
       "coverage": "covered",
       "tests": [
         {
@@ -164,12 +171,14 @@
       "revision": 1,
       "ref": "CART-3~1",
       "statement": "WHEN a customer checks out an empty cart THE SYSTEM SHALL reject the checkout with an error.",
+      "statement_digest": "c12437945f47dac39d30d0686cf5e6bdc75eb239c4b79c935186f98fdced0015",
       "status": "active",
       "location": {
         "file": "fixtures/cart/spec/cart.md",
         "line": 25
       },
       "in_focus": true,
+      "examples": [],
       "coverage": "failed",
       "tests": [
         {
@@ -191,12 +200,14 @@
       "revision": 1,
       "ref": "CART-5~1",
       "statement": "WHEN a line item quantity exceeds 99 THE SYSTEM SHALL reject the line item.",
+      "statement_digest": "663dbb190d1895d5b26a6dfd11a90db86ec30bc805fed5ccafbc4ace70b7d81a",
       "status": "active",
       "location": {
         "file": "fixtures/cart/spec/cart.md",
         "line": 27
       },
       "in_focus": true,
+      "examples": [],
       "coverage": "not_run",
       "tests": [
         {
@@ -215,12 +226,14 @@
       "revision": 1,
       "ref": "CART-6~1",
       "statement": "WHEN a total is displayed THE SYSTEM SHALL show it in the customer's currency.",
+      "statement_digest": "68b89f1e13dbfed9f7eb282da5e06faa1970587b12c9bd40a9fc7016882b8e15",
       "status": "active",
       "location": {
         "file": "fixtures/cart/spec/cart.md",
         "line": 32
       },
       "in_focus": true,
+      "examples": [],
       "coverage": "uncovered",
       "tests": [],
       "extensions": {}
@@ -230,6 +243,7 @@
       "revision": 1,
       "ref": "CART-7~1",
       "statement": "THE checkout page SHALL feel uncluttered on a phone screen.",
+      "statement_digest": "632a539fce69e862a49a2e44c51e83920dd4390ede87f8ce1a5a78142c10e912",
       "status": "non_testable",
       "justification": "judged in the quarterly design review with customer panels; no automated check can stand in for it.",
       "location": {
@@ -237,11 +251,13 @@
         "line": 34
       },
       "in_focus": true,
+      "examples": [],
       "coverage": "non_testable",
       "tests": [],
       "extensions": {}
     }
   ],
+  "out_of_scope": [],
   "findings": [
     {
       "category": "untagged_test",

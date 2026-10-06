@@ -13,13 +13,13 @@ an automated pipeline, see [docs/pipeline-gate.md](pipeline-gate.md).
 
 ## Compatibility
 
-- `schema_version` is `"MAJOR.MINOR"` (for example `"1.1"`). A minor bump adds
+- `schema_version` is `"MAJOR.MINOR"` (for example `"1.2"`). A minor bump adds
   properties only; a major bump may remove or change one.
 - Consumers must ignore properties they do not know.
 - `extensions` objects (at the top level and on each requirement) are reserved
   for data contributed by analyses outside the deterministic core (code
   coverage, mutation score, judge answers). They are empty under
-  `schema_version` `"1.1"`; a consumer must tolerate unknown keys inside them
+  `schema_version` `"1.2"`; a consumer must tolerate unknown keys inside them
   and must not treat their absence of content as a finding.
 
 ## Determinism
@@ -34,7 +34,7 @@ GitHub-annotation outputs.
 
 | Property | Type | Meaning |
 |---|---|---|
-| `schema_version` | string | Format version, `"1.1"`. `run.commit` exists from `"1.1"`. |
+| `schema_version` | string | Format version, `"1.2"`. `run.commit` exists from `"1.1"`; `run.statement_canonicalization`, `requirements[].statement_digest`, `requirements[].examples` and `out_of_scope` exist from `"1.2"`. |
 | `tool.name` | string | Always `"shallnot"`. |
 | `tool.version` | string | Version of the binary that produced the report. |
 | `run` | object | What the run was asked to do and what it read. See below. |
@@ -42,6 +42,7 @@ GitHub-annotation outputs.
 | `exit_code` | `0` \| `1` | Exit code of the process that wrote this report. A tool failure (exit 2) writes no report — any file at `--json-out`/`--markdown-out` is deleted before the run starts, so a consumer never reads a report left over from an earlier, unrelated run. |
 | `summary` | object | Aggregate counts. See below. |
 | `requirements` | array of [requirement](#requirement-object) | The coverage matrix: every known requirement, in focus or not, ordered by spec file then line. |
+| `out_of_scope` | array of [out-of-scope declaration](#out-of-scope-object) | The out-of-scope declarations of every known spec, ordered by spec file then line. Empty when there are none. |
 | `findings` | array of [finding](#finding-object) | Every finding whose severity is not `off`, ordered by file, then line, then category, then message. |
 | `extensions` | object | Reserved, empty. |
 
@@ -52,6 +53,7 @@ GitHub-annotation outputs.
 | `advisory` | boolean | True when the run was advisory: `exit_code` is 0 whatever `verdict` says. |
 | `fail_on` | `"info"` \| `"warning"` \| `"error"` | Lowest severity that blocks. |
 | `id_pattern` | string | Regular expression a requirement ID must match. |
+| `statement_canonicalization` | string | Version of the canonical form that the `statement_digest` of every requirement is computed over, `"c1"`. Specified in [spec-format.md](spec-format.md#statement-digest). |
 | `focus.everything` | boolean | True when no focus was given: every known requirement is in focus. |
 | `focus.files` | array of string | Spec files given as `--focus` / `focus`. |
 | `focus.ids` | array of string | ID globs given as `--focus-id` / `focus_ids`. |
@@ -103,13 +105,56 @@ One entry per known requirement, whether or not it is in focus.
 | `ref` | string | `ID~REVISION`: the text a tag must cite to bind at the current revision. |
 | `title` | string, optional | Present when the spec gives a title. |
 | `statement` | string | The requirement's statement. |
+| `statement_digest` | string | SHA-256 of the canonical form of the title, statement, status and justification, as 64 lowercase hexadecimal digits: see [Statement digest](spec-format.md#statement-digest). Unchanged by reformatting, changed by any other edit of those fields, the same whichever spec format declared the requirement. The revision and the location are not part of it. |
 | `status` | `"active"` \| `"non_testable"` | See [Requirement status](#requirement-status). |
 | `justification` | string, optional | Why the requirement is non-testable. Present only when `status` is `non_testable` and the spec supplied one. |
 | `location` | [location](#location-object) | Where the requirement is declared. |
+| `examples` | array of [example](#example-object) | The inline examples of the statement, ordered by `index`; empty when it holds none or when none is well-formed. |
 | `in_focus` | boolean | Whether this run demanded the requirement's coverage. |
 | `coverage` | string enum | See [Coverage states](#coverage-states). |
 | `tests` | array of [bound_test](#bound_test-object) | Tests bound to the requirement at its current revision, ordered by results file, classname, name, then location. |
 | `extensions` | object | Reserved, empty. |
+
+### Example object
+
+An inline example of a statement (see [Inline examples](spec-format.md#inline-examples)).
+
+| Property | Type | Meaning |
+|---|---|---|
+| `index` | integer ≥ 1 | 1-based position among the example markers of the statement. A malformed segment keeps its position, so indexes of the valid examples can skip a number. |
+| `operation` | string | Name of the called operation. |
+| `args` | object | The arguments of the call by name; `{}` when it has none. Each value is `{ "type", "value" }`. |
+| `args.<name>.type` | `"datetime"` \| `"decimal"` \| `"integer"` \| `"boolean"` \| `"null"` \| `"string"` | Type of the argument. |
+| `args.<name>.value` | string | The value as written, always a JSON string so that `0.00` stays distinct from `0`; for a string, its content unquoted and unescaped. |
+| `expect.kind` | `"returns"` \| `"raises"` | Whether the call must give a value or raise an exception. |
+| `expect.type` | string | The type of the expected value, as for an argument, or `"name"` when `kind` is `raises`. |
+| `expect.value` | string | The expected value, encoded as an argument value, or the exception name. |
+
+For the statement `... THE SYSTEM SHALL charge 0.00.` followed by the example
+`Example: quote(entry=2026-03-02T10:00, exit=2026-03-02T10:15) => 0.00`:
+
+```json
+{
+  "index": 1,
+  "operation": "quote",
+  "args": {
+    "entry": { "type": "datetime", "value": "2026-03-02T10:00" },
+    "exit": { "type": "datetime", "value": "2026-03-02T10:15" }
+  },
+  "expect": { "kind": "returns", "type": "decimal", "value": "0.00" }
+}
+```
+
+### Out-of-scope object
+
+An aspect of a feature that a spec declares out of scope (see [Out-of-scope declarations](spec-format.md#out-of-scope-declarations)).
+
+| Property | Type | Meaning |
+|---|---|---|
+| `spec_file` | string | Spec file holding the declaration, relative to the working directory, forward slashes. |
+| `line` | integer ≥ 1 | 1-based line of the declaration: the line in Markdown, the line of the list item in YAML. |
+| `dimension` | string | The declared dimension, as written. A value outside the closed list raises `unknown_dimension`. |
+| `reason` | string | Why the dimension is out of scope. |
 
 ### Requirement status
 
@@ -213,6 +258,7 @@ What to do about each category, and who owns the action, is specified once, in t
 ## Ordering guarantees
 
 - `requirements`: by spec file path, then by declaration line.
+- `out_of_scope`: by spec file path, then by line.
 - `requirements[].tests`: by results file, then classname, then name, then
   the test's location.
 - `findings`: by location file, then location line, then category
@@ -265,7 +311,7 @@ REQUIREMENTS
 
 ```json
 {
-  "schema_version": "1.1",
+  "schema_version": "1.2",
   "tool": {
     "name": "shallnot",
     "version": "dev"
@@ -274,6 +320,7 @@ REQUIREMENTS
     "advisory": false,
     "fail_on": "error",
     "id_pattern": "[A-Z]+-[0-9]+\\.AC[0-9]+",
+    "statement_canonicalization": "c1",
     "focus": {
       "everything": false,
       "files": [
@@ -325,9 +372,11 @@ REQUIREMENTS
       "revision": 1,
       "ref": "ABC-100.AC1~1",
       "statement": "WHEN a customer opens the invoices page THE SYSTEM SHALL list their invoices, newest first.",
+      "statement_digest": "e838a38a62938e779cd737e5eddd394aa0182df852fcec9364a619a87093d8fc",
       "status": "active",
       "location": { "file": "plans/ABC-100.md", "line": 5 },
       "in_focus": false,
+      "examples": [],
       "coverage": "covered",
       "tests": [
         {
@@ -346,9 +395,11 @@ REQUIREMENTS
       "revision": 1,
       "ref": "ABC-100.AC2~1",
       "statement": "WHEN a customer has no invoice THE SYSTEM SHALL show an empty state.",
+      "statement_digest": "46e98aa0d4235711399b630b5376d57360dc41b24fcf3e0dc7f57c5035aceb40",
       "status": "active",
       "location": { "file": "plans/ABC-100.md", "line": 7 },
       "in_focus": false,
+      "examples": [],
       "coverage": "uncovered",
       "tests": [],
       "extensions": {}
@@ -358,9 +409,11 @@ REQUIREMENTS
       "revision": 1,
       "ref": "ABC-101.AC1~1",
       "statement": "WHEN the client requests an invoice export THE SYSTEM SHALL return a PDF named after the invoice number.",
+      "statement_digest": "76a9d9bd1a3220d826378ece1b02ac94071bfa04edbcaa0a2a8d8ba018fad86c",
       "status": "active",
       "location": { "file": "plans/ABC-101.md", "line": 10 },
       "in_focus": true,
+      "examples": [],
       "coverage": "covered",
       "tests": [
         {
@@ -379,9 +432,11 @@ REQUIREMENTS
       "revision": 1,
       "ref": "ABC-101.AC2~1",
       "statement": "WHEN a customer clicks \"Export\" THE SYSTEM SHALL start the download without leaving the page.",
+      "statement_digest": "5ecb6324eea6e283d3ba05fd3504febfa06fe277d4a05995b35ce6c20bc71e49",
       "status": "active",
       "location": { "file": "plans/ABC-101.md", "line": 12 },
       "in_focus": true,
+      "examples": [],
       "coverage": "covered",
       "tests": [
         {
@@ -400,15 +455,18 @@ REQUIREMENTS
       "revision": 1,
       "ref": "ABC-101.AC3~1",
       "statement": "THE exported PDF SHALL match the brand guidelines.",
+      "statement_digest": "9700b2977bfbf5526a8a2d0bec1dc69c5ae45695b062d32d81aec54e29809d23",
       "status": "non_testable",
       "justification": "reviewed by the brand team on each template change; no automated check covers visual identity.",
       "location": { "file": "plans/ABC-101.md", "line": 14 },
       "in_focus": true,
+      "examples": [],
       "coverage": "non_testable",
       "tests": [],
       "extensions": {}
     }
   ],
+  "out_of_scope": [],
   "findings": [],
   "extensions": {}
 }
@@ -457,12 +515,14 @@ $ jq '[.requirements[] | select(.in_focus and (.coverage != "covered" and .cover
     "revision": 1,
     "ref": "ABC-100.AC2~1",
     "statement": "WHEN a customer has no invoice THE SYSTEM SHALL show an empty state.",
+    "statement_digest": "46e98aa0d4235711399b630b5376d57360dc41b24fcf3e0dc7f57c5035aceb40",
     "status": "active",
     "location": {
       "file": "plans/ABC-100.md",
       "line": 7
     },
     "in_focus": true,
+    "examples": [],
     "coverage": "uncovered",
     "tests": [],
     "extensions": {}

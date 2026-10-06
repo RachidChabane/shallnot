@@ -11,7 +11,7 @@ import (
 
 // SchemaVersion is the version of the JSON report format. The major number
 // changes only when a consumer of an earlier report would break.
-const SchemaVersion = "1.1"
+const SchemaVersion = "1.2"
 
 // Document is the JSON report. Its shape is specified by schemas/report.schema.json.
 type Document struct {
@@ -22,6 +22,7 @@ type Document struct {
 	ExitCode      app.ExitCode      `json:"exit_code"`
 	Summary       Summary           `json:"summary"`
 	Requirements  []RequirementInfo `json:"requirements"`
+	OutOfScope    []OutOfScopeInfo  `json:"out_of_scope"`
 	Findings      []FindingInfo     `json:"findings"`
 	Extensions    Extensions        `json:"extensions"`
 }
@@ -35,13 +36,15 @@ type ToolInfo struct {
 }
 
 type RunInfo struct {
-	Advisory     bool            `json:"advisory"`
-	FailOn       domain.Severity `json:"fail_on"`
-	IDPattern    string          `json:"id_pattern"`
-	Focus        FocusInfo       `json:"focus"`
-	SpecFiles    []string        `json:"spec_files"`
-	TestRoots    []string        `json:"test_roots"`
-	ResultsFiles []string        `json:"results_files"`
+	Advisory  bool            `json:"advisory"`
+	FailOn    domain.Severity `json:"fail_on"`
+	IDPattern string          `json:"id_pattern"`
+	// StatementCanonicalization names the canonical form the statement digests are computed over.
+	StatementCanonicalization string    `json:"statement_canonicalization"`
+	Focus                     FocusInfo `json:"focus"`
+	SpecFiles                 []string  `json:"spec_files"`
+	TestRoots                 []string  `json:"test_roots"`
+	ResultsFiles              []string  `json:"results_files"`
 	// Commit is absent when the caller named none.
 	Commit string `json:"commit,omitempty"`
 }
@@ -88,18 +91,49 @@ type LocationInfo struct {
 }
 
 type RequirementInfo struct {
-	ID            domain.RequirementID `json:"id"`
-	Revision      domain.Revision      `json:"revision"`
-	Ref           string               `json:"ref"`
-	Title         string               `json:"title,omitempty"`
-	Statement     string               `json:"statement"`
-	Status        domain.Status        `json:"status"`
-	Justification string               `json:"justification,omitempty"`
-	Location      LocationInfo         `json:"location"`
-	InFocus       bool                 `json:"in_focus"`
-	Coverage      domain.Coverage      `json:"coverage"`
-	Tests         []TestInfo           `json:"tests"`
-	Extensions    Extensions           `json:"extensions"`
+	ID              domain.RequirementID `json:"id"`
+	Revision        domain.Revision      `json:"revision"`
+	Ref             string               `json:"ref"`
+	Title           string               `json:"title,omitempty"`
+	Statement       string               `json:"statement"`
+	StatementDigest string               `json:"statement_digest"`
+	Status          domain.Status        `json:"status"`
+	Justification   string               `json:"justification,omitempty"`
+	Location        LocationInfo         `json:"location"`
+	InFocus         bool                 `json:"in_focus"`
+	Examples        []ExampleInfo        `json:"examples"`
+	Coverage        domain.Coverage      `json:"coverage"`
+	Tests           []TestInfo           `json:"tests"`
+	Extensions      Extensions           `json:"extensions"`
+}
+
+// OutOfScopeInfo is a spec's declaration that a dimension is not covered.
+type OutOfScopeInfo struct {
+	SpecFile  string `json:"spec_file"`
+	Line      int    `json:"line"`
+	Dimension string `json:"dimension"`
+	Reason    string `json:"reason"`
+}
+
+// LiteralInfo is a typed value of an example.
+type LiteralInfo struct {
+	Type  domain.LiteralType `json:"type"`
+	Value string             `json:"value"`
+}
+
+// OutcomeInfo is what an example expects.
+type OutcomeInfo struct {
+	Kind  domain.OutcomeKind `json:"kind"`
+	Type  domain.LiteralType `json:"type"`
+	Value string             `json:"value"`
+}
+
+// ExampleInfo is one inline example of a statement.
+type ExampleInfo struct {
+	Index     int                    `json:"index"`
+	Operation string                 `json:"operation"`
+	Args      map[string]LiteralInfo `json:"args"`
+	Expect    OutcomeInfo            `json:"expect"`
 }
 
 type TestInfo struct {
@@ -144,9 +178,10 @@ func BuildDocument(outcome app.Outcome) Document {
 		SchemaVersion: SchemaVersion,
 		Tool:          ToolInfo{Name: version.Name, Version: version.Version},
 		Run: RunInfo{
-			Advisory:  outcome.Policy.Advisory,
-			FailOn:    outcome.Policy.FailOn,
-			IDPattern: outcome.Inputs.IDPattern,
+			Advisory:                  outcome.Policy.Advisory,
+			FailOn:                    outcome.Policy.FailOn,
+			IDPattern:                 outcome.Inputs.IDPattern,
+			StatementCanonicalization: domain.StatementCanonicalization,
 			Focus: FocusInfo{
 				Everything: outcome.Inputs.FocusIsEverything(),
 				Files:      orEmpty(outcome.Inputs.FocusFiles),
@@ -161,11 +196,20 @@ func BuildDocument(outcome app.Outcome) Document {
 		ExitCode:     outcome.ExitCode(),
 		Summary:      Summarize(outcome.Analysis),
 		Requirements: []RequirementInfo{},
+		OutOfScope:   []OutOfScopeInfo{},
 		Findings:     []FindingInfo{},
 		Extensions:   Extensions{},
 	}
 	for _, row := range outcome.Analysis.Rows {
 		document.Requirements = append(document.Requirements, requirementInfo(row))
+	}
+	for _, declaration := range outcome.Analysis.OutOfScope {
+		document.OutOfScope = append(document.OutOfScope, OutOfScopeInfo{
+			SpecFile:  declaration.Location.File,
+			Line:      declaration.Location.Line,
+			Dimension: declaration.Dimension,
+			Reason:    declaration.Reason,
+		})
 	}
 	for _, finding := range outcome.Analysis.Findings {
 		document.Findings = append(document.Findings, findingInfo(finding))
@@ -210,18 +254,20 @@ func Summarize(analysis domain.Analysis) Summary {
 func requirementInfo(row domain.Row) RequirementInfo {
 	requirement := row.Requirement
 	info := RequirementInfo{
-		ID:            requirement.ID,
-		Revision:      requirement.Revision,
-		Ref:           requirement.Ref().String(),
-		Title:         requirement.Title,
-		Statement:     requirement.Statement,
-		Status:        requirement.Status,
-		Justification: requirement.Justification,
-		Location:      LocationInfo(requirement.Location),
-		InFocus:       row.InFocus,
-		Coverage:      row.Coverage,
-		Tests:         []TestInfo{},
-		Extensions:    Extensions{},
+		ID:              requirement.ID,
+		Revision:        requirement.Revision,
+		Ref:             requirement.Ref().String(),
+		Title:           requirement.Title,
+		Statement:       requirement.Statement,
+		StatementDigest: requirement.StatementDigest(),
+		Status:          requirement.Status,
+		Justification:   requirement.Justification,
+		Location:        LocationInfo(requirement.Location),
+		Examples:        exampleInfos(row.Examples),
+		InFocus:         row.InFocus,
+		Coverage:        row.Coverage,
+		Tests:           []TestInfo{},
+		Extensions:      Extensions{},
 	}
 	for _, test := range row.Tests {
 		info.Tests = append(info.Tests, TestInfo{
@@ -234,6 +280,23 @@ func requirementInfo(row domain.Row) RequirementInfo {
 		})
 	}
 	return info
+}
+
+func exampleInfos(examples []domain.Example) []ExampleInfo {
+	infos := []ExampleInfo{}
+	for _, example := range examples {
+		args := make(map[string]LiteralInfo, len(example.Args))
+		for _, argument := range example.Args {
+			args[argument.Name] = LiteralInfo(argument.Value)
+		}
+		infos = append(infos, ExampleInfo{
+			Index:     example.Index,
+			Operation: example.Operation,
+			Args:      args,
+			Expect:    OutcomeInfo{Kind: example.Expect.Kind, Type: example.Expect.Value.Type, Value: example.Expect.Value.Value},
+		})
+	}
+	return infos
 }
 
 func findingInfo(finding domain.Finding) FindingInfo {
