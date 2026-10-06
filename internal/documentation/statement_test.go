@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"golang.org/x/text/unicode/norm"
+
 	"github.com/RachidChabane/shallnot/internal/domain"
 )
 
@@ -27,6 +29,12 @@ func TestStatementDigestDocumentation(t *testing.T) {
 	t.Run("the specification states the canonicalization version the code computes [verifies SN-86~1]", func(t *testing.T) {
 		if !strings.Contains(document, "`"+domain.StatementCanonicalization+"`") {
 			t.Fatalf("%s does not name the canonicalization %s", specFormat, domain.StatementCanonicalization)
+		}
+	})
+
+	t.Run("the specification names the Unicode version of the normalization the code applies [verifies SN-86~1]", func(t *testing.T) {
+		if !strings.Contains(document, "Unicode "+norm.Version) {
+			t.Fatalf("%s does not name Unicode %s, the version of the normalization data", specFormat, norm.Version)
 		}
 	})
 

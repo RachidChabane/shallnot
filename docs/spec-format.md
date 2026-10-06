@@ -99,7 +99,7 @@ The canonical text of a title, statement or justification is obtained by
 these steps, in this order:
 
 1. Replace each maximal run of bytes that is not valid UTF-8 by one U+FFFD.
-2. Normalize to Unicode Normalization Form C (NFC).
+2. Normalize to Unicode Normalization Form C (NFC), with the normalization data of Unicode 15.0.0: a code point that Unicode 15.0.0 does not assign is left as it is.
 3. Replace each CR LF (U+000D U+000A) and each lone CR by one LF.
 4. Replace each LF by one space (U+0020): continuation lines are joined.
 5. Replace each run of whitespace by one space. Whitespace is exactly these
@@ -397,8 +397,8 @@ unknown requirement, and a malformed tag) each raise an error finding.
 
 ## YAML spec
 
-A YAML spec is a mapping with the key `requirements`, a list of mappings, and
-optionally the key `out_of_scope` (see [Out-of-scope
+A YAML spec is a mapping with the keys `requirements`, a list of mappings, and
+`out_of_scope`, both optional (see [Out-of-scope
 declarations](#out-of-scope-declarations)). Each requirement accepts these keys:
 
 | Key             | Type    | Default   |
