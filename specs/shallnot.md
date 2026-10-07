@@ -363,6 +363,17 @@ The requirements of shallnot itself, in its own Markdown spec format.
   block, the manifest keys, the pending reasons, the trust levels, the pass
   bases, the isolation levels and the properties of `extensions.proofs` the
   code defines.
+- **SN-127~1**: WHEN a hook blocks a gate whose only blocking findings are
+  pending proofs THE SYSTEM SHALL count the block in a counter of its own, in
+  the attempts directory, that lets the hook give up after `MaxHostWaits` = 3
+  such blocks, apart from the `MaxAttempts` = 3 of every other block; neither
+  kind of block SHALL reset the other counter, a pass or a give-up SHALL reset
+  both, and any interleaving of the two kinds SHALL end within `MaxAttempts` +
+  `MaxHostWaits` blocks.
+- **SN-128~1**: WHEN a hook blocks on pending proofs THE SYSTEM SHALL tell the
+  agent which module waits, which fulfil skill to run and never to answer the
+  requests itself, and, for `host_unresponsive`, to report to the user and not
+  to loop.
 
 ## Architecture
 

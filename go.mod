@@ -20,6 +20,7 @@ require (
 	golang.org/x/text v0.17.0
 	golang.org/x/tools v0.36.0 // indirect
 	gotest.tools/gotestsum v1.13.0 // indirect
+	pgregory.net/rapid v1.3.0
 )
 
 tool gotest.tools/gotestsum

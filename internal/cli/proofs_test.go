@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/RachidChabane/shallnot/internal/adapters/agenthook"
 	"github.com/RachidChabane/shallnot/internal/app"
 	"github.com/RachidChabane/shallnot/internal/domain"
 	"github.com/RachidChabane/shallnot/internal/domain/proof"
@@ -220,6 +221,127 @@ func TestEscalationSeverity(t *testing.T) {
 		config := proofConfig + "  escalation: warning\n"
 		if severity, exit := severityOf(t, config); severity != domain.SeverityError || exit != app.ExitBlocked {
 			t.Fatalf("severity %s, exit %d", severity, exit)
+		}
+	})
+}
+
+// writePending writes a verified set that lists no statement and the given pending entries.
+func writePending(t *testing.T, directory string, pending ...proof.Pending) {
+	t.Helper()
+	if pending == nil {
+		pending = []proof.Pending{}
+	}
+	manifest, err := json.Marshal(proof.Manifest{VerifierVersion: "0.1.0", Trust: proof.TrustLocal, Statements: []proof.ManifestEntry{}, Pending: pending})
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := filepath.Join(directory, ".spec-proof", "verified")
+	if err := os.MkdirAll(root, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "manifest.json"), manifest, 0o644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func awaitingHost(reason proof.PendingReason) proof.Pending {
+	return proof.Pending{Module: "spec-proof-dp", Criterion: "REQ-1~1", Reason: reason}
+}
+
+func TestHookOnPendingProofs(t *testing.T) {
+	hook := func(t *testing.T, directory string) run {
+		t.Helper()
+		t.Setenv("CLAUDE_PROJECT_DIR", directory)
+		return shallnotWithInput(t, "", "hook", "claude-stop")
+	}
+	ready := func(t *testing.T) string {
+		t.Helper()
+		isolateAttempts(t)
+		t.Chdir(t.TempDir())
+		return proofProject(t, proofConfig)
+	}
+
+	t.Run("tells the agent which module waits, which skill to run and not to answer the requests itself [verifies SN-128~1]", func(t *testing.T) {
+		directory := ready(t)
+		writePending(t, directory, awaitingHost(proof.PendingAwaitingHost))
+		result := hook(t, directory)
+		if result.exit != claudeExitBlock {
+			t.Fatalf("got %+v", result)
+		}
+		for _, expected := range []string{"spec-proof-dp", "spec-proof-dp-fulfil", "Never answer the requests yourself", "awaiting_host"} {
+			if !strings.Contains(result.stderr, expected) {
+				t.Errorf("no %q in:\n%s", expected, result.stderr)
+			}
+		}
+		if strings.Contains(result.stderr, "Never delete or alter a tag") {
+			t.Errorf("the tag prohibitions do not apply to a wait:\n%s", result.stderr)
+		}
+	})
+
+	t.Run("tells the agent to report to the user and not to loop when the host is unresponsive [verifies SN-128~1]", func(t *testing.T) {
+		directory := ready(t)
+		writePending(t, directory, awaitingHost(proof.PendingHostUnresponsive))
+		result := hook(t, directory)
+		if result.exit != claudeExitBlock || !strings.Contains(result.stderr, "report this to the user, do not loop") || strings.Contains(result.stderr, "Run the fulfil skill") {
+			t.Fatalf("got %+v", result)
+		}
+	})
+
+	t.Run("lets the turn end after MaxHostWaits blocks on pending proofs and resets both counters [verifies SN-127~1]", func(t *testing.T) {
+		directory := ready(t)
+		writePending(t, directory, awaitingHost(proof.PendingAwaitingHost))
+		for attempt := 1; attempt <= agenthook.MaxHostWaits; attempt++ {
+			if result := hook(t, directory); result.exit != claudeExitBlock {
+				t.Fatalf("attempt %d: %+v", attempt, result)
+			}
+		}
+		given := hook(t, directory)
+		if given.exit != claudeExitNotice || !strings.Contains(given.stderr, "still blocked") {
+			t.Fatalf("got %+v", given)
+		}
+		if again := hook(t, directory); again.exit != claudeExitBlock {
+			t.Fatalf("the counters were not reset: %+v", again)
+		}
+	})
+
+	t.Run("counts blocks that are not pending apart, and neither resets the other [verifies SN-127~1]", func(t *testing.T) {
+		directory := ready(t)
+		statuses := []string{}
+		step := func(pending bool) run {
+			if pending {
+				writePending(t, directory, awaitingHost(proof.PendingAwaitingHost))
+			} else {
+				writePending(t, directory)
+			}
+			result := hook(t, directory)
+			statuses = append(statuses, map[app.ExitCode]string{claudeExitBlock: "block", claudeExitNotice: "give-up", app.ExitClean: "pass"}[result.exit])
+			return result
+		}
+		// Three waits and three stale proofs, interleaved: all six block, the seventh gives up.
+		for _, pending := range []bool{true, false, true, false, true, false} {
+			if result := step(pending); result.exit != claudeExitBlock {
+				t.Fatalf("sequence %v: %+v", statuses, result)
+			}
+		}
+		if result := step(true); result.exit != claudeExitNotice {
+			t.Fatalf("sequence %v: %+v", statuses, result)
+		}
+	})
+
+	t.Run("a pass resets both counters [verifies SN-127~1]", func(t *testing.T) {
+		directory := ready(t)
+		writePending(t, directory, awaitingHost(proof.PendingAwaitingHost))
+		hook(t, directory)
+		hook(t, directory)
+		writeProofs(t, directory)
+		if result := hook(t, directory); result.exit != app.ExitClean {
+			t.Fatalf("got %+v", result)
+		}
+		writePending(t, directory, awaitingHost(proof.PendingAwaitingHost))
+		for attempt := 1; attempt <= agenthook.MaxHostWaits; attempt++ {
+			if result := hook(t, directory); result.exit != claudeExitBlock {
+				t.Fatalf("attempt %d after the pass: %+v", attempt, result)
+			}
 		}
 	})
 }

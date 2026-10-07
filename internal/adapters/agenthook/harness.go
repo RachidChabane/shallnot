@@ -13,6 +13,11 @@ import (
 // work before it lets the turn end and reports to the user instead.
 const MaxAttempts = 3
 
+// MaxHostWaits is how many consecutive times a hook sends the agent back to work on a gate whose only blocking
+// findings are proofs a module is still producing through the host, before it lets the turn end. The two counters are
+// independent, so a gate sends the agent back at most MaxAttempts + MaxHostWaits times in a row.
+const MaxHostWaits = 3
+
 // Event is what a hook needs to know from the harness.
 type Event struct {
 	// ProjectDir is the root of the project the agent works in.

@@ -184,6 +184,12 @@ read the event:
    tells the user the gate is still blocked (`shallnot: the gate is still
    blocked after 3 attempts; run \`shallnot gate\` to see why.`), then resets
    the counter. The next call after that starts counting from zero again.
+   A gate whose only blocking findings are proofs a module is still producing
+   through the host (`awaiting_host`, `awaiting_proof`,
+   `awaiting_host_judgment`, `host_unresponsive`; see [proofs.md](proofs.md))
+   is counted apart, in a second counter file, with a limit of three: neither
+   counter resets the other, and a pass or a give-up resets both, so the hook
+   sends a session back at most six times in a row.
 5. **It is advisory, never blocking by force.** The hook can only ask a
    harness to continue the turn; it has no way to prevent an agent or a user
    from stopping regardless, and a harness without hook enforcement receives

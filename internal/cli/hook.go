@@ -54,7 +54,7 @@ func runHook(args []string, stdin io.Reader, stdout, stderr io.Writer) app.ExitC
 		return failHook(stderr, err)
 	}
 
-	decision, message := decide(event, agenthook.Attempts{Directory: os.TempDir()})
+	decision, message := decide(event, agenthook.Attempts{Directory: os.TempDir()}, gateVerdict)
 	response := harness.Respond(decision, message)
 	fmt.Fprint(stdout, response.Stdout)
 	fmt.Fprint(stderr, response.Stderr)
@@ -82,23 +82,32 @@ func gatedRoot(start string) (string, bool, error) {
 	}
 }
 
-// decide gates the project and applies the attempt limit.
-func decide(event agenthook.Event, attempts agenthook.Attempts) (agenthook.Decision, string) {
+// decide gates the project and applies the attempt limits. Blocks whose only blocking findings are pending proofs
+// count against MaxHostWaits, all other blocks against MaxAttempts; neither resets the other, and only a pass or a
+// give-up resets both, so any interleaving ends within MaxAttempts + MaxHostWaits blocks.
+func decide(event agenthook.Event, attempts agenthook.Attempts, gate func() hookVerdict) (agenthook.Decision, string) {
+	waits := attempts.CountHostWaits(event.SessionID)
 	prior := event.PriorBlocks
-	if !event.CountsBlocks {
+	if event.CountsBlocks {
+		// The harness counts every block; the ones that waited for the host are not attempts.
+		prior = max(0, event.PriorBlocks-waits)
+	} else {
 		prior = attempts.Count(event.SessionID)
 	}
-	verdict := gateVerdict()
+	verdict := gate()
 	if !verdict.blocked {
 		attempts.Reset(event.SessionID)
-		if prior > 0 {
+		if prior > 0 || waits > 0 {
 			return agenthook.DecisionAnnouncePass, verdict.message
 		}
 		return agenthook.DecisionAllow, ""
 	}
+	if verdict.pendingOnly {
+		return waitForHost(event, attempts, waits, prior, verdict)
+	}
 	if prior >= agenthook.MaxAttempts {
 		attempts.Reset(event.SessionID)
-		return agenthook.DecisionGiveUp, agenthook.GiveUpMessage(prior, verdict.message)
+		return agenthook.DecisionGiveUp, agenthook.GiveUpMessage(prior+waits, verdict.message)
 	}
 	if !event.CountsBlocks {
 		// A counter that cannot be written only makes the hook more insistent; the harness's own limits still apply.
@@ -107,10 +116,21 @@ func decide(event agenthook.Event, attempts agenthook.Attempts) (agenthook.Decis
 	return agenthook.DecisionBlock, verdict.message
 }
 
+func waitForHost(event agenthook.Event, attempts agenthook.Attempts, waits, prior int, verdict hookVerdict) (agenthook.Decision, string) {
+	if waits >= agenthook.MaxHostWaits {
+		attempts.Reset(event.SessionID)
+		return agenthook.DecisionGiveUp, agenthook.GiveUpMessage(prior+waits, verdict.message)
+	}
+	_ = attempts.RecordHostWaits(event.SessionID, waits+1)
+	return agenthook.DecisionBlock, verdict.message
+}
+
 // hookVerdict is what the gate concluded, worded for the agent or the user.
 type hookVerdict struct {
 	blocked bool
-	message string
+	// pendingOnly is true when every blocking finding is a proof still being produced through the host.
+	pendingOnly bool
+	message     string
 }
 
 // gateVerdict runs the gate of the working directory's shallnot.yaml. It
@@ -130,6 +150,9 @@ func gateVerdict() hookVerdict {
 		return hookVerdict{blocked: true, message: agenthook.FailureMessage(err)}
 	}
 	if outcome.Analysis.Verdict == domain.VerdictFail && !outcome.Policy.Advisory {
+		if agenthook.OnlyPending(outcome.Analysis.Findings) {
+			return hookVerdict{blocked: true, pendingOnly: true, message: agenthook.PendingMessage(outcome.Analysis.Findings)}
+		}
 		return hookVerdict{blocked: true, message: agenthook.BlockedMessage(outcome.Analysis.Findings)}
 	}
 	covered, nonTestable := 0, 0
