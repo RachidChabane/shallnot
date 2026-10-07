@@ -37,7 +37,7 @@ func TestCore(t *testing.T) {
 	})
 
 	t.Run("the domain and the analysis depend on no adapter and import no file access [verifies SN-67~1]", func(t *testing.T) {
-		for _, core := range []string{"/internal/domain", "/internal/analysis"} {
+		for _, core := range []string{"/internal/domain/...", "/internal/analysis/..."} {
 			for _, dependency := range imports(t, modulePath+core) {
 				if strings.HasPrefix(dependency, modulePath+"/internal/adapters") || dependency == "os" || dependency == "io/fs" {
 					t.Errorf("%s depends on %s", core, dependency)

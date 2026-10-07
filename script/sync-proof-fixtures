@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Copy the golden proofs and the predicate schemas of a spec-proof checkout into
+# internal/domain/proof/testdata, then write and verify a SHA-256 manifest of
+# every copied file. Predicate schemas and goldens are owned by spec-proof;
+# nothing flows the other way.
+#
+# usage: script/sync-proof-fixtures <spec-proof checkout>
+set -euo pipefail
+if [ "$#" -ne 1 ]; then
+  echo "usage: script/sync-proof-fixtures <spec-proof checkout>" >&2
+  exit 2
+fi
+checkout="$(cd "$1" && pwd)"
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+source_format="$checkout/format"
+golden_source="$source_format/testdata/golden"
+schemas_source="$source_format/schemas"
+for directory in "$golden_source" "$schemas_source"; do
+  if [ ! -d "$directory" ]; then
+    echo "sync-proof-fixtures: $directory is not a directory" >&2
+    exit 2
+  fi
+done
+if [ ! -f "$golden_source/manifest.json" ]; then
+  echo "sync-proof-fixtures: $golden_source holds no manifest.json" >&2
+  exit 2
+fi
+
+testdata=internal/domain/proof/testdata
+manifest=sha256.manifest
+
+if command -v sha256sum >/dev/null 2>&1; then
+  hash_file() { sha256sum "$1"; }
+  check_manifest() { sha256sum --check --quiet "$1"; }
+else
+  hash_file() { shasum -a 256 "$1"; }
+  check_manifest() { shasum -a 256 --check --quiet "$1"; }
+fi
+
+rm -rf "$testdata/golden" "$testdata/schemas"
+mkdir -p "$testdata/golden" "$testdata/schemas"
+cp "$golden_source"/*.json "$testdata/golden/"
+cp "$schemas_source"/*.json "$testdata/schemas/"
+
+(
+  cd "$testdata"
+  LC_ALL=C find golden schemas -type f -name '*.json' | LC_ALL=C sort | while IFS= read -r file; do
+    hash_file "$file"
+  done >"$manifest"
+  check_manifest "$manifest"
+)
+echo "sync-proof-fixtures: $(wc -l <"$testdata/$manifest" | tr -d ' ') files copied and verified against $testdata/$manifest"

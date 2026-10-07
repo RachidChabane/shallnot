@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rachid-chabane.com/attestations/statement/v1",
+  "title": "In-toto Statement v1 envelope with the subject rule of each predicate",
+  "type": "object",
+  "required": ["_type", "subject", "predicateType", "predicate"],
+  "properties": {
+    "_type": { "const": "https://in-toto.io/Statement/v1" },
+    "subject": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "digest"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "digest": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/digest" }
+        }
+      }
+    },
+    "predicateType": {
+      "enum": [
+        "https://rachid-chabane.com/attestations/alignment/v1",
+        "https://rachid-chabane.com/attestations/discriminating-power/v1",
+        "https://rachid-chabane.com/attestations/completeness/v1"
+      ]
+    },
+    "predicate": { "type": "object" }
+  },
+  "allOf": [
+    {
+      "if": {
+        "required": ["predicateType"],
+        "properties": { "predicateType": { "const": "https://rachid-chabane.com/attestations/alignment/v1" } }
+      },
+      "then": { "$ref": "#/$defs/requirementSubject" }
+    },
+    {
+      "if": {
+        "required": ["predicateType"],
+        "properties": { "predicateType": { "const": "https://rachid-chabane.com/attestations/discriminating-power/v1" } }
+      },
+      "then": { "$ref": "#/$defs/requirementSubject" }
+    },
+    {
+      "if": {
+        "required": ["predicateType"],
+        "properties": { "predicateType": { "const": "https://rachid-chabane.com/attestations/completeness/v1" } }
+      },
+      "then": { "$ref": "#/$defs/specSubject" }
+    }
+  ],
+  "$defs": {
+    "requirementSubject": {
+      "properties": {
+        "subject": {
+          "items": {
+            "properties": {
+              "name": { "pattern": "^[^~]+~[1-9][0-9]*$" }
+            }
+          }
+        }
+      }
+    },
+    "specSubject": {
+      "properties": {
+        "subject": {
+          "items": {
+            "properties": {
+              "name": {
+                "pattern": "^(?:[^/\\\\\\x00.][^/\\\\\\x00]*|\\.[^/\\\\\\x00.][^/\\\\\\x00]*|\\.\\.[^/\\\\\\x00]+)(?:/(?:[^/\\\\\\x00.][^/\\\\\\x00]*|\\.[^/\\\\\\x00.][^/\\\\\\x00]*|\\.\\.[^/\\\\\\x00]+))*$"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

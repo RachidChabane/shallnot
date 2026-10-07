@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rachid-chabane.com/attestations/discriminating-power/v1",
+  "title": "Discriminating-power predicate: the tests-by-mutants matrix of one criterion",
+  "x-minorVersion": 1,
+  "type": "object",
+  "required": ["requirement", "module", "inputs", "cacheKey", "producedBy", "extensions", "tests", "correctCodePasses", "executor"],
+  "properties": {
+    "requirement": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/requirement" },
+    "module": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/module" },
+    "inputs": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/inputs" },
+    "cacheKey": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/sha256Hex" },
+    "producedBy": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/producedBy" },
+    "extensions": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/extensions" },
+    "tests": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" },
+      "uniqueItems": true
+    },
+    "correctCodePasses": {
+      "allOf": [
+        { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/executedClaim" },
+        { "properties": { "value": { "type": "boolean" } } }
+      ]
+    },
+    "executor": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/executor" },
+    "mutants": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/mutant" }
+    },
+    "examples": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/exampleRun" }
+    }
+  },
+  "$defs": {
+    "mutant": {
+      "type": "object",
+      "required": ["digest", "validity", "results"],
+      "properties": {
+        "digest": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/sha256Hex" },
+        "validity": {
+          "allOf": [
+            { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/judgedClaim" },
+            { "properties": { "value": { "enum": ["VALID", "EQUIVALENT", "NOT_VIOLATING", "UNDETERMINED"] } } }
+          ]
+        },
+        "sentinel": { "type": "boolean" },
+        "results": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/testResult" }
+        },
+        "extensions": {
+          "type": "object",
+          "properties": {
+            "decision": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/decision" },
+            "collateral": { "type": "boolean" },
+            "offTarget": { "type": "string" },
+            "unattributed": { "type": "boolean" }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "required": ["sentinel"],
+            "properties": { "sentinel": { "const": true } }
+          },
+          "then": {
+            "properties": {
+              "validity": { "properties": { "value": { "const": "EQUIVALENT" } } }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["validity"],
+            "properties": {
+              "validity": {
+                "required": ["value", "class"],
+                "properties": { "value": { "const": "VALID" }, "class": { "const": "judged" } }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "validity": {
+                "required": ["corroboratedBy"],
+                "properties": { "corroboratedBy": { "minItems": 1 } }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["extensions"],
+            "properties": {
+              "extensions": {
+                "anyOf": [
+                  { "required": ["unattributed"], "properties": { "unattributed": { "const": true } } },
+                  { "required": ["offTarget"], "properties": { "offTarget": { "minLength": 1 } } }
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "validity": { "properties": { "value": { "const": "NOT_VIOLATING" } } }
+            }
+          }
+        },
+        {
+          "if": {
+            "required": ["extensions"],
+            "properties": {
+              "extensions": {
+                "required": ["unattributed", "offTarget"],
+                "properties": { "unattributed": { "const": true }, "offTarget": { "minLength": 1 } }
+              }
+            }
+          },
+          "then": { "not": {} }
+        }
+      ]
+    },
+    "testResult": {
+      "type": "object",
+      "required": ["test", "outcome"],
+      "properties": {
+        "test": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" },
+        "outcome": {
+          "allOf": [
+            { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/executedClaim" },
+            { "properties": { "value": { "enum": ["killed", "survived", "error"] } } }
+          ]
+        }
+      }
+    },
+    "exampleRun": {
+      "type": "object",
+      "required": ["index", "result"],
+      "properties": {
+        "index": { "type": "integer", "minimum": 0 },
+        "result": {
+          "allOf": [
+            { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/executedClaim" },
+            { "properties": { "value": { "enum": ["passed", "failed"] } } }
+          ]
+        }
+      }
+    }
+  }
+}

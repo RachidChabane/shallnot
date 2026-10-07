@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rachid-chabane.com/attestations/alignment/v1",
+  "title": "Alignment predicate: one test judged against one criterion",
+  "x-minorVersion": 1,
+  "type": "object",
+  "required": ["requirement", "module", "inputs", "cacheKey", "producedBy", "extensions", "test", "verdict", "executor"],
+  "properties": {
+    "requirement": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/requirement" },
+    "module": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/module" },
+    "inputs": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/inputs" },
+    "cacheKey": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/sha256Hex" },
+    "producedBy": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/producedBy" },
+    "extensions": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/extensions" },
+    "test": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" },
+    "verdict": {
+      "allOf": [
+        { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/judgedClaim" },
+        { "properties": { "value": { "enum": ["ALIGNED", "MISALIGNED", "UNDETERMINED"] } } }
+      ]
+    },
+    "executor": {
+      "allOf": [
+        { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/executor" },
+        { "properties": { "blind": { "const": true } } }
+      ]
+    }
+  }
+}

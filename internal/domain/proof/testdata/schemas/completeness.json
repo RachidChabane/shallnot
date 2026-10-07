@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rachid-chabane.com/attestations/completeness/v1",
+  "title": "Completeness predicate: advisory questions about one spec",
+  "x-minorVersion": 1,
+  "type": "object",
+  "required": ["module", "inputs", "cacheKey", "producedBy", "extensions", "advisory"],
+  "properties": {
+    "module": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/module" },
+    "inputs": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/inputs" },
+    "cacheKey": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/sha256Hex" },
+    "producedBy": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/producedBy" },
+    "extensions": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/extensions" },
+    "advisory": { "const": true },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["dimension", "question"],
+        "properties": {
+          "dimension": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" },
+          "question": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" },
+          "requirementIds": {
+            "type": "array",
+            "items": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" },
+            "uniqueItems": true
+          }
+        }
+      }
+    },
+    "outOfScopeDeclared": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["dimension", "reason"],
+        "properties": {
+          "dimension": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" },
+          "reason": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" }
+        }
+      }
+    }
+  },
+  "not": { "required": ["verdict"] }
+}

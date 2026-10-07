@@ -233,6 +233,39 @@ The requirements of shallnot itself, in its own Markdown spec format.
   statement digests, or computed them with another canonicalization.
 - **SN-100~1**: THE documentation SHALL name exactly the finding categories,
   the out-of-scope dimensions and the `check` flags the code defines.
+- **SN-101~1**: WHEN given a proof file THE SYSTEM SHALL read the in-toto
+  Statement v1 envelope and the alignment, discriminating-power and
+  completeness predicates with the standard JSON library alone, ignore a
+  member the format does not define, ignore a statement of another predicate
+  type, and report a `_type` other than Statement v1 or a predicate type that
+  differs from the statement's own as a violation.
+- **SN-102~1**: WHEN a claim is judged without a confidence, executed with a
+  confidence, carries a confidence outside [0,1], or has another class than
+  the one its field allows THE SYSTEM SHALL report a violation.
+- **SN-103~1**: WHEN a statement is about a criterion THE SYSTEM SHALL require
+  exactly one subject named `ID~REV` after its requirement, with a SHA-256
+  digest; WHEN it is about a spec THE SYSTEM SHALL require a relative POSIX
+  path; and WHEN the recorded cache key differs from the SHA-256 of the
+  canonical form of the subject and the inputs THE SYSTEM SHALL report a
+  violation.
+- **SN-104~1**: WHEN an input role, a verdict, a validity, an outcome, a
+  producer, a channel, an isolation level or a decision basis is outside its
+  closed set, a digest is not a SHA-256 hex string, or an array is not
+  strictly ascending in the order the format fixes THE SYSTEM SHALL report a
+  violation.
+- **SN-105~1**: WHEN a judged VALID mutant validity lists no executed
+  corroboration, an executed claim carries a corroboration or an executor, an
+  executor lacks the fields its isolation level requires, a sentinel mutant is
+  not EQUIVALENT, an alignment judge was not blind, a completeness proof is not
+  advisory, or a mutant is both unattributed and off-target THE SYSTEM SHALL
+  report a violation.
+- **SN-106~1**: WHEN it reads the golden proofs and predicate schemas that
+  spec-proof owns THE SYSTEM SHALL give each the decode result and the exact
+  violation codes its manifest states, and SHALL refuse a copied file whose
+  SHA-256 differs from the manifest of the copy.
+- **SN-107~1**: WHEN a set of files is digested THE SYSTEM SHALL hash `path
+  NUL content NUL` over the files sorted by path, regardless of the order given,
+  and refuse a path that is not relative POSIX or that occurs twice.
 
 ## Architecture
 
