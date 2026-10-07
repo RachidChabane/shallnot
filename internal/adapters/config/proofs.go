@@ -24,10 +24,10 @@ func (f ProofsFile) config() (proof.Config, error) {
 		return config, err
 	}
 	if f.Thresholds != nil {
-		if err := applyThreshold("thresholds.validity", f.Thresholds.Validity, &config.Thresholds.Validity); err != nil {
+		if err := f.Thresholds.Validity.apply("thresholds.validity", &config.Thresholds.Validity); err != nil {
 			return config, err
 		}
-		if err := applyThreshold("thresholds.alignment", f.Thresholds.Alignment, &config.Thresholds.Alignment); err != nil {
+		if err := f.Thresholds.Alignment.apply("thresholds.alignment", &config.Thresholds.Alignment); err != nil {
 			return config, err
 		}
 	}
@@ -61,17 +61,6 @@ func (f ProofsFile) applyClosedSets(config *proof.Config) (err error) {
 			return err
 		}
 	}
-	return nil
-}
-
-func applyThreshold(name string, value *float64, target *float64) error {
-	if value == nil {
-		return nil
-	}
-	if *value < proof.MinConfidence || *value > proof.MaxConfidence {
-		return fmt.Errorf("%s must lie in [%v,%v], got %v", name, proof.MinConfidence, proof.MaxConfidence, *value)
-	}
-	*target = *value
 	return nil
 }
 

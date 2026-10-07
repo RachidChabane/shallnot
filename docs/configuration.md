@@ -135,7 +135,7 @@ proof is read.
 | `require` | array of string | `[]` | Kinds every covered requirement in focus must hold a valid proof of: `alignment`, `discriminating-power` or their predicate type URIs. `completeness` is advisory and is refused. |
 | `code` | array of string | `[]` | Files, directories or globs that a proof's `code_tree` descriptors may name. A descriptor outside them makes the proof stale, so without entries a proof that names a `code_tree` file is stale. |
 | `trust` | string | `signed` | `signed` or `local`. |
-| `thresholds` | mapping | `validity: 0.7`, `alignment: 0.7` | Confidence in [0,1] at which a judged claim has power: `validity` for mutants, `alignment` for verdicts. |
+| `thresholds` | mapping | `validity: 0.7`, `alignment: 0.7` | Confidence in [0,1] at which a judged claim has power: `validity` for mutants, `alignment` for verdicts. Each is a number for every confidence source, or a mapping of `default` and of confidence sources (`execution`, `host-votes`, `system-one`, or one exact source such as `host-votes(2)`) to numbers; see [proofs.md](proofs.md#confidence-sources). |
 | `escalation` | string | `error` | `error` fails the verdict on a finding that escalates a judged signal; `warning` only reports it. A severity set for a category wins. |
 | `signed_pass_basis` | string | `corroborated` | `executed-only`, `corroborated` or `judged`. |
 | `min_isolation` | string | `restricted` | Floor below which a judged response earns no pass credit: `restricted-attested`, `restricted`, `restricted-unverified`, `unrestricted` or `inline`. |

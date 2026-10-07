@@ -328,7 +328,8 @@ func (e *evaluation) report() proof.Report {
 		Trust: config.Trust,
 		Policy: proof.PolicyReport{
 			SignedPassBasis: config.SignedPassBasis, MinIsolation: config.MinIsolation, MaxHostExclusions: config.MaxHostExclusions,
-			ValidityThreshold: config.Thresholds.Validity, AlignmentThreshold: config.Thresholds.Alignment, Escalation: config.Escalation,
+			ValidityThreshold: config.Thresholds.Validity.Default, AlignmentThreshold: config.Thresholds.Alignment.Default,
+			ValidityThresholdBySource: config.Thresholds.Validity.BySource, AlignmentThresholdBySource: config.Thresholds.Alignment.BySource, Escalation: config.Escalation,
 			IsolationFloorLowered: config.MinIsolation.Strength() < proof.DefaultMinIsolation.Strength(),
 		},
 		Consumed: consumedReport(e.statements),

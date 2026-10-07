@@ -263,13 +263,17 @@ The requirements of shallnot itself, in its own Markdown spec format.
   spec-proof owns THE SYSTEM SHALL give each the decode result and the exact
   violation codes its manifest states, and SHALL refuse a copied file whose
   SHA-256 differs from the manifest of the copy.
-- **SN-108~1**: WHEN shallnot.yaml holds a `proofs` block of the keys
+- **SN-108~2**: WHEN shallnot.yaml holds a `proofs` block of the keys
   verified_dir, require, code, trust, thresholds with validity and alignment,
   escalation, signed_pass_basis, min_isolation and max_host_exclusions THE
   SYSTEM SHALL apply each over its default, refuse an unknown key, a value
   outside its closed set or a confidence outside [0,1], refuse to require
   completeness proofs, which are advisory, and publish the block in the config
-  schema.
+  schema; and WHEN a threshold is a number THE SYSTEM SHALL take it as the
+  default of every confidence source, and WHEN it is a mapping THE SYSTEM SHALL
+  read `default` and one number per confidence source, as a kind
+  (`execution`, `host-votes`, `system-one`) or as one exact source, and refuse
+  a key that names no confidence source.
 - **SN-109~1**: WHEN `proofs` is configured THE SYSTEM SHALL read the manifest
   of the verified directory and the statement files it lists with the
   operating system and the standard JSON library alone, record the SHA-256 of
@@ -278,20 +282,23 @@ The requirements of shallnot itself, in its own Markdown spec format.
   the digest the manifest lists, that does not decode or that breaks an
   invariant, while ignoring a statement of another predicate type and a file
   the manifest does not list.
-- **SN-110~2**: WHEN `proofs` is configured THE SYSTEM SHALL read the SHA-256
+- **SN-110~3**: WHEN `proofs` is configured THE SYSTEM SHALL read the SHA-256
   of the exact bytes of each file that a `code_tree` or `test_source`
   descriptor of a well-formed proof names, resolved against the directory of the
-  configuration file, record no digest for a file that is absent, is not a
-  regular file or whose path is not relative POSIX, read no other file of the
-  code or test tree, and record the SHA-256 of each known spec file.
+  configuration file whatever the working directory of the process is, record
+  no digest for a file that is absent, is not a regular file or whose path is
+  not relative POSIX, read no other file of the code or test tree, and record
+  the SHA-256 of each known spec file.
 - **SN-111~2**: WHEN a proof's subject digest or revision differs from the
   requirement's current statement, or a spec file a completeness proof covers
   changed, THE SYSTEM SHALL classify the proof stale, and under `trust: signed`
   SHALL classify stale a proof produced locally and every proof of a set whose
   manifest was not written by the signature verifier.
-- **SN-112~1**: WHEN a proof lists an input of the role `proof` whose digest is
-  that of no valid proof in the verified set THE SYSTEM SHALL classify it
-  stale, transitively.
+- **SN-112~2**: WHEN a proof lists an input of the role `proof` and the
+  verified set holds no valid proof of that kind, about the criterion the
+  input's `annotations.criterion` names, whose file has the input's digest THE
+  SYSTEM SHALL classify it stale, transitively, and SHALL accept several such
+  inputs of one kind that name different criteria.
 - **SN-113~1**: WHEN a requirement in focus is covered THE SYSTEM SHALL pass
   it only if traceability and every module in `proofs.require` pass; a
   required module with no valid proof SHALL be a `stale_proof` finding that
@@ -301,9 +308,10 @@ The requirements of shallnot itself, in its own Markdown spec format.
 - **SN-114~1**: WHEN a discriminating-power proof records that the tests fail
   on the reference code, or that an example of the criterion fails on it, THE
   SYSTEM SHALL block with `correct_code_fails` or `example_failed`.
-- **SN-115~1**: WHEN a mutant survived every test and is VALID THE SYSTEM
+- **SN-115~2**: WHEN a mutant survived every test and is VALID THE SYSTEM
   SHALL block with `surviving_valid_mutant` if an example of the criterion
-  fails on it, or if its confidence reaches `thresholds.validity` and it names
+  fails on it, or if its confidence reaches the `thresholds.validity` of its
+  confidence source and it names
   a confirmed witness, a build and the other criteria's tests passing, and
   otherwise escalate with `escalated_mutant`; a survivor judged UNDETERMINED
   SHALL escalate.
@@ -326,9 +334,9 @@ The requirements of shallnot itself, in its own Markdown spec format.
 - **SN-118~1**: WHEN a test killed a sentinel mutant THE SYSTEM SHALL escalate
   with `mutation_sensitive_test`, give its kills no credit and cap its
   alignment at UNDETERMINED.
-- **SN-119~1**: WHEN a passing test of a covered requirement has an alignment
+- **SN-119~2**: WHEN a passing test of a covered requirement has an alignment
   proof THE SYSTEM SHALL clear it only if the verdict is ALIGNED at or above
-  `thresholds.alignment`, the isolation reaches the floor, and, unless trust is
+  the `thresholds.alignment` of its confidence source, the isolation reaches the floor, and, unless trust is
   local or the basis is judged, the verdict lists specific matrix evidence;
   any other verdict SHALL escalate with `misaligned_test` and never block.
 - **SN-120~1**: WHEN `trust` is local THE SYSTEM SHALL apply the judged pass
@@ -358,10 +366,10 @@ The requirements of shallnot itself, in its own Markdown spec format.
   channels, the isolation levels, the host exclusions and the screen
   exclusions, and SHALL write the same report bytes for the same inputs; WHEN
   it has none the extension SHALL be absent.
-- **SN-126~1**: THE documentation SHALL name exactly the keys of the `proofs`
+- **SN-126~2**: THE documentation SHALL name exactly the keys of the `proofs`
   block, the manifest keys, the pending reasons, the trust levels, the pass
-  bases, the isolation levels and the properties of `extensions.proofs` the
-  code defines.
+  bases, the isolation levels, the kinds of confidence source and the
+  properties of `extensions.proofs` the code defines.
 - **SN-127~1**: WHEN a hook blocks a gate whose only blocking findings are
   pending proofs THE SYSTEM SHALL count the block in a counter of its own, in
   the attempts directory, that lets the hook give up after `MaxHostWaits` = 3
@@ -388,18 +396,37 @@ The requirements of shallnot itself, in its own Markdown spec format.
   file that is absent or whose bytes no longer have the recorded SHA-256 THE
   SYSTEM SHALL classify the proof stale and name the file, and WHEN a file that
   no descriptor names changes THE SYSTEM SHALL leave the proof valid.
-- **SN-133~1**: WHEN a `code_tree` descriptor names a file outside the
+- **SN-133~2**: WHEN a `code_tree` descriptor names a file outside the
   configured `proofs.code` entries, or a `test_source` descriptor a file outside
-  the configured `tests` roots, or either names an excluded path or a path that
-  is not relative POSIX, THE SYSTEM SHALL classify the proof stale.
+  the configured `tests` roots, or either names an excluded path, THE SYSTEM
+  SHALL classify the proof stale.
 - **SN-134~2**: WHEN a test file holds a test that the source tags bind to the
   criterion a discriminating-power proof is about, or, for an alignment proof,
   the test the proof is about, and the proof lists that file in no
   `test_source` descriptor THE SYSTEM SHALL classify the proof stale and name
   the file.
-- **SN-135~1**: WHEN the `spec` descriptor of a proof about a criterion is not
+- **SN-135~2**: WHEN the `spec` descriptor of a proof about a criterion is not
   named `ID~REV` of that criterion or does not carry the current statement
-  digest of the criterion THE SYSTEM SHALL classify the proof stale.
+  digest of the criterion THE SYSTEM SHALL classify the proof stale, or, when
+  it disagrees with the subject of the proof itself, report it as malformed.
+- **SN-136~1**: WHEN an input descriptor of a statement breaks the form of its
+  role, THE SYSTEM SHALL report an `input_descriptor` violation for a file
+  input whose name is not a relative POSIX path, a `spec` input of a criterion's
+  proof that is not named `ID~REV` with the digest of the subject, and a `proof`
+  input that is not named by a proof kind or whose `annotations.criterion` is
+  absent or not `ID~REV`; THE SYSTEM SHALL accept several `proof` inputs of one
+  kind that name different criteria, order inputs by role, name and criterion,
+  report two inputs with the same role, name and criterion as unsorted, and
+  leave the criterion annotation out of the cache key.
+- **SN-137~1**: WHEN a decision of a statement records a `confidenceSource`
+  THE SYSTEM SHALL read it and its `confidenceMapping`, and SHALL report an
+  unknown value for a source that is not `execution`, `host-votes(k)` with k at
+  least 1 or `system-one:` followed by an origin.
+- **SN-138~1**: WHEN a judged claim is evaluated THE SYSTEM SHALL apply the
+  threshold of the confidence source of the decision recorded on its mutant,
+  else on its predicate: the entry of the exact source, else the entry of its
+  kind, else the default, SHALL name that threshold in the finding, and SHALL
+  report the defaults and the entries by source in `extensions.proofs.policy`.
 
 ## Architecture
 

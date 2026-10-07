@@ -76,7 +76,10 @@ type PolicyReport struct {
 	MaxHostExclusions  int             `json:"maxHostExclusions"`
 	ValidityThreshold  float64         `json:"validityThreshold"`
 	AlignmentThreshold float64         `json:"alignmentThreshold"`
-	Escalation         Escalation      `json:"escalation"`
+	// ValidityThresholdBySource and AlignmentThresholdBySource list the thresholds that differ by confidence source.
+	ValidityThresholdBySource  map[ConfidenceSource]float64 `json:"validityThresholdBySource,omitempty"`
+	AlignmentThresholdBySource map[ConfidenceSource]float64 `json:"alignmentThresholdBySource,omitempty"`
+	Escalation                 Escalation                   `json:"escalation"`
 	// IsolationFloorLowered flags a floor weaker than the default.
 	IsolationFloorLowered bool `json:"isolationFloorLowered"`
 }

@@ -24,8 +24,8 @@ func drawConfig(t *rapid.T) proof.Config {
 		c.SignedPassBasis = rapid.SampledFrom([]proof.SignedPassBasis{proof.BasisExecutedOnly, proof.BasisCorroborated, proof.BasisJudged}).Draw(t, "basis")
 		c.MinIsolation = rapid.SampledFrom(proof.Isolations()).Draw(t, "floor")
 		c.MaxHostExclusions = rapid.IntRange(0, 3).Draw(t, "maxHostExclusions")
-		c.Thresholds.Validity = rapid.Float64Range(0, 1).Draw(t, "validityThreshold")
-		c.Thresholds.Alignment = rapid.Float64Range(0, 1).Draw(t, "alignmentThreshold")
+		c.Thresholds.Validity = proof.Threshold{Default: rapid.Float64Range(0, 1).Draw(t, "validityThreshold")}
+		c.Thresholds.Alignment = proof.Threshold{Default: rapid.Float64Range(0, 1).Draw(t, "alignmentThreshold")}
 		c.Require = []proof.Kind{proof.KindDiscriminatingPower}
 	})
 }

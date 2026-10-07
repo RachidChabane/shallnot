@@ -96,13 +96,13 @@ func (p policy) evaluateDiscriminatingPower(criterion Criterion, predicate *proo
 		if mutant.Sentinel {
 			continue
 		}
-		executor := executorOf(mutant.Validity, predicate.Executor)
-		evaluation.channels[executor.Channel]++
-		evaluation.isolation[executor.Isolation]++
+		who := validityAnswerer(mutant, predicate)
+		evaluation.channels[who.executor.Channel]++
+		evaluation.isolation[who.executor.Isolation]++
 		if mutant.Validity.Value == proof.ValidityValid {
 			evaluation.validMutants++
 		}
-		verdict := p.judgeMutant(mutant, predicate.Executor, &evaluation)
+		verdict := p.judgeMutant(mutant, who, &evaluation)
 		name := abbreviate(mutant.Digest)
 		switch verdict.disposition {
 		case dispositionBlock:
@@ -141,31 +141,31 @@ func (p policy) taintSentinelKillers(evaluation *dpEvaluation, mutants []proof.M
 }
 
 // judgeMutant is the claim-power table of the proof format, one case per row.
-func (p policy) judgeMutant(mutant proof.Mutant, predicateExecutor proof.Executor, evaluation *dpEvaluation) verdictOnMutant {
+func (p policy) judgeMutant(mutant proof.Mutant, who answerer, evaluation *dpEvaluation) verdictOnMutant {
 	facts := factsOf(mutant)
 	validity := mutant.Validity
-	executor := executorOf(validity, predicateExecutor)
 	switch {
 	case facts.survived:
-		return p.judgeSurvivor(mutant, executor, evaluation)
+		return p.judgeSurvivor(mutant, who, evaluation)
 	case len(facts.killedBy) > 0 && validity.Value == proof.ValidityValid:
-		return p.judgeKill(mutant, facts, executor, evaluation.tainted)
+		return p.judgeKill(mutant, facts, who, evaluation.tainted)
 	}
 	return verdictOnMutant{}
 }
 
-func (p policy) judgeSurvivor(mutant proof.Mutant, executor proof.Executor, evaluation *dpEvaluation) verdictOnMutant {
+func (p policy) judgeSurvivor(mutant proof.Mutant, who answerer, evaluation *dpEvaluation) verdictOnMutant {
 	validity := mutant.Validity
 	confidence := validity.ConfidenceOrZero()
+	threshold := p.validityThreshold(who.source)
 	switch validity.Value {
 	case proof.ValidityValid:
 		switch {
 		case has(validity, ownerExample...):
 			return verdictOnMutant{dispositionBlock, "it fails an example of the criterion"}
-		case p.confidentValidity(confidence) && has(validity, blockWitness...):
+		case confidence >= threshold && has(validity, blockWitness...):
 			return verdictOnMutant{dispositionBlock, "judged VALID with a confirmed witness, a build and the other criteria's tests passing"}
-		case !p.confidentValidity(confidence):
-			return verdictOnMutant{dispositionEscalate, fmt.Sprintf("judged VALID with confidence %.2f, below %.2f", confidence, p.config.Thresholds.Validity)}
+		case confidence < threshold:
+			return verdictOnMutant{dispositionEscalate, fmt.Sprintf("judged VALID with confidence %.2f, below %.2f", confidence, threshold)}
 		default:
 			return verdictOnMutant{dispositionEscalate, "judged VALID without a confirmed witness, a build and the other criteria's tests passing"}
 		}
@@ -175,7 +175,7 @@ func (p policy) judgeSurvivor(mutant proof.Mutant, executor proof.Executor, eval
 		}
 		return verdictOnMutant{dispositionEscalate, "judged EQUIVALENT without a differential search that found no difference"}
 	case proof.ValidityNotViolating:
-		return p.judgeNotViolatingSurvivor(validity, executor, evaluation)
+		return p.judgeNotViolatingSurvivor(validity, who, evaluation)
 	default:
 		return verdictOnMutant{dispositionEscalate, "its validity is UNDETERMINED"}
 	}
@@ -184,16 +184,17 @@ func (p policy) judgeSurvivor(mutant proof.Mutant, executor proof.Executor, eval
 // judgeNotViolatingSurvivor decides on a survivor judged not to violate the criterion, which covers off-target and
 // unattributed mutants: an executed example of another criterion excludes it; a judgment alone does so only where the
 // basis allows and the budget of host exclusions is not spent.
-func (p policy) judgeNotViolatingSurvivor(validity proof.Claim[proof.Validity], executor proof.Executor, evaluation *dpEvaluation) verdictOnMutant {
+func (p policy) judgeNotViolatingSurvivor(validity proof.Claim[proof.Validity], who answerer, evaluation *dpEvaluation) verdictOnMutant {
+	threshold := p.validityThreshold(who.source)
 	switch {
 	case has(validity, exclusionExample...):
 		return verdictOnMutant{dispositionExcludedExecuted, ""}
 	case p.basis() != proof.BasisJudged:
 		return verdictOnMutant{dispositionEscalate, fmt.Sprintf("judged NOT_VIOLATING with no example of another criterion failing; signed_pass_basis %s excludes no survivor on a judgment", p.basis())}
-	case !p.confidentValidity(validity.ConfidenceOrZero()):
-		return verdictOnMutant{dispositionEscalate, fmt.Sprintf("judged NOT_VIOLATING with confidence %.2f, below %.2f", validity.ConfidenceOrZero(), p.config.Thresholds.Validity)}
-	case !p.aboveFloor(executor):
-		return verdictOnMutant{dispositionEscalate, fmt.Sprintf("judged NOT_VIOLATING by an executor of isolation %s, below the floor %s", executor.Isolation, p.config.MinIsolation)}
+	case validity.ConfidenceOrZero() < threshold:
+		return verdictOnMutant{dispositionEscalate, fmt.Sprintf("judged NOT_VIOLATING with confidence %.2f, below %.2f", validity.ConfidenceOrZero(), threshold)}
+	case !p.aboveFloor(who.executor):
+		return verdictOnMutant{dispositionEscalate, fmt.Sprintf("judged NOT_VIOLATING by an executor of isolation %s, below the floor %s", who.executor.Isolation, p.config.MinIsolation)}
 	case evaluation.hostExclusions >= p.config.MaxHostExclusions:
 		return verdictOnMutant{dispositionEscalate, fmt.Sprintf("judged NOT_VIOLATING, but %d survivors are already excluded on a judgment alone", p.config.MaxHostExclusions)}
 	}
@@ -202,7 +203,7 @@ func (p policy) judgeNotViolatingSurvivor(validity proof.Claim[proof.Validity], 
 }
 
 // judgeKill decides whether a valid mutant that a test killed earns pass credit. Tests that killed a sentinel earn none.
-func (p policy) judgeKill(mutant proof.Mutant, facts mutantFacts, executor proof.Executor, tainted map[string]bool) verdictOnMutant {
+func (p policy) judgeKill(mutant proof.Mutant, facts mutantFacts, who answerer, tainted map[string]bool) verdictOnMutant {
 	validity := mutant.Validity
 	earning := 0
 	for _, test := range facts.killedBy {
@@ -217,9 +218,9 @@ func (p policy) judgeKill(mutant proof.Mutant, facts mutantFacts, executor proof
 		return verdictOnMutant{dispositionCredit, ""}
 	case p.basis() == proof.BasisExecutedOnly:
 		return verdictOnMutant{dispositionNoCredit, "signed_pass_basis executed-only gives no credit to a judged validity"}
-	case !p.confidentValidity(validity.ConfidenceOrZero()):
+	case validity.ConfidenceOrZero() < p.validityThreshold(who.source):
 		return verdictOnMutant{dispositionNoCredit, "the validity is judged below the threshold"}
-	case !p.aboveFloor(executor):
+	case !p.aboveFloor(who.executor):
 		return verdictOnMutant{dispositionNoCredit, "the executor's isolation is below the floor"}
 	case p.basis() == proof.BasisCorroborated && !has(validity, creditEvidence...):
 		return verdictOnMutant{dispositionNoCredit, "the validity lacks a specific kill, a build, the other criteria's tests passing and a confirmed witness"}

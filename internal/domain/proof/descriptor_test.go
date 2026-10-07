@@ -35,7 +35,7 @@ func TestScopeContains(t *testing.T) {
 		{proof.RoleModelID, "src/a.py", false},
 	}
 	for _, c := range cases {
-		t.Run(string(c.role)+" "+c.file+" [verifies SN-133~1]", func(t *testing.T) {
+		t.Run(string(c.role)+" "+c.file+" [verifies SN-133~2]", func(t *testing.T) {
 			if got := scope.Contains(c.role, c.file); got != c.want {
 				t.Fatalf("Contains = %v, want %v", got, c.want)
 			}
@@ -44,7 +44,7 @@ func TestScopeContains(t *testing.T) {
 }
 
 func TestIsRelativePOSIXPath(t *testing.T) {
-	t.Run("refuses a path that is not relative POSIX [verifies SN-133~1]", func(t *testing.T) {
+	t.Run("refuses a path that is not relative POSIX [verifies SN-136~1]", func(t *testing.T) {
 		for _, path := range []string{"/abs.txt", "../up.txt", "a//b.txt", "a/./b.txt", `a\\b.txt`, ""} {
 			if proof.IsRelativePOSIXPath(path) {
 				t.Errorf("accepted %q", path)

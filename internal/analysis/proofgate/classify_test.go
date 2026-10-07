@@ -1,6 +1,7 @@
 package proofgate_test
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
@@ -71,7 +72,7 @@ func TestStaleness(t *testing.T) {
 		wantCategories(t, evaluate(config(), ev))
 	})
 
-	t.Run("classifies a proof stale when a descriptor lies outside the configured globs or roots [verifies SN-133~1]", func(t *testing.T) {
+	t.Run("classifies a proof stale when a descriptor lies outside the configured globs or roots [verifies SN-133~2]", func(t *testing.T) {
 		outside := map[string]proof.Input{
 			"a code file outside proofs.code":     prooftest.Input(proof.RoleCodeTree, "lib/parkfee.py"),
 			"a test file outside the tests roots": prooftest.Input(proof.RoleTestSource, "spec/other_test.py"),
@@ -91,7 +92,7 @@ func TestStaleness(t *testing.T) {
 		}
 	})
 
-	t.Run("accepts a code descriptor under a file entry or a glob of proofs.code [verifies SN-133~1]", func(t *testing.T) {
+	t.Run("accepts a code descriptor under a file entry or a glob of proofs.code [verifies SN-133~2]", func(t *testing.T) {
 		for _, entries := range [][]string{{codeFile}, {"src/**/*.py"}, {"lib", "src"}} {
 			ev := evidence(dp())
 			input := scope()
@@ -118,7 +119,7 @@ func TestStaleness(t *testing.T) {
 		"carries another statement digest": func(i *proof.Input) { i.Digest.SHA256 = prooftest.Digest("another statement") },
 	}
 	for name, change := range specCases {
-		t.Run("classifies a proof stale when its spec descriptor "+name+" [verifies SN-135~1]", func(t *testing.T) {
+		t.Run("classifies a proof stale when its spec descriptor "+name+" [verifies SN-135~2]", func(t *testing.T) {
 			statement := dp()
 			for index := range statement.DiscriminatingPower.Inputs {
 				if statement.DiscriminatingPower.Inputs[index].Role == proof.RoleSpec {
@@ -162,18 +163,18 @@ func TestStaleness(t *testing.T) {
 }
 
 func proofInput(statement proof.Statement, kind proof.Kind) proof.Input {
-	return proof.Input{Role: proof.RoleProof, Name: string(kind), Digest: proof.Digest{SHA256: statementFileDigest(statement)}}
+	return prooftest.ProofInput(kind, statement.Subject[0].Name, statementFileDigest(statement))
 }
 
 func TestConsumedProofs(t *testing.T) {
-	t.Run("keeps a consumer valid while the proof it consumes is valid [verifies SN-112~1]", func(t *testing.T) {
+	t.Run("keeps a consumer valid while the proof it consumes is valid [verifies SN-112~2]", func(t *testing.T) {
 		power := dp()
 		consumer := aligned(testName, prooftest.Judged(proof.VerdictAligned, 0.9, proof.CorroborationSpecificMatrix), proofInput(power, proof.KindDiscriminatingPower))
 		result := evaluate(config(requireBoth), evidence(power, consumer))
 		wantCategories(t, result)
 	})
 
-	t.Run("makes the consumer stale when the proof it consumes is absent [verifies SN-112~1]", func(t *testing.T) {
+	t.Run("makes the consumer stale when the proof it consumes is absent [verifies SN-112~2]", func(t *testing.T) {
 		power := dp()
 		consumer := aligned(testName, prooftest.Judged(proof.VerdictAligned, 0.9, proof.CorroborationSpecificMatrix), proofInput(power, proof.KindDiscriminatingPower))
 		result := evaluate(config(requireBoth), evidence(consumer))
@@ -183,7 +184,7 @@ func TestConsumedProofs(t *testing.T) {
 		wantCategories(t, result, "stale_proof", "stale_proof")
 	})
 
-	t.Run("makes the consumer stale when the proof it consumes is stale, transitively [verifies SN-112~1]", func(t *testing.T) {
+	t.Run("makes the consumer stale when the proof it consumes is stale, transitively [verifies SN-112~2]", func(t *testing.T) {
 		stalePower := dp()
 		stalePower.DiscriminatingPower.Inputs[0].Digest.SHA256 = prooftest.Digest("old code")
 		stalePower = prooftest.Seal(stalePower)
@@ -194,6 +195,93 @@ func TestConsumedProofs(t *testing.T) {
 			if consumed.State != proof.StateStale {
 				t.Errorf("%s is %s", consumed.Path, consumed.State)
 			}
+		}
+	})
+}
+
+const (
+	otherRequirementID = "PARK-3"
+	otherStatement     = "PARK-3 statement"
+)
+
+// otherPower is the discriminating-power proof of a second criterion the project declares.
+func otherPower() proof.Statement {
+	otherDigest := prooftest.Digest(otherStatement)
+	inputs := []proof.Input{
+		{Role: proof.RoleSpec, Name: proof.SubjectName(otherRequirementID, revision), Digest: proof.Digest{SHA256: otherDigest}},
+		{Role: proof.RoleCodeTree, Name: codeFile, Digest: proof.Digest{SHA256: codeFileDigest}},
+		{Role: proof.RoleTestSource, Name: testFile, Digest: proof.Digest{SHA256: testFileDigest}},
+	}
+	return prooftest.DiscriminatingPower(otherRequirementID, revision, otherDigest, inputs...)
+}
+
+func evaluateWithOther(evidence proof.Evidence) proofgate.Result {
+	known := known()
+	known[otherRequirementID] = proofgate.KnownRequirement{Revision: revision, Digest: prooftest.Digest(otherStatement)}
+	return proofgate.Evaluate(proofgate.Input{
+		Config: config(requireBoth), Known: known, Criteria: []proofgate.Criterion{criterion()}, Scope: scope(), Evidence: evidence,
+	})
+}
+
+func consumedState(result proofgate.Result, subject string, kind proof.Kind) proof.State {
+	for _, consumed := range result.Report.Consumed {
+		if consumed.Subject == subject && consumed.PredicateType == kind.PredicateType() {
+			return consumed.State
+		}
+	}
+	return ""
+}
+
+func TestConsumedProofsPerCriterion(t *testing.T) {
+	alignmentSubject := proof.SubjectName(requirementID, revision)
+
+	t.Run("keeps a consumer valid while every proof it consumes, one per criterion of one kind, is valid [verifies SN-112~2]", func(t *testing.T) {
+		power, other := dp(), otherPower()
+		consumer := aligned(testName, prooftest.Judged(proof.VerdictAligned, 0.9, proof.CorroborationSpecificMatrix),
+			proofInput(power, proof.KindDiscriminatingPower), proofInput(other, proof.KindDiscriminatingPower))
+		result := evaluateWithOther(evidence(power, other, consumer))
+		if got := consumedState(result, alignmentSubject, proof.KindAlignment); got != proof.StateValid {
+			t.Fatalf("alignment is %s: %+v", got, result.Report.Consumed)
+		}
+	})
+
+	t.Run("makes the consumer stale when one of several proofs of one kind it consumes is absent [verifies SN-112~2]", func(t *testing.T) {
+		power, other := dp(), otherPower()
+		consumer := aligned(testName, prooftest.Judged(proof.VerdictAligned, 0.9, proof.CorroborationSpecificMatrix),
+			proofInput(power, proof.KindDiscriminatingPower), proofInput(other, proof.KindDiscriminatingPower))
+		result := evaluateWithOther(evidence(power, consumer))
+		if got := consumedState(result, alignmentSubject, proof.KindAlignment); got != proof.StateStale {
+			t.Fatalf("alignment is %s: %+v", got, result.Report.Consumed)
+		}
+	})
+
+	t.Run("makes the consumer stale when the digest names a proof of another criterion than the annotation [verifies SN-112~2]", func(t *testing.T) {
+		power, other := dp(), otherPower()
+		wrong := prooftest.ProofInput(proof.KindDiscriminatingPower, proof.SubjectName(otherRequirementID, revision), statementFileDigest(power))
+		consumer := aligned(testName, prooftest.Judged(proof.VerdictAligned, 0.9, proof.CorroborationSpecificMatrix), wrong)
+		result := evaluateWithOther(evidence(power, other, consumer))
+		if got := consumedState(result, alignmentSubject, proof.KindAlignment); got != proof.StateStale {
+			t.Fatalf("alignment is %s: %+v", got, result.Report.Consumed)
+		}
+	})
+
+	t.Run("makes the consumer stale when the proof of the criterion has another file digest [verifies SN-112~2]", func(t *testing.T) {
+		power := dp()
+		stale := prooftest.ProofInput(proof.KindDiscriminatingPower, alignmentSubject, prooftest.Digest("an older file"))
+		consumer := aligned(testName, prooftest.Judged(proof.VerdictAligned, 0.9, proof.CorroborationSpecificMatrix), stale)
+		result := evaluate(config(requireBoth), evidence(power, consumer))
+		if got := consumedState(result, alignmentSubject, proof.KindAlignment); got != proof.StateStale {
+			t.Fatalf("alignment is %s: %+v", got, result.Report.Consumed)
+		}
+	})
+
+	t.Run("reports as malformed a proof that lists one consumed criterion twice [verifies SN-112~2]", func(t *testing.T) {
+		power := dp()
+		input := proofInput(power, proof.KindDiscriminatingPower)
+		duplicated := prooftest.Alignment(requirementID, revision, statementDigest, testName, currentInputs(input, input)...)
+		violations := proof.Codes(duplicated.Validate())
+		if !slices.Contains(violations, proof.CodeUnsorted) {
+			t.Fatalf("violations = %v", violations)
 		}
 	})
 }

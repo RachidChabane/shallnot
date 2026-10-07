@@ -23,6 +23,7 @@ type alignmentClearance struct {
 func (p policy) clearance(predicate *proof.Alignment, test TestName, tainted map[string]bool) alignmentClearance {
 	verdict := predicate.Verdict
 	executor := executorOf(verdict, predicate.Executor)
+	threshold := p.alignmentThreshold(decisionSource(predicate.Extensions.Decision))
 	switch {
 	case tainted[test.Name] || (test.ClassName != "" && tainted[test.ClassName+"."+test.Name]):
 		return alignmentClearance{reason: "the test killed a sentinel mutant, so its alignment is capped at UNDETERMINED"}
@@ -30,8 +31,8 @@ func (p policy) clearance(predicate *proof.Alignment, test TestName, tainted map
 		return alignmentClearance{reason: "judged MISALIGNED: its assertions do not check the statement"}
 	case verdict.Value == proof.VerdictUndetermined:
 		return alignmentClearance{reason: "judged UNDETERMINED"}
-	case !p.confidentAlignment(verdict.ConfidenceOrZero()):
-		return alignmentClearance{reason: fmt.Sprintf("judged ALIGNED with confidence %.2f, below %.2f", verdict.ConfidenceOrZero(), p.config.Thresholds.Alignment)}
+	case verdict.ConfidenceOrZero() < threshold:
+		return alignmentClearance{reason: fmt.Sprintf("judged ALIGNED with confidence %.2f, below %.2f", verdict.ConfidenceOrZero(), threshold)}
 	case !p.aboveFloor(executor):
 		return alignmentClearance{reason: fmt.Sprintf("judged ALIGNED by an executor of isolation %s, below the floor %s", executor.Isolation, p.config.MinIsolation)}
 	case p.basis() != proof.BasisJudged && !has(verdict, alignmentMatrix...):

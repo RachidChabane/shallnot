@@ -35,9 +35,18 @@ type Module struct {
 	Version string `json:"version"`
 }
 
-// Annotations carries the file globs a file-set input was expanded from.
+// Annotations carries what an input descriptor says beyond its name and digest: the criterion `ID~REV` a consumed
+// `proof` is about, and the file globs a file-set input was expanded from.
 type Annotations struct {
-	Globs []string `json:"globs,omitempty"`
+	Criterion string   `json:"criterion,omitempty"`
+	Globs     []string `json:"globs,omitempty"`
+}
+
+func (a *Annotations) criterionOrEmpty() string {
+	if a == nil {
+		return ""
+	}
+	return a.Criterion
 }
 
 // Input is one resource descriptor that the statement depends on.
@@ -50,12 +59,14 @@ type Input struct {
 
 // Decision records how a judged claim was decided.
 type Decision struct {
-	Basis                DecisionBasis `json:"basis"`
-	Deciders             []string      `json:"deciders"`
-	RawConfidence        float64       `json:"rawConfidence"`
-	CalibratedConfidence *float64      `json:"calibratedConfidence,omitempty"`
-	Threshold            float64       `json:"threshold"`
-	EscalationReason     string        `json:"escalationReason,omitempty"`
+	Basis                DecisionBasis    `json:"basis"`
+	Deciders             []string         `json:"deciders"`
+	ConfidenceSource     ConfidenceSource `json:"confidenceSource"`
+	ConfidenceMapping    string           `json:"confidenceMapping,omitempty"`
+	RawConfidence        float64          `json:"rawConfidence"`
+	CalibratedConfidence *float64         `json:"calibratedConfidence,omitempty"`
+	Threshold            float64          `json:"threshold"`
+	EscalationReason     string           `json:"escalationReason,omitempty"`
 }
 
 // OperatorScreen counts operator mutants that were screened rather than listed.

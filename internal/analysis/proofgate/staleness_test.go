@@ -214,7 +214,7 @@ func TestStalenessGoldens(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	t.Run("gives each staleness check the committed state and reason [verifies SN-132~1, SN-133~1, SN-134~2, SN-135~1]", func(t *testing.T) {
+	t.Run("gives each staleness check the committed state and reason [verifies SN-132~1, SN-133~2, SN-134~2, SN-135~2]", func(t *testing.T) {
 		committed, err := os.ReadFile(stalenessGoldenPath)
 		if err != nil {
 			t.Fatalf("%v (run go test ./internal/analysis/proofgate -run TestStalenessGoldens -update)", err)

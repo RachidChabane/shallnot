@@ -391,18 +391,14 @@
         },
         "thresholds": {
           "type": "object",
-          "description": "Confidence at which a judged claim has power.",
+          "description": "Confidence at which a judged claim has power. Each threshold is a number, which applies to every confidence source, or a mapping with `default` and one entry per confidence source.",
           "properties": {
             "validity": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1,
+              "$ref": "#/$defs/proofThreshold",
               "description": "Confidence of a mutant validity that blocks or earns pass credit. Default 0.7."
             },
             "alignment": {
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1,
+              "$ref": "#/$defs/proofThreshold",
               "description": "Confidence of an ALIGNED verdict that clears alignment. Default 0.7."
             }
           },
@@ -445,5 +441,35 @@
   "required": [
     "version"
   ],
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$defs": {
+    "proofThreshold": {
+      "description": "A confidence in [0,1] for every confidence source, or a mapping from `default` and from confidence sources to confidences. A confidence source is `execution`, `host-votes`, `system-one`, or one exact source such as `host-votes(2)` or `system-one:<model>@<endpointDigest>`: an exact source wins over its kind, and a kind over `default`.",
+      "oneOf": [
+        {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        {
+          "type": "object",
+          "properties": {
+            "default": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            }
+          },
+          "propertyNames": {
+            "pattern": "^(default|execution|host-votes(\\([1-9][0-9]*\\))?|system-one(:.+)?)$"
+          },
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      ]
+    }
+  }
 }

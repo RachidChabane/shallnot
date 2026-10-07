@@ -41,17 +41,35 @@ func classify(input Input) []classified {
 	return statements
 }
 
+// consumedKey identifies a Statement a `proof` input names: its kind, the criterion it is about and the digest of its file.
+type consumedKey struct {
+	kind      proof.Kind
+	criterion string
+	digest    string
+}
+
+func consumedKeyOf(input proof.Input) consumedKey {
+	criterion := ""
+	if input.Annotations != nil {
+		criterion = input.Annotations.Criterion
+	}
+	return consumedKey{kind: proof.Kind(input.Name), criterion: criterion, digest: input.Digest.SHA256}
+}
+
 // invalidateConsumersOfStale marks stale every statement that consumes a proof which is not valid, until none changes.
+// A `proof` input is current only while the verified set holds a valid Statement of that kind, about that criterion,
+// whose file has exactly that digest.
 func invalidateConsumersOfStale(statements []classified) {
 	for changed := true; changed; {
 		changed = false
-		valid := map[proof.Kind]map[string]bool{}
+		valid := map[consumedKey]bool{}
 		for _, candidate := range statements {
-			if candidate.valid() {
-				if valid[candidate.Statement.Kind] == nil {
-					valid[candidate.Statement.Kind] = map[string]bool{}
-				}
-				valid[candidate.Statement.Kind][candidate.Digest] = true
+			if !candidate.valid() {
+				continue
+			}
+			if requirement, about := candidate.Statement.Requirement(); about {
+				criterion := proof.SubjectName(requirement.ID, requirement.Revision)
+				valid[consumedKey{kind: candidate.Statement.Kind, criterion: criterion, digest: candidate.Digest}] = true
 			}
 		}
 		for index, candidate := range statements {
@@ -59,9 +77,10 @@ func invalidateConsumersOfStale(statements []classified) {
 				continue
 			}
 			for _, consumed := range candidate.Statement.Core().Inputs {
-				if consumed.Role == proof.RoleProof && !valid[proof.Kind(consumed.Name)][consumed.Digest.SHA256] {
+				if consumed.Role == proof.RoleProof && !valid[consumedKeyOf(consumed)] {
+					key := consumedKeyOf(consumed)
 					statements[index].State = proof.StateStale
-					statements[index].Reason = fmt.Sprintf("the %s proof %s it consumes is not in the verified set or is stale", consumed.Name, abbreviate(consumed.Digest.SHA256))
+					statements[index].Reason = fmt.Sprintf("the %s proof %s of %s it consumes is not in the verified set or is stale", key.kind, abbreviate(key.digest), key.criterion)
 					changed = true
 					break
 				}

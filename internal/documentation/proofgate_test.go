@@ -111,6 +111,7 @@ const (
 	trustHeading      = "## Trust levels"
 	basesHeading      = "### Pass bases"
 	isolationHeading  = "### Isolation levels"
+	sourcesHeading    = "### Confidence sources"
 	configSchemaPath  = "schemas/config.schema.json"
 	reportSchemaPath  = "schemas/report.schema.json"
 )
@@ -146,7 +147,7 @@ func jsonKeys(value any) []string {
 
 func TestProofsDocumentation(t *testing.T) {
 	check := func(name, document, heading string, want []string) {
-		t.Run(name+" [verifies SN-126~1]", func(t *testing.T) {
+		t.Run(name+" [verifies SN-126~2]", func(t *testing.T) {
 			got := codeSpansOfFirstColumn(t, tableRows(t, section(t, read(t, document), heading)))
 			if !reflect.DeepEqual(got, sorted(want)) {
 				t.Fatalf("documented %v; the code defines %v", got, sorted(want))
@@ -164,4 +165,5 @@ func TestProofsDocumentation(t *testing.T) {
 	check("docs/proofs.md documents each trust level and no other", proofsDocument, trustHeading, proof.TrustNames())
 	check("docs/proofs.md documents each pass basis and no other", proofsDocument, basesHeading, proof.SignedPassBasisNames())
 	check("docs/proofs.md documents each isolation level and no other", proofsDocument, isolationHeading, proof.IsolationNames())
+	check("docs/proofs.md documents each kind of confidence source and no other", proofsDocument, sourcesHeading, proof.SourceKindNames())
 }

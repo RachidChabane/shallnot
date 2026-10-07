@@ -36,7 +36,7 @@ func TestSurvivingMutants(t *testing.T) {
 	bases := []proof.SignedPassBasis{proof.BasisExecutedOnly, proof.BasisCorroborated, proof.BasisJudged}
 
 	for _, signedBasis := range bases {
-		t.Run(fmt.Sprintf("blocks a survivor that fails an example of the criterion under %s [verifies SN-115~1]", signedBasis), func(t *testing.T) {
+		t.Run(fmt.Sprintf("blocks a survivor that fails an example of the criterion under %s [verifies SN-115~2]", signedBasis), func(t *testing.T) {
 			survivor := survivor("s", valid(lowConfidence, proof.CorroborationExampleFailed))
 			result := expect(t, config(basis(signedBasis)), withCredit(survivor), "surviving_valid_mutant")
 			if outcome(t, result) != proofgate.OutcomeBlock {
@@ -44,19 +44,19 @@ func TestSurvivingMutants(t *testing.T) {
 			}
 		})
 
-		t.Run(fmt.Sprintf("blocks a survivor judged VALID at the threshold with its full witness under %s [verifies SN-115~1]", signedBasis), func(t *testing.T) {
+		t.Run(fmt.Sprintf("blocks a survivor judged VALID at the threshold with its full witness under %s [verifies SN-115~2]", signedBasis), func(t *testing.T) {
 			expect(t, config(basis(signedBasis)), withCredit(survivor("s", valid(0.7, witness...))), "surviving_valid_mutant")
 		})
 	}
 
-	t.Run("escalates a survivor judged VALID below the threshold [verifies SN-115~1]", func(t *testing.T) {
+	t.Run("escalates a survivor judged VALID below the threshold [verifies SN-115~2]", func(t *testing.T) {
 		result := expect(t, config(), withCredit(survivor("s", valid(0.69, witness...))), "escalated_mutant")
 		if outcome(t, result) != proofgate.OutcomeEscalate {
 			t.Fatal("not escalated")
 		}
 	})
 
-	t.Run("escalates a survivor judged VALID that lacks a part of the witness [verifies SN-115~1]", func(t *testing.T) {
+	t.Run("escalates a survivor judged VALID that lacks a part of the witness [verifies SN-115~2]", func(t *testing.T) {
 		for _, missing := range witness {
 			var kinds []proof.CorroborationKind
 			for _, kind := range witness {
@@ -69,18 +69,18 @@ func TestSurvivingMutants(t *testing.T) {
 		}
 	})
 
-	t.Run("escalates a survivor whose validity is UNDETERMINED [verifies SN-115~1]", func(t *testing.T) {
+	t.Run("escalates a survivor whose validity is UNDETERMINED [verifies SN-115~2]", func(t *testing.T) {
 		expect(t, config(), withCredit(survivor("s", judged(proof.ValidityUndetermined, highConfidence))), "escalated_mutant")
 	})
 
-	t.Run("blocks a survivor on the strength of a judgment executor below the floor, which keeps its block power [verifies SN-115~1]", func(t *testing.T) {
+	t.Run("blocks a survivor on the strength of a judgment executor below the floor, which keeps its block power [verifies SN-115~2]", func(t *testing.T) {
 		mutant := survivor("s", valid(highConfidence, witness...))
 		executor := prooftest.Executor(proof.IsolationInline)
 		mutant.Validity.Executor = &executor
 		expect(t, config(), withCredit(mutant), "surviving_valid_mutant")
 	})
 
-	t.Run("does not count a mutant that errored as a survivor or a kill [verifies SN-115~1]", func(t *testing.T) {
+	t.Run("does not count a mutant that errored as a survivor or a kill [verifies SN-115~2]", func(t *testing.T) {
 		errored := prooftest.Mutant("e", valid(highConfidence, witness...), map[string]proof.Outcome{testName: proof.OutcomeError})
 		expect(t, config(), withCredit(errored))
 	})

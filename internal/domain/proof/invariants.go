@@ -118,7 +118,7 @@ func (e Executor) check(sink *collector, path string) {
 func (p *Alignment) check(sink *collector, subject []Subject) {
 	checkRequirement(sink, "predicate.requirement", p.Requirement)
 	checkRequirementSubject(sink, subject, p.Requirement)
-	checkCore(sink, "predicate", p.Core, subject)
+	checkCore(sink, "predicate", p.Core, subject, &p.Requirement)
 	checkNotEmpty(sink, "predicate.test", p.Test)
 	p.Verdict.check(sink, "predicate.verdict", ClassJudged)
 	checkMember(sink, "predicate.verdict.value", p.Verdict.Value, verdicts)
@@ -131,7 +131,7 @@ func (p *Alignment) check(sink *collector, subject []Subject) {
 func (p *DiscriminatingPower) check(sink *collector, subject []Subject) {
 	checkRequirement(sink, "predicate.requirement", p.Requirement)
 	checkRequirementSubject(sink, subject, p.Requirement)
-	checkCore(sink, "predicate", p.Core, subject)
+	checkCore(sink, "predicate", p.Core, subject, &p.Requirement)
 	checkNotEmptyList(sink, "predicate.tests", p.Tests)
 	checkAscending(sink, "predicate.tests", p.Tests, strings.Compare)
 	p.CorrectCodePasses.check(sink, "predicate.correctCodePasses", ClassExecuted)
@@ -150,7 +150,7 @@ func (p *DiscriminatingPower) check(sink *collector, subject []Subject) {
 
 func (p *Completeness) check(sink *collector, subject []Subject) {
 	checkSpecSubject(sink, subject)
-	checkCore(sink, "predicate", p.Core, subject)
+	checkCore(sink, "predicate", p.Core, subject, nil)
 	if !p.Advisory {
 		sink.add(CodeNotAdvisory, "predicate.advisory", "a completeness proof is advisory")
 	}
@@ -215,15 +215,15 @@ func checkAttribution(sink *collector, path string, mutant Mutant) {
 	}
 }
 
-func checkCore(sink *collector, path string, core Core, subject []Subject) {
+// checkCore checks the part shared by the predicates. A requirement, when the predicate is about one, fixes what the
+// `spec` input names: the criterion and the statement digest of the subject.
+func checkCore(sink *collector, path string, core Core, subject []Subject, requirement *Requirement) {
 	checkNotEmpty(sink, path+".module.name", core.Module.Name)
 	checkNotEmpty(sink, path+".module.version", core.Module.Version)
 	checkNotEmptyList(sink, path+".inputs", core.Inputs)
-	checkAscending(sink, path+".inputs", core.Inputs, func(a, b Input) int {
-		return cmp.Or(strings.Compare(string(a.Role), string(b.Role)), strings.Compare(a.Name, b.Name))
-	})
+	checkAscending(sink, path+".inputs", core.Inputs, compareInputsByIdentity)
 	for index, input := range core.Inputs {
-		checkInput(sink, fmt.Sprintf("%s.inputs[%d]", path, index), input)
+		checkInput(sink, fmt.Sprintf("%s.inputs[%d]", path, index), input, requirement, subject)
 	}
 	checkDigest(sink, path+".cacheKey", core.CacheKey)
 	checkCacheKey(sink, path+".cacheKey", core, subject)
@@ -231,12 +231,61 @@ func checkCore(sink *collector, path string, core Core, subject []Subject) {
 	checkDecision(sink, path+".extensions.decision", core.Extensions.Decision)
 }
 
-func checkInput(sink *collector, path string, input Input) {
+// compareInputsByIdentity orders inputs by role, name and consumed criterion: the identity of an input. Several
+// `proof` inputs of one kind differ by their criterion, and two inputs with one identity are duplicates.
+func compareInputsByIdentity(a, b Input) int {
+	return cmp.Or(
+		strings.Compare(string(a.Role), string(b.Role)),
+		strings.Compare(a.Name, b.Name),
+		strings.Compare(a.Annotations.criterionOrEmpty(), b.Annotations.criterionOrEmpty()),
+	)
+}
+
+func checkInput(sink *collector, path string, input Input, requirement *Requirement, subject []Subject) {
 	checkMember(sink, path+".role", input.Role, inputRoles)
 	checkNotEmpty(sink, path+".name", input.Name)
 	checkDigest(sink, path+".digest.sha256", input.Digest.SHA256)
 	if input.Annotations != nil {
 		checkAscending(sink, path+".annotations.globs", input.Annotations.Globs, strings.Compare)
+	}
+	switch {
+	case input.Role == RoleSpec && requirement != nil:
+		checkSpecInput(sink, path, input, *requirement, subject)
+	case input.Role.NamesFile() && input.Name != "" && !IsRelativePOSIXPath(input.Name):
+		sink.add(CodeInputDescriptor, path+".name", "%q is not a path relative to the directory holding shallnot.yaml with / separators", input.Name)
+	case input.Role == RoleProof:
+		checkProofInput(sink, path, input)
+	}
+}
+
+// checkSpecInput enforces that the `spec` input of a criterion's proof repeats the subject: named `ID~REV`, with the
+// statement digest. A requirement or a subject digest that is malformed is reported where it is, once.
+func checkSpecInput(sink *collector, path string, input Input, requirement Requirement, subject []Subject) {
+	if isWellFormedRequirement(requirement) {
+		if expected := SubjectName(requirement.ID, requirement.Revision); input.Name != expected {
+			sink.add(CodeInputDescriptor, path+".name", "the spec input is named %q, not %q", input.Name, expected)
+		}
+	}
+	if len(subject) == 1 && IsSHA256Hex(subject[0].Digest.SHA256) && input.Digest.SHA256 != subject[0].Digest.SHA256 {
+		sink.add(CodeInputDescriptor, path+".digest.sha256", "the spec input digest is not the statement digest of the subject")
+	}
+}
+
+func isWellFormedRequirement(requirement Requirement) bool {
+	return requirement.ID != "" && !strings.Contains(requirement.ID, RevisionSeparator) && requirement.Revision >= MinimumRevision
+}
+
+// checkProofInput enforces that a consumed proof is named by its kind and says which criterion it is about.
+func checkProofInput(sink *collector, path string, input Input) {
+	if _, known := KindOfName(input.Name); !known {
+		sink.add(CodeInputDescriptor, path+".name", "%q is not a proof kind", input.Name)
+	}
+	if input.Annotations == nil || input.Annotations.Criterion == "" {
+		sink.add(CodeInputDescriptor, path+".annotations.criterion", "a proof input names the criterion it is about")
+		return
+	}
+	if _, _, ok := ParseCriterion(input.Annotations.Criterion); !ok {
+		sink.add(CodeInputDescriptor, path+".annotations.criterion", "%q is not a criterion ID~REV", input.Annotations.Criterion)
 	}
 }
 
@@ -261,6 +310,9 @@ func checkDecision(sink *collector, path string, decision *Decision) {
 	checkMember(sink, path+".basis", decision.Basis, bases)
 	checkNotEmptyList(sink, path+".deciders", decision.Deciders)
 	checkAscending(sink, path+".deciders", decision.Deciders, strings.Compare)
+	if !decision.ConfidenceSource.IsKnown() {
+		sink.add(CodeUnknownValue, path+".confidenceSource", "%q is not a confidence source", decision.ConfidenceSource)
+	}
 	checkConfidence(sink, path+".rawConfidence", decision.RawConfidence)
 	if decision.CalibratedConfidence != nil {
 		checkConfidence(sink, path+".calibratedConfidence", *decision.CalibratedConfidence)

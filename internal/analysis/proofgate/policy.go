@@ -14,12 +14,39 @@ func (p policy) basis() proof.SignedPassBasis {
 	return p.config.SignedPassBasis
 }
 
-func (p policy) confidentValidity(confidence float64) bool {
-	return confidence >= p.config.Thresholds.Validity
+// validityThreshold is the confidence a judged validity must reach, for the confidence source that produced it.
+func (p policy) validityThreshold(source proof.ConfidenceSource) float64 {
+	return p.config.Thresholds.Validity.For(source)
 }
 
-func (p policy) confidentAlignment(confidence float64) bool {
-	return confidence >= p.config.Thresholds.Alignment
+// alignmentThreshold is the confidence an ALIGNED verdict must reach, for the confidence source that produced it.
+func (p policy) alignmentThreshold(source proof.ConfidenceSource) float64 {
+	return p.config.Thresholds.Alignment.For(source)
+}
+
+// answerer is who answered a judged claim: the executor and the confidence source of the decision.
+type answerer struct {
+	executor proof.Executor
+	source   proof.ConfidenceSource
+}
+
+// decisionSource is the confidence source a decision records; a claim without a decision has none, which takes the
+// default threshold.
+func decisionSource(decision *proof.Decision) proof.ConfidenceSource {
+	if decision == nil {
+		return ""
+	}
+	return decision.ConfidenceSource
+}
+
+// validityAnswerer is who answered the validity of a mutant: its executor and the source of the decision recorded on the
+// mutant, else of the one recorded on the predicate.
+func validityAnswerer(mutant proof.Mutant, predicate *proof.DiscriminatingPower) answerer {
+	decision := predicate.Extensions.Decision
+	if mutant.Extensions != nil && mutant.Extensions.Decision != nil {
+		decision = mutant.Extensions.Decision
+	}
+	return answerer{executor: executorOf(mutant.Validity, predicate.Executor), source: decisionSource(decision)}
 }
 
 func (p policy) aboveFloor(executor proof.Executor) bool {

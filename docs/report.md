@@ -282,7 +282,7 @@ described in [proofs.md](proofs.md).
 | Property | Type | Meaning |
 |---|---|---|
 | `trust` | `"signed"` \| `"local"` | The trust level the proofs were consumed under. |
-| `policy` | object | `signedPassBasis`, `minIsolation`, `maxHostExclusions`, `validityThreshold`, `alignmentThreshold`, `escalation` and `isolationFloorLowered`. |
+| `policy` | object | `signedPassBasis`, `minIsolation`, `maxHostExclusions`, `validityThreshold`, `alignmentThreshold` (the defaults), `validityThresholdBySource` and `alignmentThresholdBySource` (present only when the configuration keys a threshold by confidence source), `escalation` and `isolationFloorLowered`. |
 | `manifest` | object \| null | `path`, `digest` (SHA-256 of the manifest) and the verifier fields; null when the verified set has no manifest. |
 | `consumed` | array | Every statement file the manifest lists, by path: `path`, `digest`, `predicateType`, `subject`, `state` (`valid`, `stale`, `malformed`, `ignored`) and the `reason` it is not valid. |
 | `pending` | array | The `pending` entries of the manifest. |

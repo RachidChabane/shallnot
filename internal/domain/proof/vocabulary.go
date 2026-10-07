@@ -66,6 +66,16 @@ func KindOfPredicateType(predicateType string) (Kind, bool) {
 	return "", false
 }
 
+// KindOfName resolves the wire name of a kind, the name a `proof` input carries.
+func KindOfName(name string) (Kind, bool) {
+	for _, kind := range Kinds() {
+		if string(kind) == name {
+			return kind, true
+		}
+	}
+	return "", false
+}
+
 // Class is the evidence class of a claim.
 type Class string
 

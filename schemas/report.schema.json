@@ -721,6 +721,24 @@
               "minimum": 0,
               "maximum": 1
             },
+            "validityThresholdBySource": {
+              "type": "object",
+              "description": "Validity thresholds that differ by confidence source, keyed by the kind or the exact source. Absent when none is set.",
+              "additionalProperties": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "alignmentThresholdBySource": {
+              "type": "object",
+              "description": "Alignment thresholds that differ by confidence source, keyed by the kind or the exact source. Absent when none is set.",
+              "additionalProperties": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
             "escalation": {
               "enum": [
                 "error",

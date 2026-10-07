@@ -63,6 +63,15 @@ func Input(role proof.InputRole, name string) proof.Input {
 	return proof.Input{Role: role, Name: name, Digest: proof.Digest{SHA256: Digest(name)}}
 }
 
+// ProofInput builds a `proof` input: named by the consumed kind, carrying the criterion it is about, with the
+// digest of the consumed Statement file.
+func ProofInput(kind proof.Kind, criterion, statementFileDigest string) proof.Input {
+	return proof.Input{
+		Role: proof.RoleProof, Name: string(kind), Digest: proof.Digest{SHA256: statementFileDigest},
+		Annotations: &proof.Annotations{Criterion: criterion},
+	}
+}
+
 // Results builds one result per test, in test name order, with the given outcome per test.
 func Results(outcomes map[string]proof.Outcome) []proof.TestResult {
 	results := make([]proof.TestResult, 0, len(outcomes))
@@ -137,7 +146,7 @@ func Completeness(specPath, fileDigest string, inputs ...proof.Input) proof.Stat
 func Seal(statement proof.Statement) proof.Statement {
 	statementCore := coreOf(&statement)
 	slices.SortFunc(statementCore.Inputs, func(a, b proof.Input) int {
-		return cmp.Or(strings.Compare(string(a.Role), string(b.Role)), strings.Compare(a.Name, b.Name))
+		return cmp.Or(strings.Compare(string(a.Role), string(b.Role)), strings.Compare(a.Name, b.Name), strings.Compare(criterionOf(a), criterionOf(b)))
 	})
 	if predicate := statement.DiscriminatingPower; predicate != nil {
 		slices.Sort(predicate.Tests)
@@ -173,4 +182,11 @@ func Bytes(statement proof.Statement) []byte {
 		panic(err)
 	}
 	return encoded
+}
+
+func criterionOf(input proof.Input) string {
+	if input.Annotations == nil {
+		return ""
+	}
+	return input.Annotations.Criterion
 }

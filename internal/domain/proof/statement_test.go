@@ -261,7 +261,7 @@ func TestClosedSetsAndOrders(t *testing.T) {
 
 		unsortedInputs := alignment()
 		inputs := unsortedInputs.Alignment.Inputs
-		unsortedInputs.Alignment.Inputs = append([]proof.Input{prooftest.Input(proof.RoleTestSource, "t")}, append(inputs, prooftest.Input(proof.RoleSpec, "s"))...)
+		unsortedInputs.Alignment.Inputs = append([]proof.Input{prooftest.Input(proof.RoleTestSource, "t")}, append(inputs, prooftest.Input(proof.RoleHostResponse, "s"))...)
 		unsortedInputs.Alignment.CacheKey, _ = proof.CacheKey(unsortedInputs.Subject, unsortedInputs.Alignment.Inputs)
 		wantCodes(t, unsortedInputs, proof.CodeUnsorted)
 

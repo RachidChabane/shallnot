@@ -33,6 +33,7 @@ const (
 	CodeExecutedWithCorroboration ViolationCode = "executed_with_corroboration"
 	CodeExecutedWithExecutor      ViolationCode = "executed_with_executor"
 	CodeInconsistentAttribution   ViolationCode = "inconsistent_attribution"
+	CodeInputDescriptor           ViolationCode = "input_descriptor"
 )
 
 // Violation is one broken invariant at a JSON path of the statement.

@@ -55,8 +55,8 @@ type ProofsFile struct {
 
 // Thresholds are the confidences of the `proofs` block, each defaulted when absent.
 type Thresholds struct {
-	Validity  *float64 `yaml:"validity"`
-	Alignment *float64 `yaml:"alignment"`
+	Validity  *ThresholdFile `yaml:"validity"`
+	Alignment *ThresholdFile `yaml:"alignment"`
 }
 
 // Load reads a configuration file into settings. Relative paths in the file

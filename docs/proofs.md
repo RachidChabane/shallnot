@@ -63,20 +63,36 @@ is stale when:
 - a `code_tree` input names a file outside the `proofs.code` entries, or a `test_source` input a file outside the `tests` roots, or either names an excluded path;
 - a test file that holds a test bound to the criterion by a source tag is not among the `test_source` inputs of a discriminating-power proof, or the file that holds the proof's own test is not among those of an alignment proof;
 - the `spec` input of a proof about a criterion is not named `ID~REV` of that criterion, or its digest is not the current statement digest of the criterion;
-- an input of the role `proof` names a proof, by kind and by the SHA-256 of its file, that is not valid in the verified set;
+- an input of the role `proof` names a proof that is not valid in the verified set: the verified set must hold a valid statement of that kind, about the criterion the input's `annotations.criterion` names, whose file has exactly the input's SHA-256;
 - `proofs.trust` is `signed` and the statement was produced locally, or the manifest's `trust` is not `signed`.
 
 ### Input descriptors
 
 `code_tree` and `test_source` inputs are one descriptor per file: `name` is the
-path relative to the configuration file's directory with `/` separators, and
-`digest` is the SHA-256 of the file's exact bytes. The module that wrote the proof
-lists the files the criterion depends on, so `shallnot` reads exactly those files
-and no other: a change to a file that no descriptor names leaves the proof valid.
+path relative to the directory that holds `shallnot.yaml`, with `/` separators,
+and `digest` is the SHA-256 of the file's exact bytes. That directory is the base
+of every path the configuration holds (`specs`, `tests`, `proofs.code`,
+`verified_dir`), so a descriptor resolves to the same file whatever the working
+directory of the process is. The module that wrote the proof lists the files the
+criterion depends on, so `shallnot` reads exactly those files and no other: a
+change to a file that no descriptor names leaves the proof valid.
 `proofs.code` entries and `tests` roots are files, directories or globs; `exclude`
 and, by default, dependency and build directories are left out. A `spec` input
 of a completeness proof is the spec file itself and is covered by its subject
 digest.
+
+The `spec` input of a proof about a criterion repeats its subject: named `ID~REV`,
+with the statement digest of the subject. A file input whose name is not a
+relative POSIX path, a `spec` input that differs from the subject and a `proof`
+input without a criterion make the statement `malformed`.
+
+A `proof` input is named by the kind of the statement it consumes, carries the
+criterion `ID~REV` that statement is about in `annotations.criterion`, and its
+digest is the SHA-256 of the consumed statement's file, the digest the manifest
+lists. A statement may consume the statements of several criteria of one kind:
+each is one `proof` input, and the pair of name and `annotations.criterion` is
+unique within the statement, a repeated pair makes it `malformed`. Inputs are
+strictly ascending by role, then name, then criterion.
 
 ## Trust levels
 
@@ -100,7 +116,8 @@ An escalating finding fails the verdict when `proofs.escalation` is `error`
 
 ### Claim power
 
-τ is `proofs.thresholds.validity`. The effects below apply to the mutants of a
+τ is `proofs.thresholds.validity` for the confidence source of the claim (see
+[Confidence sources](#confidence-sources)). The effects below apply to the mutants of a
 discriminating-power proof; "corroboration" is the executed evidence a judged
 claim lists in `corroboratedBy`.
 
@@ -115,9 +132,35 @@ claim lists in `corroboratedBy`.
 | UNDETERMINED survivor | escalate | none | none |
 | no mutant judged VALID | escalate (`no_valid_mutant`) | none | none |
 | test that killed a sentinel | escalate (`mutation_sensitive_test`), no kill credit, alignment capped at UNDETERMINED | none | none |
-| alignment ALIGNED | clears the test | confidence at least `thresholds.alignment`, isolation at the floor, `specific_matrix` | escalate (`misaligned_test`) |
+| alignment ALIGNED | clears the test | confidence at least `thresholds.alignment` for its confidence source, isolation at the floor, `specific_matrix` | escalate (`misaligned_test`) |
 | alignment MISALIGNED or UNDETERMINED | escalate (`misaligned_test`) | none | none |
 | completeness question | reported (`completeness_question`) | none | none |
+
+### Confidence sources
+
+A judged claim records in `extensions.decision.confidenceSource` where its
+confidence came from, and `confidenceMapping` names the mapping that derived it.
+`proofs.thresholds.validity` and `proofs.thresholds.alignment` are a number, which
+applies to every source, or a mapping of `default` and of sources to numbers. A
+source is a kind below or one exact source, such as `host-votes(2)`; the exact
+source wins over its kind, and the kind over `default`. A claim without a recorded
+decision takes `default`.
+
+```yaml
+proofs:
+  thresholds:
+    validity: 0.70            # every source
+    alignment:
+      default: 0.70
+      host-votes: 0.80        # host-votes(k) for any k
+      system-one: 0.90        # system-one:<model>@<endpointDigest> for any model
+```
+
+| Kind | Source |
+|---|---|
+| `execution` | The module fixed the confidence: execution or construction decided. |
+| `host-votes` | The modal share, or the weakest stated confidence, of k blind votes of the host; written `host-votes(k)`. |
+| `system-one` | The confidence a System One endpoint reported; written `system-one:<model>@<endpointDigest>`. |
 
 ### Pass bases
 

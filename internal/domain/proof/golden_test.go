@@ -106,7 +106,7 @@ func TestSyncedGoldens(t *testing.T) {
 		for _, code := range []proof.ViolationCode{
 			proof.CodeJudgedWithoutConfidence, proof.CodeExecutedWithConfidence, proof.CodeWrongClass, proof.CodeSubject,
 			proof.CodeUnsorted, proof.CodeCacheKeyMismatch, proof.CodeUncorroboratedClaim, proof.CodeExecutedWithCorroboration,
-			proof.CodeExecutedWithExecutor, proof.CodeInconsistentAttribution,
+			proof.CodeExecutedWithExecutor, proof.CodeInconsistentAttribution, proof.CodeInputDescriptor,
 		} {
 			if !seen[code] {
 				t.Errorf("no golden raises %s", code)

@@ -47,12 +47,46 @@ const (
 	BasisJudged SignedPassBasis = "judged"
 )
 
+// Threshold is the confidence at which a judged claim has power, per confidence source. A claim whose source is not
+// keyed takes the default.
+type Threshold struct {
+	// Default applies to every confidence source that has no entry of its own.
+	Default float64
+	// BySource maps a confidence source, as a kind (`host-votes`) or as the exact source (`host-votes(2)`), to its
+	// threshold. It is nil when the block sets none.
+	BySource map[ConfidenceSource]float64
+}
+
+// For returns the threshold of a confidence source: the entry of the exact source, else the entry of its kind, else
+// the default. A source the format does not know takes the default.
+func (t Threshold) For(source ConfidenceSource) float64 {
+	if value, keyed := t.BySource[source]; keyed {
+		return value
+	}
+	if kind, known := source.Kind(); known {
+		if value, keyed := t.BySource[kind]; keyed {
+			return value
+		}
+	}
+	return t.Default
+}
+
+// ParseThresholdSource reads the key of a per-source threshold: a kind of confidence source (`host-votes`) or one exact
+// source (`host-votes(2)`).
+func ParseThresholdSource(text string) (ConfidenceSource, error) {
+	source := ConfidenceSource(text)
+	if !source.IsKnown() && !slices.Contains(SourceKinds(), source) {
+		return "", fmt.Errorf("confidence source %q is not one of %s, nor an exact source such as host-votes(2) or system-one:<model>@<digest>", text, strings.Join(SourceKindNames(), ", "))
+	}
+	return source, nil
+}
+
 // Thresholds are the confidences at which a judged claim has power.
 type Thresholds struct {
 	// Validity is tau_judge: the confidence of a mutant validity that blocks or earns pass credit.
-	Validity float64
+	Validity Threshold
 	// Alignment is the confidence of an ALIGNED verdict that clears alignment.
-	Alignment float64
+	Alignment Threshold
 }
 
 // Config is the `proofs` block of shallnot.yaml with its defaults applied.
@@ -78,7 +112,7 @@ func DefaultConfig() Config {
 	return Config{
 		VerifiedDir:       DefaultVerifiedDir,
 		Trust:             TrustSigned,
-		Thresholds:        Thresholds{Validity: DefaultValidityThreshold, Alignment: DefaultAlignmentThreshold},
+		Thresholds:        Thresholds{Validity: Threshold{Default: DefaultValidityThreshold}, Alignment: Threshold{Default: DefaultAlignmentThreshold}},
 		Escalation:        EscalationError,
 		SignedPassBasis:   BasisCorroborated,
 		MinIsolation:      DefaultMinIsolation,

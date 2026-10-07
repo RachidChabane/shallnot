@@ -130,17 +130,45 @@ func writeCanonicalString(buffer *bytes.Buffer, text string) {
 	buffer.WriteByte('"')
 }
 
+// keyedInput is an input as the cache key sees it: the members every reader of the format knows. A member a reader
+// does not know is ignored on reading, so it never reaches the key, or a reader would recompute another key than the
+// writer.
+type keyedInput struct {
+	Role        InputRole        `json:"role"`
+	Name        string           `json:"name"`
+	Digest      Digest           `json:"digest"`
+	Annotations *keyedAnnotation `json:"annotations,omitempty"`
+}
+
+// keyedAnnotation is the part of the annotations the cache key covers: the globs a file-set input was expanded from.
+// The criterion a `proof` input is about is informational: the name and the digest already identify what was consumed.
+type keyedAnnotation struct {
+	Globs []string `json:"globs,omitempty"`
+}
+
+func keyedInputOf(input Input) keyedInput {
+	keyed := keyedInput{Role: input.Role, Name: input.Name, Digest: input.Digest}
+	if input.Annotations != nil {
+		keyed.Annotations = &keyedAnnotation{Globs: input.Annotations.Globs}
+	}
+	return keyed
+}
+
 // CacheKey returns the SHA-256 over the canonical JSON of the subject and the
 // inputs. Both arrays are sorted first, so the key does not depend on their order.
 func CacheKey(subject []Subject, inputs []Input) (string, error) {
 	sortedInputs := slices.Clone(inputs)
 	slices.SortStableFunc(sortedInputs, compareInputs)
+	keyedInputs := make([]keyedInput, len(sortedInputs))
+	for index, input := range sortedInputs {
+		keyedInputs[index] = keyedInputOf(input)
+	}
 	sortedSubject := slices.Clone(subject)
 	slices.SortStableFunc(sortedSubject, compareSubjects)
 	raw, err := json.Marshal(struct {
-		Inputs  []Input   `json:"inputs"`
-		Subject []Subject `json:"subject"`
-	}{Inputs: sortedInputs, Subject: sortedSubject})
+		Inputs  []keyedInput `json:"inputs"`
+		Subject []Subject    `json:"subject"`
+	}{Inputs: keyedInputs, Subject: sortedSubject})
 	if err != nil {
 		return "", fmt.Errorf("marshal: %w", err)
 	}

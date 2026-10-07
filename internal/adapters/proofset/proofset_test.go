@@ -181,7 +181,7 @@ func fileInput(role proof.InputRole, name, content string) proof.Input {
 }
 
 func TestDerivedDigests(t *testing.T) {
-	t.Run("reads the digest of each file a descriptor names and of each known spec file [verifies SN-110~2]", func(t *testing.T) {
+	t.Run("reads the digest of each file a descriptor names and of each known spec file [verifies SN-110~3]", func(t *testing.T) {
 		root := project(t)
 		writeProofNaming(t, root, fileInput(proof.RoleCodeTree, "src/a.py", "code"), fileInput(proof.RoleTestSource, "tests/t_test.py", "test"))
 		got, err := proofset.Load(source(root))
@@ -197,7 +197,7 @@ func TestDerivedDigests(t *testing.T) {
 		}
 	})
 
-	t.Run("reads no file that no descriptor names [verifies SN-110~2]", func(t *testing.T) {
+	t.Run("reads no file that no descriptor names [verifies SN-110~3]", func(t *testing.T) {
 		root := project(t)
 		write(t, root, "src/unlisted.py", []byte("unlisted"))
 		writeProofNaming(t, root, fileInput(proof.RoleCodeTree, "src/a.py", "code"))
@@ -207,7 +207,7 @@ func TestDerivedDigests(t *testing.T) {
 		}
 	})
 
-	t.Run("follows an edit of a named file and leaves the others alone [verifies SN-110~2]", func(t *testing.T) {
+	t.Run("follows an edit of a named file and leaves the others alone [verifies SN-110~3]", func(t *testing.T) {
 		root := project(t)
 		writeProofNaming(t, root, fileInput(proof.RoleCodeTree, "src/a.py", "code"), fileInput(proof.RoleTestSource, "tests/t_test.py", "test"))
 		before, _ := proofset.Load(source(root))
@@ -218,19 +218,19 @@ func TestDerivedDigests(t *testing.T) {
 		}
 	})
 
-	t.Run("records no entry for a file that is absent, a directory or a path that escapes the tree [verifies SN-110~2]", func(t *testing.T) {
+	t.Run("records no entry for a file that is absent or a directory [verifies SN-110~3]", func(t *testing.T) {
 		root := project(t)
 		write(t, root, "src/dir/x.py", []byte("x"))
 		writeProofNaming(t, root,
 			fileInput(proof.RoleCodeTree, "src/gone.py", "code"), fileInput(proof.RoleCodeTree, "src/dir", "code"),
-			fileInput(proof.RoleCodeTree, "../outside.py", "code"), fileInput(proof.RoleTestSource, "tests/t_test.py", "test"))
+			fileInput(proof.RoleTestSource, "tests/t_test.py", "test"))
 		got, err := proofset.Load(source(root))
 		if err != nil || len(got.Derived.Files) != 1 || got.Derived.Files["tests/t_test.py"] == "" {
 			t.Fatalf("got %+v, %v", got.Derived.Files, err)
 		}
 	})
 
-	t.Run("resolves descriptors against the configuration directory [verifies SN-110~2]", func(t *testing.T) {
+	t.Run("resolves descriptors against the configuration directory [verifies SN-110~3]", func(t *testing.T) {
 		root := project(t)
 		writeProofNaming(t, root, fileInput(proof.RoleCodeTree, "src/a.py", "code"))
 		configured := source(root)
@@ -238,6 +238,43 @@ func TestDerivedDigests(t *testing.T) {
 		got, err := proofset.Load(configured)
 		if err != nil || got.Derived.Files["src/a.py"] == "" {
 			t.Fatalf("got %+v, %v", got.Derived.Files, err)
+		}
+	})
+
+	t.Run("resolves descriptors against the configuration directory whatever the working directory is [verifies SN-110~3]", func(t *testing.T) {
+		root := project(t)
+		writeProofNaming(t, root, fileInput(proof.RoleCodeTree, "src/a.py", "code"))
+		elsewhere := t.TempDir()
+		write(t, elsewhere, "src/a.py", []byte("another file with the same relative path"))
+		t.Chdir(elsewhere)
+		configured := source(root)
+		configured.WorkDir = root
+		got, err := proofset.Load(configured)
+		if err != nil || got.Derived.Files["src/a.py"] != proof.SHA256Hex([]byte("code")) {
+			t.Fatalf("got %+v, %v", got.Derived.Files, err)
+		}
+	})
+
+	t.Run("resolves descriptors against a configuration directory given relative to the working directory [verifies SN-110~3]", func(t *testing.T) {
+		parent := t.TempDir()
+		root := filepath.Join(parent, "project")
+		write(t, root, "specs/a.md", []byte("spec"))
+		writeProofNaming(t, root, fileInput(proof.RoleCodeTree, "src/a.py", "code"))
+		write(t, root, "src/a.py", []byte("code"))
+		t.Chdir(parent)
+		configured := proofset.Source{Config: proof.DefaultConfig(), WorkDir: "project", SpecFiles: []string{filepath.Join("project", "specs", "a.md")}}
+		got, err := proofset.Load(configured)
+		if err != nil || got.Derived.Files["src/a.py"] != proof.SHA256Hex([]byte("code")) || got.Derived.SpecFiles["specs/a.md"] == "" {
+			t.Fatalf("got %+v %+v, %v", got.Derived.Files, got.Derived.SpecFiles, err)
+		}
+	})
+
+	t.Run("treats a proof whose descriptor names a path outside the tree as malformed and reads no file for it [verifies SN-136~1]", func(t *testing.T) {
+		root := project(t)
+		writeProofNaming(t, root, fileInput(proof.RoleCodeTree, "../outside.py", "code"), fileInput(proof.RoleTestSource, "tests/t_test.py", "test"))
+		got, err := proofset.Load(source(root))
+		if err != nil || len(got.Statements) != 1 || got.Statements[0].Problem == "" || len(got.Derived.Files) != 0 {
+			t.Fatalf("got %+v %+v, %v", got.Statements, got.Derived.Files, err)
 		}
 	})
 }

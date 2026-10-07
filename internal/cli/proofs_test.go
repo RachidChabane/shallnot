@@ -100,6 +100,26 @@ func TestProofsEndToEnd(t *testing.T) {
 		}
 	})
 
+	t.Run("reads the files the proof names from the directory of the configuration whatever the working directory is [verifies SN-110~3]", func(t *testing.T) {
+		directory := proofProject(t, proofConfig)
+		writeProofs(t, directory)
+		t.Chdir(t.TempDir())
+		result := checkProject(t, directory)
+		if result.exit != app.ExitClean || decode(t, result.stdout).Verdict != domain.VerdictPass {
+			t.Fatalf("exit %d, stdout %s, stderr %s", result.exit, result.stdout, result.stderr)
+		}
+	})
+
+	t.Run("reads them from the directory of a configuration given as a relative path [verifies SN-110~3]", func(t *testing.T) {
+		directory := proofProject(t, proofConfig)
+		writeProofs(t, directory)
+		t.Chdir(filepath.Dir(directory))
+		result := shallnot(t, "check", "--config", filepath.Join(filepath.Base(directory), "shallnot.yaml"), "--format", "json")
+		if result.exit != app.ExitClean || decode(t, result.stdout).Verdict != domain.VerdictPass {
+			t.Fatalf("exit %d, stdout %s, stderr %s", result.exit, result.stdout, result.stderr)
+		}
+	})
+
 	t.Run("blocks with stale_proof when the proofs are missing [verifies SN-113~1]", func(t *testing.T) {
 		directory := proofProject(t, proofConfig)
 		result := checkProject(t, directory)
@@ -151,7 +171,7 @@ func TestProofsEndToEnd(t *testing.T) {
 		}
 	})
 
-	t.Run("blocks with stale_proof when the proof lists a code file outside proofs.code [verifies SN-133~1]", func(t *testing.T) {
+	t.Run("blocks with stale_proof when the proof lists a code file outside proofs.code [verifies SN-133~2]", func(t *testing.T) {
 		directory := proofProject(t, strings.Replace(proofConfig, "code: [src]", "code: [lib]", 1))
 		writeProofs(t, directory)
 		result := checkProject(t, directory)
@@ -160,7 +180,7 @@ func TestProofsEndToEnd(t *testing.T) {
 		}
 	})
 
-	t.Run("blocks with stale_proof when the spec input is not the statement digest of the criterion [verifies SN-135~1]", func(t *testing.T) {
+	t.Run("blocks with stale_proof when the spec input is not the statement digest of the criterion [verifies SN-135~2]", func(t *testing.T) {
 		directory := proofProject(t, proofConfig)
 		writeProofs(t, directory)
 		if err := os.WriteFile(filepath.Join(directory, "spec.md"), []byte("- **REQ-1~1**: THE SYSTEM SHALL work differently.\n"), 0o644); err != nil {

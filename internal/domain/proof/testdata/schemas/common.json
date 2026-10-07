@@ -188,6 +188,7 @@
         "annotations": {
           "type": "object",
           "properties": {
+            "criterion": { "$ref": "#/$defs/nonEmptyString" },
             "globs": {
               "type": "array",
               "items": { "$ref": "#/$defs/nonEmptyString" },
@@ -205,7 +206,7 @@
     "producedBy": { "enum": ["local", "ci"] },
     "decision": {
       "type": "object",
-      "required": ["basis", "deciders", "rawConfidence", "threshold"],
+      "required": ["basis", "deciders", "confidenceSource", "rawConfidence", "threshold"],
       "properties": {
         "basis": { "enum": ["construction", "spec_example", "judges", "system_one", "execution"] },
         "deciders": {
@@ -214,6 +215,8 @@
           "items": { "$ref": "#/$defs/nonEmptyString" },
           "uniqueItems": true
         },
+        "confidenceSource": { "type": "string", "pattern": "^(execution|host-votes\\([1-9][0-9]*\\)|system-one:.+)$" },
+        "confidenceMapping": { "$ref": "#/$defs/nonEmptyString" },
         "rawConfidence": { "$ref": "#/$defs/confidence" },
         "calibratedConfidence": { "$ref": "#/$defs/confidence" },
         "threshold": { "$ref": "#/$defs/confidence" },
@@ -231,7 +234,8 @@
             "flagged": { "type": "integer", "minimum": 0 },
             "screenedOut": { "type": "integer", "minimum": 0 }
           }
-        }
+        },
+        "hostExclusions": { "type": "integer", "minimum": 0 }
       }
     }
   }

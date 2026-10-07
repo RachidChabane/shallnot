@@ -94,6 +94,54 @@
     "schema": "invalid"
   },
   {
+    "file": "alignment-spec-input-wrong-name.json",
+    "decode": "ok",
+    "violations": [
+      "input_descriptor"
+    ],
+    "schema": "valid"
+  },
+  {
+    "file": "alignment-spec-input-wrong-digest.json",
+    "decode": "ok",
+    "violations": [
+      "input_descriptor"
+    ],
+    "schema": "valid"
+  },
+  {
+    "file": "alignment-file-input-absolute-path.json",
+    "decode": "ok",
+    "violations": [
+      "input_descriptor"
+    ],
+    "schema": "valid"
+  },
+  {
+    "file": "alignment-proof-input-without-criterion.json",
+    "decode": "ok",
+    "violations": [
+      "input_descriptor"
+    ],
+    "schema": "valid"
+  },
+  {
+    "file": "alignment-proof-input-named-after-a-criterion.json",
+    "decode": "ok",
+    "violations": [
+      "input_descriptor"
+    ],
+    "schema": "valid"
+  },
+  {
+    "file": "alignment-unknown-confidence-source.json",
+    "decode": "ok",
+    "violations": [
+      "unknown_value"
+    ],
+    "schema": "invalid"
+  },
+  {
     "file": "alignment-cache-key-mismatch.json",
     "decode": "ok",
     "violations": [
