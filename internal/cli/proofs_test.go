@@ -28,7 +28,7 @@ func proofProject(t *testing.T, config string) string {
 	directory := t.TempDir()
 	for name, content := range map[string]string{
 		"spec.md":       proofSpec,
-		proofTests:      "def test_works(): pass\n",
+		proofTests:      "def works(record_property):\n    record_property(\"" + domain.TagKeyword + "\", \"REQ-1~1\")\n",
 		proofCode:       "def work(): pass\n",
 		"junit.xml":     `<testsuite name="s"><testcase classname="c" name="works ` + testkit.Tag("REQ-1~1") + `"/></testsuite>`,
 		"shallnot.yaml": config,
@@ -44,21 +44,13 @@ func proofProject(t *testing.T, config string) string {
 	return directory
 }
 
-func fileSetDigestOf(t *testing.T, directory string, paths ...string) string {
+func fileDigestOf(t *testing.T, directory, path string) string {
 	t.Helper()
-	files := make([]proof.File, len(paths))
-	for index, path := range paths {
-		content, err := os.ReadFile(filepath.Join(directory, filepath.FromSlash(path)))
-		if err != nil {
-			t.Fatal(err)
-		}
-		files[index] = proof.File{Path: path, Content: content}
-	}
-	digest, err := proof.FileSetDigest(files)
+	content, err := os.ReadFile(filepath.Join(directory, filepath.FromSlash(path)))
 	if err != nil {
 		t.Fatal(err)
 	}
-	return digest
+	return proof.SHA256Hex(content)
 }
 
 // writeProofs writes a verified set holding one discriminating-power proof of REQ-1~1 produced from the current tree.
@@ -66,9 +58,9 @@ func writeProofs(t *testing.T, directory string) {
 	t.Helper()
 	statementDigest := domain.Requirement{Statement: strings.TrimSpace("THE SYSTEM SHALL work.")}.StatementDigest()
 	inputs := []proof.Input{
-		{Role: proof.RoleCodeTree, Name: "src", Digest: proof.Digest{SHA256: fileSetDigestOf(t, directory, proofCode)}},
-		{Role: proof.RoleSpec, Name: "spec.md", Digest: proof.Digest{SHA256: fileSetDigestOf(t, directory, "spec.md")}},
-		{Role: proof.RoleTestSource, Name: "tests", Digest: proof.Digest{SHA256: fileSetDigestOf(t, directory, proofTests)}},
+		{Role: proof.RoleCodeTree, Name: proofCode, Digest: proof.Digest{SHA256: fileDigestOf(t, directory, proofCode)}},
+		{Role: proof.RoleSpec, Name: "REQ-1~1", Digest: proof.Digest{SHA256: statementDigest}},
+		{Role: proof.RoleTestSource, Name: proofTests, Digest: proof.Digest{SHA256: fileDigestOf(t, directory, proofTests)}},
 	}
 	statement := prooftest.DiscriminatingPower("REQ-1", 1, statementDigest, inputs...)
 	statement.DiscriminatingPower.ProducedBy = proof.ProducedByLocal
@@ -118,7 +110,7 @@ func TestProofsEndToEnd(t *testing.T) {
 		}
 	})
 
-	t.Run("blocks with stale_proof once the code changed after the proof [verifies SN-111~1]", func(t *testing.T) {
+	t.Run("blocks with stale_proof once the code changed after the proof [verifies SN-111~2]", func(t *testing.T) {
 		directory := proofProject(t, proofConfig)
 		writeProofs(t, directory)
 		if err := os.WriteFile(filepath.Join(directory, proofCode), []byte("def work(): return 1\n"), 0o644); err != nil {
@@ -127,12 +119,60 @@ func TestProofsEndToEnd(t *testing.T) {
 		result := checkProject(t, directory)
 		document := decode(t, result.stdout)
 		if result.exit != app.ExitBlocked || document.Findings[0].Category != domain.CategoryStaleProof ||
-			!strings.Contains(string(result.stdout), "code_tree files changed") {
+			!strings.Contains(string(result.stdout), "code_tree file src/a.py changed") {
 			t.Fatalf("exit %d, stdout %s", result.exit, result.stdout)
 		}
 	})
 
-	t.Run("blocks with stale_proof once the statement changed without a revision bump [verifies SN-111~1]", func(t *testing.T) {
+	t.Run("keeps the proof valid when a file outside every descriptor changes [verifies SN-132~1]", func(t *testing.T) {
+		directory := proofProject(t, proofConfig)
+		writeProofs(t, directory)
+		for name, content := range map[string]string{"src/unrelated.py": "def other(): pass\n", "tests/helpers.py": "VALUE = 1\n"} {
+			if err := os.WriteFile(filepath.Join(directory, filepath.FromSlash(name)), []byte(content), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
+		result := checkProject(t, directory)
+		if document := decode(t, result.stdout); result.exit != app.ExitClean || document.Verdict != domain.VerdictPass {
+			t.Fatalf("exit %d, findings %+v", result.exit, document.Findings)
+		}
+	})
+
+	t.Run("blocks with stale_proof once a test file bound to the criterion is missing from the proof [verifies SN-134~1]", func(t *testing.T) {
+		directory := proofProject(t, proofConfig)
+		writeProofs(t, directory)
+		moved := "def works_too(record_property):\n    record_property(\"" + domain.TagKeyword + "\", \"REQ-1~1\")\n"
+		if err := os.WriteFile(filepath.Join(directory, "tests", "t2.py"), []byte(moved), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		result := checkProject(t, directory)
+		if !strings.Contains(string(result.stdout), "tests/t2.py holds a test bound to REQ-1~1") {
+			t.Fatalf("exit %d, stdout %s", result.exit, result.stdout)
+		}
+	})
+
+	t.Run("blocks with stale_proof when the proof lists a code file outside proofs.code [verifies SN-133~1]", func(t *testing.T) {
+		directory := proofProject(t, strings.Replace(proofConfig, "code: [src]", "code: [lib]", 1))
+		writeProofs(t, directory)
+		result := checkProject(t, directory)
+		if result.exit != app.ExitBlocked || !strings.Contains(string(result.stdout), "outside the configured proofs.code globs") {
+			t.Fatalf("exit %d, stdout %s", result.exit, result.stdout)
+		}
+	})
+
+	t.Run("blocks with stale_proof when the spec input is not the statement digest of the criterion [verifies SN-135~1]", func(t *testing.T) {
+		directory := proofProject(t, proofConfig)
+		writeProofs(t, directory)
+		if err := os.WriteFile(filepath.Join(directory, "spec.md"), []byte("- **REQ-1~1**: THE SYSTEM SHALL work differently.\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		result := checkProject(t, directory)
+		if result.exit != app.ExitBlocked || decode(t, result.stdout).Findings[0].Category != domain.CategoryStaleProof {
+			t.Fatalf("exit %d, stdout %s", result.exit, result.stdout)
+		}
+	})
+
+	t.Run("blocks with stale_proof once the statement changed without a revision bump [verifies SN-111~2]", func(t *testing.T) {
 		directory := proofProject(t, proofConfig)
 		writeProofs(t, directory)
 		if err := os.WriteFile(filepath.Join(directory, "spec.md"), []byte("- **REQ-1~1**: THE SYSTEM SHALL work differently.\n"), 0o644); err != nil {

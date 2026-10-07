@@ -263,9 +263,6 @@ The requirements of shallnot itself, in its own Markdown spec format.
   spec-proof owns THE SYSTEM SHALL give each the decode result and the exact
   violation codes its manifest states, and SHALL refuse a copied file whose
   SHA-256 differs from the manifest of the copy.
-- **SN-107~1**: WHEN a set of files is digested THE SYSTEM SHALL hash `path
-  NUL content NUL` over the files sorted by path, regardless of the order given,
-  and refuse a path that is not relative POSIX or that occurs twice.
 - **SN-108~1**: WHEN shallnot.yaml holds a `proofs` block of the keys
   verified_dir, require, code, trust, thresholds with validity and alignment,
   escalation, signed_pass_basis, min_isolation and max_host_exclusions THE
@@ -281,17 +278,16 @@ The requirements of shallnot itself, in its own Markdown spec format.
   the digest the manifest lists, that does not decode or that breaks an
   invariant, while ignoring a statement of another predicate type and a file
   the manifest does not list.
-- **SN-110~1**: WHEN `proofs` is configured THE SYSTEM SHALL recompute the
-  digests of the spec, test source and code sets from the tree with the
-  file-set rule, over the files the `specs`, `tests` and `proofs.code`
-  patterns match less the excluded paths, and the SHA-256 of each spec file.
-- **SN-111~1**: WHEN a proof's subject digest or revision differs from the
-  requirement's current statement, a spec file it covers changed, an input of
-  the role spec, test_source or code_tree differs from the digest the gate
-  recomputes, such an input names globs other than the configured ones, or
-  such an input cannot be checked because the configuration names no files for
-  it THE SYSTEM SHALL classify the proof stale, and under `trust: signed` SHALL
-  classify stale a proof produced locally and every proof of a set whose
+- **SN-110~2**: WHEN `proofs` is configured THE SYSTEM SHALL read the SHA-256
+  of the exact bytes of each file that a `code_tree` or `test_source`
+  descriptor of a well-formed proof names, resolved against the directory of the
+  configuration file, record no digest for a file that is absent, is not a
+  regular file or whose path is not relative POSIX, read no other file of the
+  code or test tree, and record the SHA-256 of each known spec file.
+- **SN-111~2**: WHEN a proof's subject digest or revision differs from the
+  requirement's current statement, or a spec file a completeness proof covers
+  changed, THE SYSTEM SHALL classify the proof stale, and under `trust: signed`
+  SHALL classify stale a proof produced locally and every proof of a set whose
   manifest was not written by the signature verifier.
 - **SN-112~1**: WHEN a proof lists an input of the role `proof` whose digest is
   that of no valid proof in the verified set THE SYSTEM SHALL classify it
@@ -388,6 +384,20 @@ The requirements of shallnot itself, in its own Markdown spec format.
 - **SN-131~1**: WHEN the rows of the claim-power table are evaluated under each
   trust level and signed pass basis THE SYSTEM SHALL give the outcome and the
   finding categories of the committed gate-outcome goldens.
+- **SN-132~1**: WHEN a `code_tree` or `test_source` descriptor of a proof names a
+  file that is absent or whose bytes no longer have the recorded SHA-256 THE
+  SYSTEM SHALL classify the proof stale and name the file, and WHEN a file that
+  no descriptor names changes THE SYSTEM SHALL leave the proof valid.
+- **SN-133~1**: WHEN a `code_tree` descriptor names a file outside the
+  configured `proofs.code` entries, or a `test_source` descriptor a file outside
+  the configured `tests` roots, or either names an excluded path or a path that
+  is not relative POSIX, THE SYSTEM SHALL classify the proof stale.
+- **SN-134~1**: WHEN a test file holds a test that the source tags bind to the
+  criterion a proof is about and the proof lists that file in no `test_source`
+  descriptor THE SYSTEM SHALL classify the proof stale and name the file.
+- **SN-135~1**: WHEN the `spec` descriptor of a proof about a criterion is not
+  named `ID~REV` of that criterion or does not carry the current statement
+  digest of the criterion THE SYSTEM SHALL classify the proof stale.
 
 ## Architecture
 

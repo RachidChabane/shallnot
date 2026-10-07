@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/bmatcuk/doublestar/v4"
 
@@ -15,6 +16,7 @@ import (
 	"github.com/RachidChabane/shallnot/internal/adapters/spec"
 	"github.com/RachidChabane/shallnot/internal/analysis"
 	"github.com/RachidChabane/shallnot/internal/domain"
+	"github.com/RachidChabane/shallnot/internal/domain/proof"
 )
 
 const resultsExtension = ".xml"
@@ -93,7 +95,9 @@ func Run(settings Settings) (Outcome, error) {
 		if err != nil {
 			return Outcome{}, fmt.Errorf("proofs: %w", err)
 		}
-		input.Proofs = &analysis.ProofInput{Config: *settings.Proofs, Evidence: evidence}
+		input.Proofs = &analysis.ProofInput{
+			Config: *settings.Proofs, Scope: proofScope(settings), BaseDir: settings.WorkDir, Evidence: evidence,
+		}
 	}
 
 	return Outcome{
@@ -191,35 +195,36 @@ func (f focusRule) includes(file inputFile, id domain.RequirementID) bool {
 	return false
 }
 
-// proofSource says where the verified proofs are and which files the gate derives their input digests from.
+// proofSource says where the verified proofs are and which spec files the gate knows.
 func proofSource(settings Settings, specFiles []inputFile) proofset.Source {
 	paths := make([]string, len(specFiles))
 	for index, file := range specFiles {
 		paths[index] = file.path
 	}
 	return proofset.Source{
-		Config:          *settings.Proofs,
-		WorkDir:         settings.WorkDir,
-		SpecFiles:       paths,
-		SpecGlobs:       relativeTo(settings.WorkDir, append(append([]string(nil), settings.Specs...), settings.Focus...)),
-		TestGlobs:       relativeTo(settings.WorkDir, settings.Tests),
-		Exclude:         settings.Exclude,
-		DefaultExcludes: settings.UseDefaultExcludes,
+		Config:    *settings.Proofs,
+		WorkDir:   settings.WorkDir,
+		SpecFiles: paths,
 	}
 }
 
 // relativeTo undoes the rebasing of configured paths against the configuration file's directory, which is how
-// they are written in shallnot.yaml and in a proof's input annotations.
+// they are written in shallnot.yaml.
 func relativeTo(workDir string, patterns []string) []string {
 	relative := make([]string, len(patterns))
 	for index, pattern := range patterns {
 		relative[index] = filepath.ToSlash(filepath.Clean(pattern))
-		if workDir == "" || filepath.IsAbs(pattern) {
+		if workDir == "" {
 			continue
 		}
-		if trimmed, err := filepath.Rel(workDir, pattern); err == nil {
+		if trimmed, err := filepath.Rel(workDir, pattern); err == nil && !strings.HasPrefix(trimmed, "..") {
 			relative[index] = filepath.ToSlash(trimmed)
 		}
 	}
 	return relative
+}
+
+// proofScope is where the configuration lets the file descriptors of a proof point.
+func proofScope(settings Settings) proof.Scope {
+	return proof.Scope{Code: settings.Proofs.Code, Tests: relativeTo(settings.WorkDir, settings.Tests), Exclude: excludesOf(settings)}
 }

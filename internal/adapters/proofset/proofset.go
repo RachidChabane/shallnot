@@ -1,6 +1,6 @@
 // Package proofset reads the verified proof set that the signature verifier
-// writes: its manifest, the statement files it lists, and the digests of the
-// tree the gate recomputes to tell a current proof from a stale one. It uses
+// writes: its manifest, the statement files it lists, and the digests of
+// the files its descriptors name, to tell a current proof from a stale one. It uses
 // the operating system and the standard JSON library only.
 package proofset
 
@@ -13,9 +13,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/bmatcuk/doublestar/v4"
-
-	"github.com/RachidChabane/shallnot/internal/adapters/scan"
 	"github.com/RachidChabane/shallnot/internal/domain/proof"
 )
 
@@ -31,12 +28,6 @@ type Source struct {
 	WorkDir string
 	// SpecFiles are the known spec files, as paths openable from the working directory.
 	SpecFiles []string
-	// SpecGlobs and TestGlobs are the configured `specs` (with `focus`) and `tests` entries, relative to WorkDir.
-	SpecGlobs []string
-	TestGlobs []string
-	// Exclude are the configured exclude globs; DefaultExcludes adds the dependency and build directories.
-	Exclude         []string
-	DefaultExcludes bool
 }
 
 func (s Source) base() string {
@@ -74,11 +65,8 @@ func (s Source) relative(path string) (string, error) {
 func Load(source Source) (proof.Evidence, error) {
 	directory := source.resolve(source.Config.VerifiedDir)
 	evidence := proof.Evidence{ManifestPath: filepath.ToSlash(filepath.Join(directory, ManifestName))}
-	derived, err := source.derive()
-	if err != nil {
-		return evidence, err
-	}
-	evidence.Derived = derived
+	evidence.Derived.SpecFiles = map[string]string{}
+	evidence.Derived.Files = map[string]string{}
 
 	raw, err := os.ReadFile(filepath.Join(directory, ManifestName))
 	switch {
@@ -104,6 +92,11 @@ func Load(source Source) (proof.Evidence, error) {
 	for _, entry := range manifest.Statements {
 		evidence.Statements = append(evidence.Statements, loadStatement(directory, entry))
 	}
+	derived, err := source.derive(evidence.Statements)
+	if err != nil {
+		return evidence, err
+	}
+	evidence.Derived = derived
 	return evidence, nil
 }
 
@@ -140,122 +133,69 @@ func loadStatement(directory string, entry proof.ManifestEntry) proof.LoadedStat
 	return loaded
 }
 
-// derive recomputes the digests of the spec, test source and code sets from the tree.
-func (s Source) derive() (proof.DerivedInputs, error) {
-	var derived proof.DerivedInputs
-	specs, err := s.readFiles(s.SpecFiles)
-	if err != nil {
-		return derived, err
-	}
-	derived.SpecFiles = map[string]string{}
-	for _, file := range specs {
-		derived.SpecFiles[file.Path] = proof.SHA256Hex(file.Content)
-	}
-	derived.Spec = fileSet(specs, s.SpecGlobs)
-	tests, err := s.collect(s.TestGlobs)
-	if err != nil {
-		return derived, err
-	}
-	derived.TestSource = fileSet(tests, s.TestGlobs)
-	if len(s.Config.Code) > 0 {
-		code, err := s.collect(s.Config.Code)
+// derive reads what the checks compare against: the digest of each known spec file, and the digest of each file a
+// code_tree or test_source descriptor of a well-formed statement names.
+func (s Source) derive(statements []proof.LoadedStatement) (proof.DerivedInputs, error) {
+	derived := proof.DerivedInputs{SpecFiles: map[string]string{}, Files: map[string]string{}}
+	for _, path := range s.SpecFiles {
+		relative, err := s.relative(path)
 		if err != nil {
 			return derived, err
 		}
-		derived.CodeTree = fileSet(code, s.Config.Code)
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return derived, err
+		}
+		derived.SpecFiles[relative] = proof.SHA256Hex(content)
+	}
+	for _, name := range descriptorNames(statements) {
+		digest, present, err := s.digestOf(name)
+		if err != nil {
+			return derived, err
+		}
+		if present {
+			derived.Files[name] = digest
+		}
 	}
 	return derived, nil
 }
 
-// fileSet digests the files; a set the format cannot express (a path outside the tree) is not derivable.
-func fileSet(files []proof.File, globs []string) *proof.FileSet {
-	if len(globs) == 0 {
-		return nil
-	}
-	digest, err := proof.FileSetDigest(files)
-	if err != nil {
-		return nil
-	}
-	sorted := append([]string(nil), globs...)
-	sort.Strings(sorted)
-	return &proof.FileSet{Globs: sorted, Digest: digest}
-}
-
-func (s Source) readFiles(paths []string) ([]proof.File, error) {
-	files := make([]proof.File, 0, len(paths))
+// descriptorNames lists the distinct paths named by the file descriptors of the statements, in a stable order.
+func descriptorNames(statements []proof.LoadedStatement) []string {
 	seen := map[string]bool{}
-	for _, path := range paths {
-		relative, err := s.relative(path)
-		if err != nil {
-			return nil, err
-		}
-		if seen[relative] {
+	for _, loaded := range statements {
+		if loaded.Statement == nil {
 			continue
 		}
-		seen[relative] = true
-		content, err := os.ReadFile(path)
-		if err != nil {
-			return nil, err
-		}
-		files = append(files, proof.File{Path: relative, Content: content})
-	}
-	return files, nil
-}
-
-// collect expands patterns: a directory contributes every regular file under it, a glob every file it matches.
-// Excluded paths and, by default, dependency and build directories are left out.
-func (s Source) collect(patterns []string) ([]proof.File, error) {
-	var paths []string
-	for _, pattern := range patterns {
-		matched, err := s.expand(s.resolve(pattern))
-		if err != nil {
-			return nil, err
-		}
-		paths = append(paths, matched...)
-	}
-	kept := paths[:0]
-	for _, path := range paths {
-		relative, err := s.relative(path)
-		if err != nil {
-			return nil, err
-		}
-		if !s.excluded(relative) {
-			kept = append(kept, path)
-		}
-	}
-	return s.readFiles(kept)
-}
-
-func (s Source) expand(pattern string) ([]string, error) {
-	info, err := os.Stat(pattern)
-	if err == nil && info.IsDir() {
-		var files []string
-		err := filepath.WalkDir(pattern, func(path string, entry fs.DirEntry, walkErr error) error {
-			if walkErr != nil {
-				return walkErr
+		for _, input := range loaded.Statement.Core().Inputs {
+			if input.Role.NamesFile() && proof.IsRelativePOSIXPath(input.Name) {
+				seen[input.Name] = true
 			}
-			if entry.Type().IsRegular() {
-				files = append(files, path)
-			}
-			return nil
-		})
-		return files, err
-	}
-	if err == nil {
-		return []string{pattern}, nil
-	}
-	return doublestar.FilepathGlob(filepath.ToSlash(pattern), doublestar.WithFilesOnly())
-}
-
-func (s Source) excluded(relative string) bool {
-	patterns := append([]string(nil), s.Exclude...)
-	if s.DefaultExcludes {
-		patterns = append(patterns, scan.DefaultExcludes...)
-	}
-	for _, pattern := range patterns {
-		if matched, _ := doublestar.Match(pattern, relative); matched {
-			return true
 		}
 	}
-	return false
+	names := make([]string, 0, len(seen))
+	for name := range seen {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
+// digestOf hashes a file of the tree; a file that does not exist, or is not a regular file, is not present.
+func (s Source) digestOf(name string) (digest string, present bool, err error) {
+	path := s.resolve(filepath.FromSlash(name))
+	info, err := os.Stat(path)
+	switch {
+	case errors.Is(err, fs.ErrNotExist):
+		return "", false, nil
+	case err != nil:
+		return "", false, err
+	case !info.Mode().IsRegular():
+		return "", false, nil
+	}
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return "", false, err
+	}
+	return proof.SHA256Hex(content), true, nil
 }

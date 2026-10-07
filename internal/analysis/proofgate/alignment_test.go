@@ -71,10 +71,10 @@ func TestAlignment(t *testing.T) {
 	t.Run("matches the proof's test to the bound test by name or by class name and name [verifies SN-119~1]", func(t *testing.T) {
 		qualified := aligned("tests.ParkTest.test_one", verdict(proof.VerdictAligned, 0.9, matrix))
 		input := proofgate.Input{
-			Config: config(requireBoth), Known: known(), Evidence: evidence(dp(), qualified),
+			Config: config(requireBoth), Known: known(), Scope: scope(), Evidence: evidence(dp(), qualified),
 			Criteria: []proofgate.Criterion{{
 				Ref: domain.Ref{ID: requirementID, Revision: revision}, Digest: statementDigest,
-				PassingTests: []proofgate.TestName{{Name: "test_one", ClassName: "tests.ParkTest"}},
+				PassingTests: []proofgate.TestName{{Name: "test_one", ClassName: "tests.ParkTest"}}, TestFiles: []string{testFile},
 			}},
 		}
 		wantCategories(t, proofgate.Evaluate(input))

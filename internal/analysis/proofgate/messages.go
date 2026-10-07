@@ -10,6 +10,8 @@ import (
 const (
 	digestPrefixLength = 12
 	listSeparator      = ", "
+	scopeCode          = "proofs.code globs"
+	scopeTests         = "tests roots"
 )
 
 func abbreviate(digest string) string {

@@ -49,6 +49,8 @@ type Criterion struct {
 	Digest       string
 	Location     domain.Location
 	PassingTests []TestName
+	// TestFiles are the test files, relative to the configuration file, that hold a test bound to the criterion.
+	TestFiles []string
 }
 
 // Input is everything the policy needs.
@@ -57,6 +59,8 @@ type Input struct {
 	// Known holds every requirement the specs declare.
 	Known    map[domain.RequirementID]KnownRequirement
 	Criteria []Criterion
+	// Scope is where the configuration lets the file descriptors of a proof point.
+	Scope    proof.Scope
 	Evidence proof.Evidence
 }
 

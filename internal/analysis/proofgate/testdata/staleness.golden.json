@@ -1,0 +1,37 @@
+[
+  {
+    "case": "current",
+    "state": "valid",
+    "reason": ""
+  },
+  {
+    "case": "listed code file differs",
+    "state": "stale",
+    "reason": "the code_tree file src/a.py changed since the proof was produced"
+  },
+  {
+    "case": "listed test file absent",
+    "state": "stale",
+    "reason": "the test_source file tests/a_test.py is absent"
+  },
+  {
+    "case": "code file outside proofs.code",
+    "state": "stale",
+    "reason": "the code_tree input src/a.py is outside the configured proofs.code globs"
+  },
+  {
+    "case": "test file outside the tests roots",
+    "state": "stale",
+    "reason": "the test_source input tests/a_test.py is outside the configured tests roots"
+  },
+  {
+    "case": "bound test file not listed",
+    "state": "stale",
+    "reason": "the test file tests/b_test.py holds a test bound to PARK-2~1 but is not a test_source input"
+  },
+  {
+    "case": "statement digest differs",
+    "state": "stale",
+    "reason": "the statement of PARK-2~1 changed since the proof was produced"
+  }
+]

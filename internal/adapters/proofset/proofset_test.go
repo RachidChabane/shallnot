@@ -54,12 +54,7 @@ func sortEntries(entries []proof.ManifestEntry) {
 }
 
 func source(root string) proofset.Source {
-	config := proof.DefaultConfig()
-	config.Code = []string{"src"}
-	return proofset.Source{
-		Config: config, WorkDir: root, SpecFiles: []string{filepath.Join(root, "specs", "a.md")},
-		SpecGlobs: []string{"specs"}, TestGlobs: []string{"tests"}, DefaultExcludes: true,
-	}
+	return proofset.Source{Config: proof.DefaultConfig(), WorkDir: root, SpecFiles: []string{filepath.Join(root, "specs", "a.md")}}
 }
 
 func project(t *testing.T) string {
@@ -172,65 +167,77 @@ func TestLoad(t *testing.T) {
 	})
 }
 
-func TestDerivedDigests(t *testing.T) {
-	expected := func(t *testing.T, files ...proof.File) string {
-		t.Helper()
-		digest, err := proof.FileSetDigest(files)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return digest
-	}
+// writeProofNaming writes a verified set holding one proof whose inputs are the given descriptors.
+func writeProofNaming(t *testing.T, root string, inputs ...proof.Input) {
+	t.Helper()
+	statement := prooftest.Seal(prooftest.DiscriminatingPower("PARK-2", 1, prooftest.Digest("statement"), inputs...))
+	content := prooftest.Bytes(statement)
+	write(t, root, ".spec-proof/verified/dp/PARK-2~1/key.json", content)
+	write(t, root, ".spec-proof/verified/manifest.json", manifestOf(t, proof.TrustLocal, map[string][]byte{"dp/PARK-2~1/key.json": content}, nil))
+}
 
-	t.Run("recomputes the spec, test source and code digests with the file-set rule [verifies SN-110~1]", func(t *testing.T) {
+func fileInput(role proof.InputRole, name, content string) proof.Input {
+	return proof.Input{Role: role, Name: name, Digest: proof.Digest{SHA256: proof.SHA256Hex([]byte(content))}}
+}
+
+func TestDerivedDigests(t *testing.T) {
+	t.Run("reads the digest of each file a descriptor names and of each known spec file [verifies SN-110~2]", func(t *testing.T) {
 		root := project(t)
-		derived, err := proofset.Load(source(root))
+		writeProofNaming(t, root, fileInput(proof.RoleCodeTree, "src/a.py", "code"), fileInput(proof.RoleTestSource, "tests/t_test.py", "test"))
+		got, err := proofset.Load(source(root))
 		if err != nil {
 			t.Fatal(err)
 		}
-		got := derived.Derived
-		if got.Spec.Digest != expected(t, proof.File{Path: "specs/a.md", Content: []byte("spec")}) ||
-			got.TestSource.Digest != expected(t, proof.File{Path: "tests/t_test.py", Content: []byte("test")}) ||
-			got.CodeTree.Digest != expected(t, proof.File{Path: "src/a.py", Content: []byte("code")}) {
-			t.Fatalf("got %+v %+v %+v", got.Spec, got.TestSource, got.CodeTree)
+		files := got.Derived.Files
+		if len(files) != 2 || files["src/a.py"] != proof.SHA256Hex([]byte("code")) || files["tests/t_test.py"] != proof.SHA256Hex([]byte("test")) {
+			t.Fatalf("got %+v", files)
 		}
-		if got.SpecFiles["specs/a.md"] != proof.SHA256Hex([]byte("spec")) || got.CodeTree.Globs[0] != "src" {
-			t.Fatalf("got %+v", got)
+		if got.Derived.SpecFiles["specs/a.md"] != proof.SHA256Hex([]byte("spec")) {
+			t.Fatalf("got %+v", got.Derived.SpecFiles)
 		}
 	})
 
-	t.Run("changes a digest when a file changes and leaves the others alone [verifies SN-110~1]", func(t *testing.T) {
+	t.Run("reads no file that no descriptor names [verifies SN-110~2]", func(t *testing.T) {
 		root := project(t)
+		write(t, root, "src/unlisted.py", []byte("unlisted"))
+		writeProofNaming(t, root, fileInput(proof.RoleCodeTree, "src/a.py", "code"))
+		got, err := proofset.Load(source(root))
+		if err != nil || len(got.Derived.Files) != 1 {
+			t.Fatalf("got %+v, %v", got.Derived.Files, err)
+		}
+	})
+
+	t.Run("follows an edit of a named file and leaves the others alone [verifies SN-110~2]", func(t *testing.T) {
+		root := project(t)
+		writeProofNaming(t, root, fileInput(proof.RoleCodeTree, "src/a.py", "code"), fileInput(proof.RoleTestSource, "tests/t_test.py", "test"))
 		before, _ := proofset.Load(source(root))
 		write(t, root, "src/a.py", []byte("edited"))
 		after, _ := proofset.Load(source(root))
-		if before.Derived.CodeTree.Digest == after.Derived.CodeTree.Digest || before.Derived.Spec.Digest != after.Derived.Spec.Digest {
+		if before.Derived.Files["src/a.py"] == after.Derived.Files["src/a.py"] || before.Derived.Files["tests/t_test.py"] != after.Derived.Files["tests/t_test.py"] {
 			t.Fatal("digests did not follow the edit")
 		}
 	})
 
-	t.Run("leaves out excluded paths and dependency directories and expands globs [verifies SN-110~1]", func(t *testing.T) {
+	t.Run("records no entry for a file that is absent, a directory or a path that escapes the tree [verifies SN-110~2]", func(t *testing.T) {
 		root := project(t)
-		write(t, root, "src/node_modules/dep/x.js", []byte("dependency"))
-		write(t, root, "src/generated.py", []byte("generated"))
-		configured := source(root)
-		configured.Exclude = []string{"src/generated.py"}
-		configured.Config.Code = []string{"src/**/*.py"}
-		got, err := proofset.Load(configured)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if got.Derived.CodeTree.Digest != expected(t, proof.File{Path: "src/a.py", Content: []byte("code")}) {
-			t.Fatal("excluded or dependency files entered the set")
+		write(t, root, "src/dir/x.py", []byte("x"))
+		writeProofNaming(t, root,
+			fileInput(proof.RoleCodeTree, "src/gone.py", "code"), fileInput(proof.RoleCodeTree, "src/dir", "code"),
+			fileInput(proof.RoleCodeTree, "../outside.py", "code"), fileInput(proof.RoleTestSource, "tests/t_test.py", "test"))
+		got, err := proofset.Load(source(root))
+		if err != nil || len(got.Derived.Files) != 1 || got.Derived.Files["tests/t_test.py"] == "" {
+			t.Fatalf("got %+v, %v", got.Derived.Files, err)
 		}
 	})
 
-	t.Run("cannot derive the code set without proofs.code [verifies SN-110~1]", func(t *testing.T) {
-		configured := source(project(t))
-		configured.Config.Code = nil
+	t.Run("resolves descriptors against the configuration directory [verifies SN-110~2]", func(t *testing.T) {
+		root := project(t)
+		writeProofNaming(t, root, fileInput(proof.RoleCodeTree, "src/a.py", "code"))
+		configured := source(root)
+		configured.WorkDir = root
 		got, err := proofset.Load(configured)
-		if err != nil || got.Derived.CodeTree != nil {
-			t.Fatalf("got %+v, %v", got.Derived.CodeTree, err)
+		if err != nil || got.Derived.Files["src/a.py"] == "" {
+			t.Fatalf("got %+v, %v", got.Derived.Files, err)
 		}
 	})
 }

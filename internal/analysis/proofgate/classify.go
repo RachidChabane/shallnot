@@ -2,9 +2,7 @@ package proofgate
 
 import (
 	"fmt"
-	"slices"
 	"sort"
-	"strings"
 
 	"github.com/RachidChabane/shallnot/internal/domain"
 	"github.com/RachidChabane/shallnot/internal/domain/proof"
@@ -87,11 +85,11 @@ func staleReason(input Input, statement proof.Statement) string {
 		return reason
 	}
 	for _, consumed := range core.Inputs {
-		if reason := inputStaleReason(input.Evidence.Derived, consumed); reason != "" {
+		if reason := inputStaleReason(input, statement, consumed); reason != "" {
 			return reason
 		}
 	}
-	return ""
+	return unlistedTestFilesReason(input, statement)
 }
 
 func subjectStaleReason(input Input, statement proof.Statement) string {
@@ -119,19 +117,71 @@ func subjectStaleReason(input Input, statement proof.Statement) string {
 	return ""
 }
 
-func inputStaleReason(derived proof.DerivedInputs, consumed proof.Input) string {
-	set, derivable := derived.Set(consumed.Role)
-	if !derivable {
-		return ""
-	}
+// inputStaleReason applies the per-input checks: a spec descriptor must be the criterion's statement digest, a file
+// descriptor must lie within the configured scope and name a file that is present with the recorded bytes.
+func inputStaleReason(input Input, statement proof.Statement, consumed proof.Input) string {
 	switch {
-	case set == nil:
-		return fmt.Sprintf("the %s input cannot be checked: shallnot.yaml does not name its files", consumed.Role)
-	case consumed.Digest.SHA256 != set.Digest:
-		return fmt.Sprintf("the %s files changed since the proof was produced", consumed.Role)
-	case consumed.Annotations != nil && len(consumed.Annotations.Globs) > 0 && !slices.Equal(consumed.Annotations.Globs, set.Globs):
-		return fmt.Sprintf("the proof expanded its %s input from [%s], not from the configured [%s]", consumed.Role,
-			strings.Join(consumed.Annotations.Globs, listSeparator), strings.Join(set.Globs, listSeparator))
+	case consumed.Role == proof.RoleSpec && statement.Kind != proof.KindCompleteness:
+		return specDescriptorStaleReason(input, statement, consumed)
+	case consumed.Role.NamesFile():
+		return fileDescriptorStaleReason(input, consumed)
+	}
+	return ""
+}
+
+func specDescriptorStaleReason(input Input, statement proof.Statement, consumed proof.Input) string {
+	requirement, _ := statement.Requirement()
+	expected := proof.SubjectName(requirement.ID, requirement.Revision)
+	known := input.Known[domain.RequirementID(requirement.ID)]
+	switch {
+	case consumed.Name != expected:
+		return fmt.Sprintf("the spec input is named %q, not %q", consumed.Name, expected)
+	case consumed.Digest.SHA256 != known.Digest:
+		return fmt.Sprintf("the spec input %s is not the current statement digest of %s", consumed.Name, requirement.ID)
+	}
+	return ""
+}
+
+func fileDescriptorStaleReason(input Input, consumed proof.Input) string {
+	if !input.Scope.Contains(consumed.Role, consumed.Name) {
+		return fmt.Sprintf("the %s input %s is outside the configured %s", consumed.Role, consumed.Name, scopeName(consumed.Role))
+	}
+	current, present := input.Evidence.Derived.Files[consumed.Name]
+	switch {
+	case !present:
+		return fmt.Sprintf("the %s file %s is absent", consumed.Role, consumed.Name)
+	case current != consumed.Digest.SHA256:
+		return fmt.Sprintf("the %s file %s changed since the proof was produced", consumed.Role, consumed.Name)
+	}
+	return ""
+}
+
+func scopeName(role proof.InputRole) string {
+	if role == proof.RoleCodeTree {
+		return scopeCode
+	}
+	return scopeTests
+}
+
+// unlistedTestFilesReason checks that every test file holding a test bound to the criterion is a test_source
+// descriptor of the proof.
+func unlistedTestFilesReason(input Input, statement proof.Statement) string {
+	requirement, _ := statement.Requirement()
+	listed := map[string]bool{}
+	for _, consumed := range statement.Core().Inputs {
+		if consumed.Role == proof.RoleTestSource {
+			listed[consumed.Name] = true
+		}
+	}
+	for _, criterion := range input.Criteria {
+		if string(criterion.Ref.ID) != requirement.ID || int(criterion.Ref.Revision) != requirement.Revision {
+			continue
+		}
+		for _, file := range criterion.TestFiles {
+			if !listed[file] {
+				return fmt.Sprintf("the test file %s holds a test bound to %s but is not a test_source input", file, criterion.Ref)
+			}
+		}
 	}
 	return ""
 }

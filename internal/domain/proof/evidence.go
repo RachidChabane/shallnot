@@ -1,34 +1,12 @@
 package proof
 
-// FileSet is a set of files as the gate derives it from its own configuration, with the digest of the set.
-type FileSet struct {
-	// Globs are the configured patterns the set was expanded from, sorted.
-	Globs  []string
-	Digest string
-}
-
-// DerivedInputs are the input digests the gate recomputes from the tree. A nil set means the configuration does
-// not name that set, so the input cannot be checked.
+// DerivedInputs are the digests the gate reads from the tree: the files the proofs name and the known spec files.
 type DerivedInputs struct {
-	Spec       *FileSet
-	TestSource *FileSet
-	CodeTree   *FileSet
 	// SpecFiles maps the relative path of each known spec file to the SHA-256 of its content.
 	SpecFiles map[string]string
-}
-
-// Set returns the derived set of an input role, and false for a role the gate cannot derive.
-func (d DerivedInputs) Set(role InputRole) (*FileSet, bool) {
-	switch role {
-	case RoleSpec:
-		return d.Spec, true
-	case RoleTestSource:
-		return d.TestSource, true
-	case RoleCodeTree:
-		return d.CodeTree, true
-	default:
-		return nil, false
-	}
+	// Files maps the relative POSIX path of each file a code_tree or test_source descriptor names to the SHA-256 of
+	// its bytes; a file that is absent or unreadable as a regular file has no entry.
+	Files map[string]string
 }
 
 // LoadedStatement is one statement file of the verified set, as the adapter read it.

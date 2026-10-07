@@ -1,6 +1,10 @@
 package analysis
 
 import (
+	"path/filepath"
+	"sort"
+	"strings"
+
 	"github.com/RachidChabane/shallnot/internal/analysis/proofgate"
 	"github.com/RachidChabane/shallnot/internal/domain"
 	"github.com/RachidChabane/shallnot/internal/domain/proof"
@@ -8,7 +12,11 @@ import (
 
 // ProofInput is the verified proof set a run consumes and the policy it is consumed under.
 type ProofInput struct {
-	Config   proof.Config
+	Config proof.Config
+	// Scope is where the configuration lets the file descriptors of a proof point.
+	Scope proof.Scope
+	// BaseDir is the directory of the configuration file, as the tags' paths are written; descriptors are relative to it.
+	BaseDir  string
 	Evidence proof.Evidence
 }
 
@@ -25,15 +33,41 @@ func (a *analyzer) settleProofs(rows []domain.Row) *proof.Report {
 		known[requirement.ID] = proofgate.KnownRequirement{Revision: requirement.Revision, Digest: requirement.StatementDigest()}
 		if row.InFocus && row.Coverage == domain.CoverageCovered {
 			criteria = append(criteria, proofgate.Criterion{
-				Ref: requirement.Ref(), Digest: requirement.StatementDigest(), Location: requirement.Location, PassingTests: passingTests(row),
+				Ref: requirement.Ref(), Digest: requirement.StatementDigest(), Location: requirement.Location, PassingTests: passingTests(row), TestFiles: a.testFiles(requirement.Ref()),
 			})
 		}
 	}
-	result := proofgate.Evaluate(proofgate.Input{Config: a.input.Proofs.Config, Known: known, Criteria: criteria, Evidence: a.input.Proofs.Evidence})
+	result := proofgate.Evaluate(proofgate.Input{Config: a.input.Proofs.Config, Known: known, Criteria: criteria, Scope: a.input.Proofs.Scope, Evidence: a.input.Proofs.Evidence})
 	for _, finding := range result.Findings {
 		a.reportProof(finding)
 	}
 	return &result.Report
+}
+
+// testFiles are the files holding a source tag that cites the criterion, relative to the configuration file's directory.
+func (a *analyzer) testFiles(ref domain.Ref) []string {
+	seen := map[string]bool{}
+	var files []string
+	for _, tag := range a.input.SourceTags {
+		if !citesRef(tag, ref) {
+			continue
+		}
+		file := relativeToBase(a.input.Proofs.BaseDir, tag.Location.File)
+		if !seen[file] {
+			seen[file] = true
+			files = append(files, file)
+		}
+	}
+	sort.Strings(files)
+	return files
+}
+
+func relativeToBase(baseDir, file string) string {
+	file = filepath.ToSlash(filepath.Clean(file))
+	if baseDir == "" {
+		return file
+	}
+	return strings.TrimPrefix(file, filepath.ToSlash(filepath.Clean(baseDir))+"/")
 }
 
 func passingTests(row domain.Row) []proofgate.TestName {

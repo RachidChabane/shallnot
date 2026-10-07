@@ -17,33 +17,41 @@ const (
 	revision      = 1
 	testName      = "test_one"
 	specPath      = "specs/parkfee.md"
+	testFile      = "tests/test_parkfee.py"
+	codeFile      = "src/parkfee.py"
 )
 
 var (
 	statementDigest = prooftest.Digest("PARK-2 statement")
-	specSetDigest   = prooftest.Digest("spec set")
-	testSetDigest   = prooftest.Digest("test set")
-	codeSetDigest   = prooftest.Digest("code set")
 	specFileDigest  = prooftest.Digest("spec file")
+	testFileDigest  = prooftest.Digest("test file")
+	codeFileDigest  = prooftest.Digest("code file")
 )
+
+func scope() proof.Scope {
+	return proof.Scope{Code: []string{"src"}, Tests: []string{"tests"}, Exclude: []string{"**/node_modules/**"}}
+}
 
 func derived() proof.DerivedInputs {
 	return proof.DerivedInputs{
-		Spec:       &proof.FileSet{Globs: []string{"specs"}, Digest: specSetDigest},
-		TestSource: &proof.FileSet{Globs: []string{"tests"}, Digest: testSetDigest},
-		CodeTree:   &proof.FileSet{Globs: []string{"src"}, Digest: codeSetDigest},
-		SpecFiles:  map[string]string{specPath: specFileDigest},
+		SpecFiles: map[string]string{specPath: specFileDigest},
+		Files:     map[string]string{testFile: testFileDigest, codeFile: codeFileDigest},
 	}
 }
 
 // currentInputs are the inputs of a proof produced from the current tree.
 func currentInputs(extra ...proof.Input) []proof.Input {
 	inputs := []proof.Input{
-		{Role: proof.RoleSpec, Name: specPath, Digest: proof.Digest{SHA256: specSetDigest}},
-		{Role: proof.RoleTestSource, Name: "tests", Digest: proof.Digest{SHA256: testSetDigest}},
-		{Role: proof.RoleCodeTree, Name: "src", Digest: proof.Digest{SHA256: codeSetDigest}},
+		{Role: proof.RoleSpec, Name: proof.SubjectName(requirementID, revision), Digest: proof.Digest{SHA256: statementDigest}},
+		{Role: proof.RoleTestSource, Name: testFile, Digest: proof.Digest{SHA256: testFileDigest}},
+		{Role: proof.RoleCodeTree, Name: codeFile, Digest: proof.Digest{SHA256: codeFileDigest}},
 	}
 	return append(inputs, extra...)
+}
+
+// completenessInputs are the inputs of a completeness proof: it is about a spec file, not a criterion.
+func completenessInputs(extra ...proof.Input) []proof.Input {
+	return append([]proof.Input{{Role: proof.RoleSpec, Name: specPath, Digest: proof.Digest{SHA256: specFileDigest}}}, extra...)
 }
 
 func criterion(tests ...string) proofgate.Criterion {
@@ -56,7 +64,7 @@ func criterion(tests ...string) proofgate.Criterion {
 	}
 	return proofgate.Criterion{
 		Ref: domain.Ref{ID: requirementID, Revision: revision}, Digest: statementDigest,
-		Location: domain.Location{File: specPath, Line: 3}, PassingTests: names,
+		Location: domain.Location{File: specPath, Line: 3}, PassingTests: names, TestFiles: []string{testFile},
 	}
 }
 
@@ -139,7 +147,7 @@ func evidence(statements ...proof.Statement) proof.Evidence {
 }
 
 func evaluate(config proof.Config, evidence proof.Evidence, tests ...string) proofgate.Result {
-	return proofgate.Evaluate(proofgate.Input{Config: config, Known: known(), Criteria: []proofgate.Criterion{criterion(tests...)}, Evidence: evidence})
+	return proofgate.Evaluate(proofgate.Input{Config: config, Known: known(), Criteria: []proofgate.Criterion{criterion(tests...)}, Scope: scope(), Evidence: evidence})
 }
 
 func categories(result proofgate.Result) []string {

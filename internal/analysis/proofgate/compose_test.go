@@ -210,7 +210,7 @@ func TestMalformedProofs(t *testing.T) {
 
 func TestCompleteness(t *testing.T) {
 	t.Run("reports each question at the spec and never blocks [verifies SN-121~1]", func(t *testing.T) {
-		completeness := prooftest.Completeness(specPath, specFileDigest, currentInputs()...)
+		completeness := prooftest.Completeness(specPath, specFileDigest, completenessInputs()...)
 		completeness.Completeness.Questions = []proof.Question{
 			{Dimension: "boundaries", Question: "what happens at exactly 15 minutes?", RequirementIDs: []string{"PARK-2"}},
 			{Dimension: "time", Question: "which time zone applies?"},
