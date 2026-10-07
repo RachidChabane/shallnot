@@ -61,7 +61,7 @@ is stale when:
 - its subject digest or revision differs from the requirement's current statement, or no spec declares the requirement; for a completeness proof, the spec file changed;
 - a `code_tree` or `test_source` input names a file that is absent, or whose bytes no longer have the SHA-256 the descriptor records;
 - a `code_tree` input names a file outside the `proofs.code` entries, or a `test_source` input a file outside the `tests` roots, or either names an excluded path;
-- a test file that holds a test bound to the criterion by a source tag is not among the `test_source` inputs;
+- a test file that holds a test bound to the criterion by a source tag is not among the `test_source` inputs of a discriminating-power proof, or the file that holds the proof's own test is not among those of an alignment proof;
 - the `spec` input of a proof about a criterion is not named `ID~REV` of that criterion, or its digest is not the current statement digest of the criterion;
 - an input of the role `proof` names a proof, by kind and by the SHA-256 of its file, that is not valid in the verified set;
 - `proofs.trust` is `signed` and the statement was produced locally, or the manifest's `trust` is not `signed`.

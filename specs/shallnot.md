@@ -392,9 +392,11 @@ The requirements of shallnot itself, in its own Markdown spec format.
   configured `proofs.code` entries, or a `test_source` descriptor a file outside
   the configured `tests` roots, or either names an excluded path or a path that
   is not relative POSIX, THE SYSTEM SHALL classify the proof stale.
-- **SN-134~1**: WHEN a test file holds a test that the source tags bind to the
-  criterion a proof is about and the proof lists that file in no `test_source`
-  descriptor THE SYSTEM SHALL classify the proof stale and name the file.
+- **SN-134~2**: WHEN a test file holds a test that the source tags bind to the
+  criterion a discriminating-power proof is about, or, for an alignment proof,
+  the test the proof is about, and the proof lists that file in no
+  `test_source` descriptor THE SYSTEM SHALL classify the proof stale and name
+  the file.
 - **SN-135~1**: WHEN the `spec` descriptor of a proof about a criterion is not
   named `ID~REV` of that criterion or does not carry the current statement
   digest of the criterion THE SYSTEM SHALL classify the proof stale.

@@ -30,6 +30,16 @@
     "reason": "the test file tests/b_test.py holds a test bound to PARK-2~1 but is not a test_source input"
   },
   {
+    "case": "alignment lists only the file of its own test",
+    "state": "valid",
+    "reason": ""
+  },
+  {
+    "case": "alignment omits the file of its own test",
+    "state": "stale",
+    "reason": "the test file tests/a_test.py holds a test bound to PARK-2~1 but is not a test_source input"
+  },
+  {
     "case": "statement digest differs",
     "state": "stale",
     "reason": "the statement of PARK-2~1 changed since the proof was produced"

@@ -163,8 +163,9 @@ func scopeName(role proof.InputRole) string {
 	return scopeTests
 }
 
-// unlistedTestFilesReason checks that every test file holding a test bound to the criterion is a test_source
-// descriptor of the proof.
+// unlistedTestFilesReason checks that the test files a proof depends on are test_source descriptors of it: for a
+// discriminating-power proof every test file holding a test bound to the criterion, for an alignment proof the file
+// holding its own test.
 func unlistedTestFilesReason(input Input, statement proof.Statement) string {
 	requirement, _ := statement.Requirement()
 	listed := map[string]bool{}
@@ -177,13 +178,26 @@ func unlistedTestFilesReason(input Input, statement proof.Statement) string {
 		if string(criterion.Ref.ID) != requirement.ID || int(criterion.Ref.Revision) != requirement.Revision {
 			continue
 		}
-		for _, file := range criterion.TestFiles {
+		for _, file := range requiredTestFiles(criterion, statement) {
 			if !listed[file] {
 				return fmt.Sprintf("the test file %s holds a test bound to %s but is not a test_source input", file, criterion.Ref)
 			}
 		}
 	}
 	return ""
+}
+
+func requiredTestFiles(criterion Criterion, statement proof.Statement) []string {
+	if statement.Kind != proof.KindAlignment {
+		return criterion.TestFiles
+	}
+	var files []string
+	for _, test := range criterion.PassingTests {
+		if test.File != "" && matches(statement.Alignment.Test, test) {
+			files = append(files, test.File)
+		}
+	}
+	return files
 }
 
 // consumedReport lists every statement file with its state, ordered by path.

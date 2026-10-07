@@ -33,7 +33,7 @@ func (a *analyzer) settleProofs(rows []domain.Row) *proof.Report {
 		known[requirement.ID] = proofgate.KnownRequirement{Revision: requirement.Revision, Digest: requirement.StatementDigest()}
 		if row.InFocus && row.Coverage == domain.CoverageCovered {
 			criteria = append(criteria, proofgate.Criterion{
-				Ref: requirement.Ref(), Digest: requirement.StatementDigest(), Location: requirement.Location, PassingTests: passingTests(row), TestFiles: a.testFiles(requirement.Ref()),
+				Ref: requirement.Ref(), Digest: requirement.StatementDigest(), Location: requirement.Location, PassingTests: a.passingTests(row), TestFiles: a.testFiles(requirement.Ref()),
 			})
 		}
 	}
@@ -70,11 +70,15 @@ func relativeToBase(baseDir, file string) string {
 	return strings.TrimPrefix(file, filepath.ToSlash(filepath.Clean(baseDir))+"/")
 }
 
-func passingTests(row domain.Row) []proofgate.TestName {
+func (a *analyzer) passingTests(row domain.Row) []proofgate.TestName {
 	var names []proofgate.TestName
 	for _, test := range row.Tests {
 		if test.Outcome == domain.OutcomePassed {
-			names = append(names, proofgate.TestName{Name: test.Name, ClassName: test.ClassName})
+			name := proofgate.TestName{Name: test.Name, ClassName: test.ClassName}
+			if test.Source != nil {
+				name.File = relativeToBase(a.input.Proofs.BaseDir, test.Source.File)
+			}
+			names = append(names, name)
 		}
 	}
 	return names

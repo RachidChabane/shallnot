@@ -138,7 +138,7 @@ func TestProofsEndToEnd(t *testing.T) {
 		}
 	})
 
-	t.Run("blocks with stale_proof once a test file bound to the criterion is missing from the proof [verifies SN-134~1]", func(t *testing.T) {
+	t.Run("blocks with stale_proof once a test file bound to the criterion is missing from the proof [verifies SN-134~2]", func(t *testing.T) {
 		directory := proofProject(t, proofConfig)
 		writeProofs(t, directory)
 		moved := "def works_too(record_property):\n    record_property(\"" + domain.TagKeyword + "\", \"REQ-1~1\")\n"

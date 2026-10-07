@@ -101,7 +101,7 @@ func TestStaleness(t *testing.T) {
 		}
 	})
 
-	t.Run("classifies a proof stale when a test file bound to the criterion is not a test_source input [verifies SN-134~1]", func(t *testing.T) {
+	t.Run("classifies a proof stale when a test file bound to the criterion is not a test_source input [verifies SN-134~2]", func(t *testing.T) {
 		moved := criterion()
 		moved.TestFiles = []string{testFile, "tests/new_test.py"}
 		result := proofgate.Evaluate(proofgate.Input{Config: config(), Known: known(), Criteria: []proofgate.Criterion{moved}, Scope: scope(), Evidence: evidence(dp())})

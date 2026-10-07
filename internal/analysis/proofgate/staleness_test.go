@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 
@@ -124,10 +125,74 @@ func stalenessCases() []struct {
 		{"code file outside proofs.code", with(func(in *proofgate.Input) { in.Scope.Code = []string{"lib"} })},
 		{"test file outside the tests roots", with(func(in *proofgate.Input) { in.Scope.Tests = []string{"spec"} })},
 		{"bound test file not listed", with(func(in *proofgate.Input) { in.Criteria[0].TestFiles = []string{"tests/a_test.py", "tests/b_test.py"} })},
+		{"alignment lists only the file of its own test", func() proofgate.Input {
+			return alignmentInput([]string{"tests/a_test.py"}, map[string]string{testName: "tests/a_test.py", "test_two": "tests/b_test.py"})
+		}},
+		{"alignment omits the file of its own test", func() proofgate.Input {
+			return alignmentInput([]string{"tests/b_test.py"}, map[string]string{testName: "tests/a_test.py", "test_two": "tests/b_test.py"})
+		}},
 		{"statement digest differs", with(func(in *proofgate.Input) {
 			in.Known = map[domain.RequirementID]proofgate.KnownRequirement{requirementID: {Revision: revision, Digest: prooftest.Digest("new statement")}}
 		})},
 	}
+}
+
+// alignmentInput is a verified set holding one alignment proof of testName that lists the given test files, for a
+// criterion whose tests live in the files given per test name.
+func alignmentInput(listedTests []string, files map[string]string) proofgate.Input {
+	inputs := []proof.Input{{Role: proof.RoleSpec, Name: proof.SubjectName(requirementID, revision), Digest: proof.Digest{SHA256: statementDigest}}}
+	for _, file := range listedTests {
+		inputs = append(inputs, proof.Input{Role: proof.RoleTestSource, Name: file, Digest: proof.Digest{SHA256: prooftest.Digest("content of " + file)}})
+	}
+	statement := prooftest.Alignment(requirementID, revision, statementDigest, testName, inputs...)
+	statement.Alignment.Verdict = verdict(proof.VerdictAligned, 0.9)
+	ev := evidence(prooftest.Seal(statement))
+	ev.Derived.Files = map[string]string{}
+	bound := criterion()
+	bound.PassingTests = nil
+	for name, file := range files {
+		bound.PassingTests = append(bound.PassingTests, proofgate.TestName{Name: name, File: file})
+		bound.TestFiles = append(bound.TestFiles, file)
+		ev.Derived.Files[file] = prooftest.Digest("content of " + file)
+	}
+	sort.Strings(bound.TestFiles)
+	return proofgate.Input{Config: config(), Known: known(), Criteria: []proofgate.Criterion{bound}, Scope: scope(), Evidence: ev}
+}
+
+func TestAlignmentTestFile(t *testing.T) {
+	files := map[string]string{testName: "tests/a_test.py", "test_two": "tests/b_test.py"}
+
+	t.Run("requires only the file that holds the proof's own test [verifies SN-134~2]", func(t *testing.T) {
+		input := alignmentInput([]string{"tests/a_test.py"}, files)
+		if got := proofgate.Evaluate(input).Report.Consumed[0].State; got != proof.StateValid {
+			t.Fatalf("state %s", got)
+		}
+	})
+
+	t.Run("classifies an alignment proof stale when the file of its own test is not listed [verifies SN-134~2]", func(t *testing.T) {
+		input := alignmentInput([]string{"tests/b_test.py"}, files)
+		consumed := proofgate.Evaluate(input).Report.Consumed[0]
+		if consumed.State != proof.StateStale || !strings.Contains(consumed.Reason, "tests/a_test.py") {
+			t.Fatalf("consumed %+v", consumed)
+		}
+	})
+
+	t.Run("a listed file edit or an unlisted file edit keeps the property for alignment proofs [verifies SN-132~1]", func(t *testing.T) {
+		rapid.Check(t, func(t *rapid.T) {
+			input := alignmentInput([]string{"tests/a_test.py"}, files)
+			if rapid.Bool().Draw(t, "edit listed") {
+				input.Evidence.Derived.Files["tests/a_test.py"] = prooftest.Digest("edited")
+				if got := stateOf(input); got != proof.StateStale {
+					t.Fatalf("listed edit left %s", got)
+				}
+				return
+			}
+			input.Evidence.Derived.Files["tests/b_test.py"] = prooftest.Digest("edited")
+			if got := stateOf(input); got != proof.StateValid {
+				t.Fatalf("unlisted edit made it %s", got)
+			}
+		})
+	})
 }
 
 func TestStalenessGoldens(t *testing.T) {
@@ -149,7 +214,7 @@ func TestStalenessGoldens(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	t.Run("gives each staleness check the committed state and reason [verifies SN-132~1, SN-133~1, SN-134~1, SN-135~1]", func(t *testing.T) {
+	t.Run("gives each staleness check the committed state and reason [verifies SN-132~1, SN-133~1, SN-134~2, SN-135~1]", func(t *testing.T) {
 		committed, err := os.ReadFile(stalenessGoldenPath)
 		if err != nil {
 			t.Fatalf("%v (run go test ./internal/analysis/proofgate -run TestStalenessGoldens -update)", err)

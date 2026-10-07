@@ -41,6 +41,8 @@ type KnownRequirement struct {
 type TestName struct {
 	Name      string
 	ClassName string
+	// File is the test file that holds the test, relative to the configuration file, or "" when the source is unknown.
+	File string
 }
 
 // Criterion is a requirement in focus that traceability found covered: the only ones the proofs are asked about.
