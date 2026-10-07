@@ -59,16 +59,24 @@ with no valid statement for a criterion is `missing` (or `pending`). A statement
 is stale when:
 
 - its subject digest or revision differs from the requirement's current statement, or no spec declares the requirement; for a completeness proof, the spec file changed;
-- an input of the role `spec`, `test_source` or `code_tree` carries a digest other than the one `shallnot` recomputes from the tree, carries `annotations.globs` other than the configured patterns, or cannot be checked because `shallnot.yaml` names no files for it (`proofs.code` is empty, for `code_tree`);
+- a `code_tree` or `test_source` input names a file that is absent, or whose bytes no longer have the SHA-256 the descriptor records;
+- a `code_tree` input names a file outside the `proofs.code` entries, or a `test_source` input a file outside the `tests` roots, or either names an excluded path;
+- a test file that holds a test bound to the criterion by a source tag is not among the `test_source` inputs;
+- the `spec` input of a proof about a criterion is not named `ID~REV` of that criterion, or its digest is not the current statement digest of the criterion;
 - an input of the role `proof` names a proof, by kind and by the SHA-256 of its file, that is not valid in the verified set;
 - `proofs.trust` is `signed` and the statement was produced locally, or the manifest's `trust` is not `signed`.
 
-The digest of a file set is the SHA-256 over the files sorted by relative path,
-each written as `path`, a NUL byte, the content and a NUL byte. The `spec` set
-is the known spec files, the `test_source` set is every file under the `tests`
-entries and the `code_tree` set is every file the `proofs.code` globs match;
-excluded paths and, by default, dependency and build directories are left out.
-Paths are relative to the configuration file's directory.
+### Input descriptors
+
+`code_tree` and `test_source` inputs are one descriptor per file: `name` is the
+path relative to the configuration file's directory with `/` separators, and
+`digest` is the SHA-256 of the file's exact bytes. The module that wrote the proof
+lists the files the criterion depends on, so `shallnot` reads exactly those files
+and no other: a change to a file that no descriptor names leaves the proof valid.
+`proofs.code` entries and `tests` roots are files, directories or globs; `exclude`
+and, by default, dependency and build directories are left out. A `spec` input
+of a completeness proof is the spec file itself and is covered by its subject
+digest.
 
 ## Trust levels
 

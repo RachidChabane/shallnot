@@ -377,7 +377,7 @@
         },
         "code": {
           "type": "array",
-          "description": "Globs of the source files a proof's code_tree input is derived from. Without them a proof that names a code_tree input is stale.",
+          "description": "Files, directories or globs that a proof's code_tree descriptors may name. A descriptor outside them makes the proof stale, so without entries a proof that names a code_tree file is stale.",
           "items": {
             "type": "string"
           }
