@@ -266,6 +266,13 @@ The requirements of shallnot itself, in its own Markdown spec format.
 - **SN-107~1**: WHEN a set of files is digested THE SYSTEM SHALL hash `path
   NUL content NUL` over the files sorted by path, regardless of the order given,
   and refuse a path that is not relative POSIX or that occurs twice.
+- **SN-108~1**: WHEN shallnot.yaml holds a `proofs` block of the keys
+  verified_dir, require, code, trust, thresholds with validity and alignment,
+  escalation, signed_pass_basis, min_isolation and max_host_exclusions THE
+  SYSTEM SHALL apply each over its default, refuse an unknown key, a value
+  outside its closed set or a confidence outside [0,1], refuse to require
+  completeness proofs, which are advisory, and publish the block in the config
+  schema.
 
 ## Architecture
 

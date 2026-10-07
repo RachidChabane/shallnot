@@ -37,6 +37,26 @@ type File struct {
 	Strict          bool              `yaml:"strict"`
 	FailOn          string            `yaml:"fail_on"`
 	Severities      map[string]string `yaml:"severities"`
+	Proofs          *ProofsFile       `yaml:"proofs"`
+}
+
+// ProofsFile is the `proofs` block of the configuration file.
+type ProofsFile struct {
+	VerifiedDir       string      `yaml:"verified_dir"`
+	Require           []string    `yaml:"require"`
+	Code              []string    `yaml:"code"`
+	Trust             string      `yaml:"trust"`
+	Thresholds        *Thresholds `yaml:"thresholds"`
+	Escalation        string      `yaml:"escalation"`
+	SignedPassBasis   string      `yaml:"signed_pass_basis"`
+	MinIsolation      string      `yaml:"min_isolation"`
+	MaxHostExclusions *int        `yaml:"max_host_exclusions"`
+}
+
+// Thresholds are the confidences of the `proofs` block, each defaulted when absent.
+type Thresholds struct {
+	Validity  *float64 `yaml:"validity"`
+	Alignment *float64 `yaml:"alignment"`
 }
 
 // Load reads a configuration file into settings. Relative paths in the file
@@ -99,6 +119,13 @@ func (f File) settings(baseDirectory string) (app.Settings, error) {
 		if err := SetSeverity(&settings.Policy, category, f.Severities[category]); err != nil {
 			return settings, err
 		}
+	}
+	if f.Proofs != nil {
+		proofs, err := f.Proofs.config()
+		if err != nil {
+			return settings, fmt.Errorf("proofs: %w", err)
+		}
+		settings.Proofs = &proofs
 	}
 	return settings, nil
 }

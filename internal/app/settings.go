@@ -2,7 +2,10 @@
 // adapters and hands them to the analysis.
 package app
 
-import "github.com/RachidChabane/shallnot/internal/domain"
+import (
+	"github.com/RachidChabane/shallnot/internal/domain"
+	"github.com/RachidChabane/shallnot/internal/domain/proof"
+)
 
 // Settings are the fully resolved options of one run.
 type Settings struct {
@@ -23,6 +26,8 @@ type Settings struct {
 	// Baseline is the path of an earlier JSON report whose statement digests this run compares against, or "".
 	Baseline string
 	Policy   domain.Policy
+	// Proofs configures the consumption of the verified proof set; nil when the project has no `proofs` block.
+	Proofs *proof.Config
 }
 
 // DefaultSettings returns the options of a run that configures nothing.

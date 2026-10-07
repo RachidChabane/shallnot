@@ -13,6 +13,7 @@ import (
 	"go.yaml.in/yaml/v3"
 
 	"github.com/RachidChabane/shallnot/internal/domain"
+	"github.com/RachidChabane/shallnot/internal/domain/proof"
 	"github.com/RachidChabane/shallnot/schemas"
 )
 
@@ -45,6 +46,19 @@ func enumAt(t *testing.T, schema []byte, path ...string) []string {
 	return names
 }
 
+// requirable lists the kinds and predicate types a criterion may be required to hold a proof of.
+func requirable() []string {
+	var names, uris []string
+	for _, kind := range proof.Kinds() {
+		if kind == proof.KindCompleteness {
+			continue
+		}
+		names = append(names, string(kind))
+		uris = append(uris, kind.PredicateType())
+	}
+	return append(names, uris...)
+}
+
 func without(names []string, excluded string) []string {
 	var kept []string
 	for _, name := range names {
@@ -74,6 +88,11 @@ func TestSchemasAgreeWithTheTypes(t *testing.T) {
 		{"report outcome value types", schemas.Report, []string{"$defs", "outcome", "properties", "type"}, domain.LiteralTypeNames()},
 		{"report outcome kinds", schemas.Report, []string{"$defs", "outcome", "properties", "kind"}, domain.OutcomeKindNames()},
 		{"config fail_on", schemas.Config, []string{"properties", "fail_on"}, reported},
+		{"config proofs require", schemas.Config, []string{"properties", "proofs", "properties", "require", "items"}, requirable()},
+		{"config proofs trust", schemas.Config, []string{"properties", "proofs", "properties", "trust"}, proof.TrustNames()},
+		{"config proofs escalation", schemas.Config, []string{"properties", "proofs", "properties", "escalation"}, proof.EscalationNames()},
+		{"config proofs signed_pass_basis", schemas.Config, []string{"properties", "proofs", "properties", "signed_pass_basis"}, proof.SignedPassBasisNames()},
+		{"config proofs min_isolation", schemas.Config, []string{"properties", "proofs", "properties", "min_isolation"}, proof.IsolationNames()},
 		{"spec status", schemas.Spec, []string{"properties", "requirements", "items", "properties", "status"}, domain.StatusNames()},
 	}
 	for _, enum := range enums {

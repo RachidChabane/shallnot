@@ -233,6 +233,93 @@
         }
       },
       "additionalProperties": false
+    },
+    "proofs": {
+      "type": "object",
+      "description": "Consumption of the verified proof set that spec-proof modules write. Absent: no proof is read.",
+      "properties": {
+        "verified_dir": {
+          "type": "string",
+          "description": "Directory holding the verified proof set and its manifest.json, relative to the config file's directory. Default .spec-proof/verified."
+        },
+        "require": {
+          "type": "array",
+          "description": "Proof kinds that every criterion in focus must hold a valid proof of, by kind or by predicate type URI. A required kind with no valid proof is a stale_proof finding, never a pass. Completeness is advisory and cannot be required.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "alignment",
+              "discriminating-power",
+              "https://rachid-chabane.com/attestations/alignment/v1",
+              "https://rachid-chabane.com/attestations/discriminating-power/v1"
+            ]
+          }
+        },
+        "code": {
+          "type": "array",
+          "description": "Globs of the source files a proof's code_tree input is derived from. Without them a proof that names a code_tree input is stale.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "trust": {
+          "enum": [
+            "signed",
+            "local"
+          ],
+          "description": "signed admits only statements produced by CI in a set the signature verifier wrote; local also admits unsigned local statements and is feedback, never proof. Default signed."
+        },
+        "thresholds": {
+          "type": "object",
+          "description": "Confidence at which a judged claim has power.",
+          "properties": {
+            "validity": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Confidence of a mutant validity that blocks or earns pass credit. Default 0.7."
+            },
+            "alignment": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1,
+              "description": "Confidence of an ALIGNED verdict that clears alignment. Default 0.7."
+            }
+          },
+          "additionalProperties": false
+        },
+        "escalation": {
+          "enum": [
+            "error",
+            "warning"
+          ],
+          "description": "Whether a finding that escalates a judged signal fails the verdict (error) or is only reported (warning). A severity set for a category wins. Default error."
+        },
+        "signed_pass_basis": {
+          "enum": [
+            "executed-only",
+            "corroborated",
+            "judged"
+          ],
+          "description": "Evidence a signed pass may rest on: executed evidence alone, judged claims that name their executed corroboration, or judged claims alone. Default corroborated."
+        },
+        "min_isolation": {
+          "enum": [
+            "restricted-attested",
+            "restricted",
+            "restricted-unverified",
+            "unrestricted",
+            "inline"
+          ],
+          "description": "Isolation floor below which a judged response earns no pass credit but keeps its block power. Default restricted."
+        },
+        "max_host_exclusions": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Survivors a criterion may exclude on a judgment alone. Default 2."
+        }
+      },
+      "additionalProperties": false
     }
   },
   "required": [
