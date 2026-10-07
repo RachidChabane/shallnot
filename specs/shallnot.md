@@ -374,6 +374,17 @@ The requirements of shallnot itself, in its own Markdown spec format.
   agent which module waits, which fulfil skill to run and never to answer the
   requests itself, and, for `host_unresponsive`, to report to the user and not
   to loop.
+- **SN-129~1**: WHEN a response is added that blocks or escalates, a surviving
+  mutant, a failing execution or example, a test that kills a sentinel, or an
+  alignment proof, THE SYSTEM SHALL never turn an outcome of block into one of
+  escalate or pass, nor an outcome of escalate into pass, for any
+  configuration.
+- **SN-130~1**: WHEN no judged claim of a proof lists executed corroboration
+  and nothing executed failed THE SYSTEM SHALL never block the criterion, and
+  under a signed pass basis other than judged SHALL never pass it.
+- **SN-131~1**: WHEN the rows of the claim-power table are evaluated under each
+  trust level and signed pass basis THE SYSTEM SHALL give the outcome and the
+  finding categories of the committed gate-outcome goldens.
 
 ## Architecture
 

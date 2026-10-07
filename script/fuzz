@@ -10,6 +10,7 @@ go test ./internal/domain -run '^$' -fuzz FuzzFindBracketTags -fuzztime "$FUZZTI
 go test ./internal/domain -run '^$' -fuzz FuzzStatementDigest -fuzztime "$FUZZTIME" -fuzzminimizetime "$MINIMIZE_TIME"
 go test ./internal/domain -run '^$' -fuzz FuzzParseExamples -fuzztime "$FUZZTIME" -fuzzminimizetime "$MINIMIZE_TIME"
 go test ./internal/domain/proof -run '^$' -fuzz FuzzDecode -fuzztime "$FUZZTIME" -fuzzminimizetime "$MINIMIZE_TIME"
+go test ./internal/domain/proof -run '^$' -fuzz FuzzParseManifest -fuzztime "$FUZZTIME" -fuzzminimizetime "$MINIMIZE_TIME"
 go test ./internal/adapters/spec -run '^$' -fuzz FuzzMarkdown -fuzztime "$FUZZTIME" -fuzzminimizetime "$MINIMIZE_TIME"
 go test ./internal/adapters/baseline -run '^$' -fuzz FuzzBaseline -fuzztime "$FUZZTIME" -fuzzminimizetime "$MINIMIZE_TIME"
 go test ./internal/adapters/junitxml -run '^$' -fuzz FuzzReader -fuzztime "$FUZZTIME" -fuzzminimizetime "$MINIMIZE_TIME"

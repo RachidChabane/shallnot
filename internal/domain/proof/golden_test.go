@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -173,6 +174,22 @@ func TestSyncedGoldens(t *testing.T) {
 				if name := directory + "/" + entry.Name(); !listed[name] {
 					t.Errorf("%s is copied but not in the manifest", name)
 				}
+			}
+		}
+	})
+}
+
+func TestSyncScript(t *testing.T) {
+	t.Run("the sync script refuses a call without a spec-proof checkout and a checkout without goldens [verifies SN-106~1]", func(t *testing.T) {
+		script, err := filepath.Abs("../../../script/sync-proof-fixtures")
+		if err != nil {
+			t.Fatal(err)
+		}
+		for name, args := range map[string][]string{"no argument": nil, "an empty checkout": {t.TempDir()}} {
+			output, err := exec.Command("bash", append([]string{script}, args...)...).CombinedOutput()
+			var exit *exec.ExitError
+			if !errors.As(err, &exit) || exit.ExitCode() != 2 {
+				t.Errorf("%s: err = %v, output %s", name, err, output)
 			}
 		}
 	})

@@ -14,6 +14,7 @@ script/lint             # gofmt and go vet
 script/ci               # what CI runs: lint, build, shallnot gate, shallnot init --check
 script/fuzz             # fuzz the parsers
 script/regen-fixtures   # re-run pytest, Jest, Vitest, Maven and Gradle on the fixture projects
+script/sync-proof-fixtures DIR  # copy the golden proofs and predicate schemas of a spec-proof checkout, verify their SHA-256 manifest
 script/eval-plugin      # claude plugin eval on the plugin (spends model tokens)
 ```
 

@@ -1,0 +1,640 @@
+[
+  {
+    "row": "tests fail on the reference code",
+    "trust": "local",
+    "basis": "corroborated",
+    "outcome": "block",
+    "categories": [
+      "correct_code_fails"
+    ]
+  },
+  {
+    "row": "tests fail on the reference code",
+    "trust": "signed",
+    "basis": "executed-only",
+    "outcome": "block",
+    "categories": [
+      "correct_code_fails"
+    ]
+  },
+  {
+    "row": "tests fail on the reference code",
+    "trust": "signed",
+    "basis": "corroborated",
+    "outcome": "block",
+    "categories": [
+      "correct_code_fails"
+    ]
+  },
+  {
+    "row": "tests fail on the reference code",
+    "trust": "signed",
+    "basis": "judged",
+    "outcome": "block",
+    "categories": [
+      "correct_code_fails"
+    ]
+  },
+  {
+    "row": "an example fails on the reference code",
+    "trust": "local",
+    "basis": "corroborated",
+    "outcome": "block",
+    "categories": [
+      "example_failed"
+    ]
+  },
+  {
+    "row": "an example fails on the reference code",
+    "trust": "signed",
+    "basis": "executed-only",
+    "outcome": "block",
+    "categories": [
+      "example_failed"
+    ]
+  },
+  {
+    "row": "an example fails on the reference code",
+    "trust": "signed",
+    "basis": "corroborated",
+    "outcome": "block",
+    "categories": [
+      "example_failed"
+    ]
+  },
+  {
+    "row": "an example fails on the reference code",
+    "trust": "signed",
+    "basis": "judged",
+    "outcome": "block",
+    "categories": [
+      "example_failed"
+    ]
+  },
+  {
+    "row": "VALID survivor failing an example of the criterion",
+    "trust": "local",
+    "basis": "corroborated",
+    "outcome": "block",
+    "categories": [
+      "surviving_valid_mutant"
+    ]
+  },
+  {
+    "row": "VALID survivor failing an example of the criterion",
+    "trust": "signed",
+    "basis": "executed-only",
+    "outcome": "block",
+    "categories": [
+      "surviving_valid_mutant"
+    ]
+  },
+  {
+    "row": "VALID survivor failing an example of the criterion",
+    "trust": "signed",
+    "basis": "corroborated",
+    "outcome": "block",
+    "categories": [
+      "surviving_valid_mutant"
+    ]
+  },
+  {
+    "row": "VALID survivor failing an example of the criterion",
+    "trust": "signed",
+    "basis": "judged",
+    "outcome": "block",
+    "categories": [
+      "surviving_valid_mutant"
+    ]
+  },
+  {
+    "row": "VALID survivor with a full witness",
+    "trust": "local",
+    "basis": "corroborated",
+    "outcome": "block",
+    "categories": [
+      "surviving_valid_mutant"
+    ]
+  },
+  {
+    "row": "VALID survivor with a full witness",
+    "trust": "signed",
+    "basis": "executed-only",
+    "outcome": "block",
+    "categories": [
+      "surviving_valid_mutant"
+    ]
+  },
+  {
+    "row": "VALID survivor with a full witness",
+    "trust": "signed",
+    "basis": "corroborated",
+    "outcome": "block",
+    "categories": [
+      "surviving_valid_mutant"
+    ]
+  },
+  {
+    "row": "VALID survivor with a full witness",
+    "trust": "signed",
+    "basis": "judged",
+    "outcome": "block",
+    "categories": [
+      "surviving_valid_mutant"
+    ]
+  },
+  {
+    "row": "VALID survivor without a witness",
+    "trust": "local",
+    "basis": "corroborated",
+    "outcome": "escalate",
+    "categories": [
+      "escalated_mutant"
+    ]
+  },
+  {
+    "row": "VALID survivor without a witness",
+    "trust": "signed",
+    "basis": "executed-only",
+    "outcome": "escalate",
+    "categories": [
+      "escalated_mutant"
+    ]
+  },
+  {
+    "row": "VALID survivor without a witness",
+    "trust": "signed",
+    "basis": "corroborated",
+    "outcome": "escalate",
+    "categories": [
+      "escalated_mutant"
+    ]
+  },
+  {
+    "row": "VALID survivor without a witness",
+    "trust": "signed",
+    "basis": "judged",
+    "outcome": "escalate",
+    "categories": [
+      "escalated_mutant"
+    ]
+  },
+  {
+    "row": "VALID killed with the evidence of every row",
+    "trust": "local",
+    "basis": "corroborated",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "VALID killed with the evidence of every row",
+    "trust": "signed",
+    "basis": "executed-only",
+    "outcome": "escalate",
+    "categories": [
+      "no_killed_valid_mutant"
+    ]
+  },
+  {
+    "row": "VALID killed with the evidence of every row",
+    "trust": "signed",
+    "basis": "corroborated",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "VALID killed with the evidence of every row",
+    "trust": "signed",
+    "basis": "judged",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "VALID killed with a judgment alone",
+    "trust": "local",
+    "basis": "corroborated",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "VALID killed with a judgment alone",
+    "trust": "signed",
+    "basis": "executed-only",
+    "outcome": "escalate",
+    "categories": [
+      "no_killed_valid_mutant"
+    ]
+  },
+  {
+    "row": "VALID killed with a judgment alone",
+    "trust": "signed",
+    "basis": "corroborated",
+    "outcome": "escalate",
+    "categories": [
+      "no_killed_valid_mutant"
+    ]
+  },
+  {
+    "row": "VALID killed with a judgment alone",
+    "trust": "signed",
+    "basis": "judged",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "VALID killed failing an example of the criterion",
+    "trust": "local",
+    "basis": "corroborated",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "VALID killed failing an example of the criterion",
+    "trust": "signed",
+    "basis": "executed-only",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "VALID killed failing an example of the criterion",
+    "trust": "signed",
+    "basis": "corroborated",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "VALID killed failing an example of the criterion",
+    "trust": "signed",
+    "basis": "judged",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "EQUIVALENT survivor with no difference found",
+    "trust": "local",
+    "basis": "corroborated",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "EQUIVALENT survivor with no difference found",
+    "trust": "signed",
+    "basis": "executed-only",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "EQUIVALENT survivor with no difference found",
+    "trust": "signed",
+    "basis": "corroborated",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "EQUIVALENT survivor with no difference found",
+    "trust": "signed",
+    "basis": "judged",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "EQUIVALENT survivor on a judgment alone",
+    "trust": "local",
+    "basis": "corroborated",
+    "outcome": "escalate",
+    "categories": [
+      "escalated_mutant"
+    ]
+  },
+  {
+    "row": "EQUIVALENT survivor on a judgment alone",
+    "trust": "signed",
+    "basis": "executed-only",
+    "outcome": "escalate",
+    "categories": [
+      "escalated_mutant"
+    ]
+  },
+  {
+    "row": "EQUIVALENT survivor on a judgment alone",
+    "trust": "signed",
+    "basis": "corroborated",
+    "outcome": "escalate",
+    "categories": [
+      "escalated_mutant"
+    ]
+  },
+  {
+    "row": "EQUIVALENT survivor on a judgment alone",
+    "trust": "signed",
+    "basis": "judged",
+    "outcome": "escalate",
+    "categories": [
+      "escalated_mutant"
+    ]
+  },
+  {
+    "row": "NOT_VIOLATING survivor failing an example of another criterion",
+    "trust": "local",
+    "basis": "corroborated",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "NOT_VIOLATING survivor failing an example of another criterion",
+    "trust": "signed",
+    "basis": "executed-only",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "NOT_VIOLATING survivor failing an example of another criterion",
+    "trust": "signed",
+    "basis": "corroborated",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "NOT_VIOLATING survivor failing an example of another criterion",
+    "trust": "signed",
+    "basis": "judged",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "NOT_VIOLATING survivor on a judgment alone",
+    "trust": "local",
+    "basis": "corroborated",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "NOT_VIOLATING survivor on a judgment alone",
+    "trust": "signed",
+    "basis": "executed-only",
+    "outcome": "escalate",
+    "categories": [
+      "escalated_mutant"
+    ]
+  },
+  {
+    "row": "NOT_VIOLATING survivor on a judgment alone",
+    "trust": "signed",
+    "basis": "corroborated",
+    "outcome": "escalate",
+    "categories": [
+      "escalated_mutant"
+    ]
+  },
+  {
+    "row": "NOT_VIOLATING survivor on a judgment alone",
+    "trust": "signed",
+    "basis": "judged",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "UNDETERMINED survivor",
+    "trust": "local",
+    "basis": "corroborated",
+    "outcome": "escalate",
+    "categories": [
+      "escalated_mutant"
+    ]
+  },
+  {
+    "row": "UNDETERMINED survivor",
+    "trust": "signed",
+    "basis": "executed-only",
+    "outcome": "escalate",
+    "categories": [
+      "escalated_mutant"
+    ]
+  },
+  {
+    "row": "UNDETERMINED survivor",
+    "trust": "signed",
+    "basis": "corroborated",
+    "outcome": "escalate",
+    "categories": [
+      "escalated_mutant"
+    ]
+  },
+  {
+    "row": "UNDETERMINED survivor",
+    "trust": "signed",
+    "basis": "judged",
+    "outcome": "escalate",
+    "categories": [
+      "escalated_mutant"
+    ]
+  },
+  {
+    "row": "no mutant judged VALID",
+    "trust": "local",
+    "basis": "corroborated",
+    "outcome": "escalate",
+    "categories": [
+      "no_valid_mutant"
+    ]
+  },
+  {
+    "row": "no mutant judged VALID",
+    "trust": "signed",
+    "basis": "executed-only",
+    "outcome": "escalate",
+    "categories": [
+      "no_valid_mutant"
+    ]
+  },
+  {
+    "row": "no mutant judged VALID",
+    "trust": "signed",
+    "basis": "corroborated",
+    "outcome": "escalate",
+    "categories": [
+      "no_valid_mutant"
+    ]
+  },
+  {
+    "row": "no mutant judged VALID",
+    "trust": "signed",
+    "basis": "judged",
+    "outcome": "escalate",
+    "categories": [
+      "no_valid_mutant"
+    ]
+  },
+  {
+    "row": "test that killed a sentinel",
+    "trust": "local",
+    "basis": "corroborated",
+    "outcome": "escalate",
+    "categories": [
+      "mutation_sensitive_test",
+      "no_killed_valid_mutant"
+    ]
+  },
+  {
+    "row": "test that killed a sentinel",
+    "trust": "signed",
+    "basis": "executed-only",
+    "outcome": "escalate",
+    "categories": [
+      "mutation_sensitive_test",
+      "no_killed_valid_mutant"
+    ]
+  },
+  {
+    "row": "test that killed a sentinel",
+    "trust": "signed",
+    "basis": "corroborated",
+    "outcome": "escalate",
+    "categories": [
+      "mutation_sensitive_test",
+      "no_killed_valid_mutant"
+    ]
+  },
+  {
+    "row": "test that killed a sentinel",
+    "trust": "signed",
+    "basis": "judged",
+    "outcome": "escalate",
+    "categories": [
+      "mutation_sensitive_test",
+      "no_killed_valid_mutant"
+    ]
+  },
+  {
+    "row": "alignment ALIGNED with matrix evidence",
+    "trust": "local",
+    "basis": "corroborated",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "alignment ALIGNED with matrix evidence",
+    "trust": "signed",
+    "basis": "executed-only",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "alignment ALIGNED with matrix evidence",
+    "trust": "signed",
+    "basis": "corroborated",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "alignment ALIGNED with matrix evidence",
+    "trust": "signed",
+    "basis": "judged",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "alignment ALIGNED without matrix evidence",
+    "trust": "local",
+    "basis": "corroborated",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "alignment ALIGNED without matrix evidence",
+    "trust": "signed",
+    "basis": "executed-only",
+    "outcome": "escalate",
+    "categories": [
+      "misaligned_test"
+    ]
+  },
+  {
+    "row": "alignment ALIGNED without matrix evidence",
+    "trust": "signed",
+    "basis": "corroborated",
+    "outcome": "escalate",
+    "categories": [
+      "misaligned_test"
+    ]
+  },
+  {
+    "row": "alignment ALIGNED without matrix evidence",
+    "trust": "signed",
+    "basis": "judged",
+    "outcome": "pass",
+    "categories": []
+  },
+  {
+    "row": "alignment MISALIGNED",
+    "trust": "local",
+    "basis": "corroborated",
+    "outcome": "escalate",
+    "categories": [
+      "misaligned_test"
+    ]
+  },
+  {
+    "row": "alignment MISALIGNED",
+    "trust": "signed",
+    "basis": "executed-only",
+    "outcome": "escalate",
+    "categories": [
+      "misaligned_test"
+    ]
+  },
+  {
+    "row": "alignment MISALIGNED",
+    "trust": "signed",
+    "basis": "corroborated",
+    "outcome": "escalate",
+    "categories": [
+      "misaligned_test"
+    ]
+  },
+  {
+    "row": "alignment MISALIGNED",
+    "trust": "signed",
+    "basis": "judged",
+    "outcome": "escalate",
+    "categories": [
+      "misaligned_test"
+    ]
+  },
+  {
+    "row": "alignment UNDETERMINED",
+    "trust": "local",
+    "basis": "corroborated",
+    "outcome": "escalate",
+    "categories": [
+      "misaligned_test"
+    ]
+  },
+  {
+    "row": "alignment UNDETERMINED",
+    "trust": "signed",
+    "basis": "executed-only",
+    "outcome": "escalate",
+    "categories": [
+      "misaligned_test"
+    ]
+  },
+  {
+    "row": "alignment UNDETERMINED",
+    "trust": "signed",
+    "basis": "corroborated",
+    "outcome": "escalate",
+    "categories": [
+      "misaligned_test"
+    ]
+  },
+  {
+    "row": "alignment UNDETERMINED",
+    "trust": "signed",
+    "basis": "judged",
+    "outcome": "escalate",
+    "categories": [
+      "misaligned_test"
+    ]
+  }
+]

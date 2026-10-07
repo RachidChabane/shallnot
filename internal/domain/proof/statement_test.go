@@ -393,3 +393,13 @@ func FuzzDecode(f *testing.F) {
 		decoded.Validate()
 	})
 }
+
+func FuzzParseManifest(f *testing.F) {
+	f.Add([]byte(`{"verifierVersion":"1","trust":"local","statements":[],"pending":[]}`))
+	f.Add([]byte(`{"statements":[{"path":"../x","digest":"y"}],"pending":[{"criterion":"A~0"}]}`))
+	f.Fuzz(func(t *testing.T, document []byte) {
+		if _, violations, err := proof.ParseManifest(document); err == nil {
+			proof.Describe(violations)
+		}
+	})
+}
