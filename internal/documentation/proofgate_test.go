@@ -2,6 +2,7 @@ package documentation_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"reflect"
 	"regexp"
 	"sort"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/RachidChabane/shallnot/internal/cli"
 	"github.com/RachidChabane/shallnot/internal/domain"
+	"github.com/RachidChabane/shallnot/internal/domain/proof"
 )
 
 const (
@@ -98,4 +100,68 @@ func TestProofGateDocumentation(t *testing.T) {
 			t.Fatalf("documented %v; shallnot check accepts %v", got, want)
 		}
 	})
+}
+
+const (
+	proofsDocument    = "docs/proofs.md"
+	proofsKeysHeading = "## The `proofs` block"
+	extensionHeading  = "## Proof extension"
+	manifestHeading   = "### Manifest"
+	reasonsHeading    = "### Pending reasons"
+	trustHeading      = "## Trust levels"
+	basesHeading      = "### Pass bases"
+	isolationHeading  = "### Isolation levels"
+	configSchemaPath  = "schemas/config.schema.json"
+	reportSchemaPath  = "schemas/report.schema.json"
+)
+
+// schemaProperties lists the property names of the object at a path of a JSON Schema file.
+func schemaProperties(t *testing.T, file string, path ...string) []string {
+	t.Helper()
+	var node any
+	if err := json.Unmarshal([]byte(read(t, file)), &node); err != nil {
+		t.Fatal(err)
+	}
+	for _, key := range path {
+		node = node.(map[string]any)[key]
+	}
+	var names []string
+	for name := range node.(map[string]any)["properties"].(map[string]any) {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
+func jsonKeys(value any) []string {
+	var names []string
+	kind := reflect.TypeOf(value)
+	for index := range kind.NumField() {
+		name, _, _ := strings.Cut(kind.Field(index).Tag.Get("json"), ",")
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
+func TestProofsDocumentation(t *testing.T) {
+	check := func(name, document, heading string, want []string) {
+		t.Run(name+" [verifies SN-126~1]", func(t *testing.T) {
+			got := codeSpansOfFirstColumn(t, tableRows(t, section(t, read(t, document), heading)))
+			if !reflect.DeepEqual(got, sorted(want)) {
+				t.Fatalf("documented %v; the code defines %v", got, sorted(want))
+			}
+		})
+	}
+	var reasons []string
+	for _, reason := range proof.PendingReasons() {
+		reasons = append(reasons, string(reason))
+	}
+	check("docs/configuration.md documents each key of the proofs block and no other", configurationDocument, proofsKeysHeading, schemaProperties(t, configSchemaPath, "properties", "proofs"))
+	check("docs/report.md documents each property of extensions.proofs and no other", reportDocument, extensionHeading, schemaProperties(t, reportSchemaPath, "$defs", "proofs"))
+	check("docs/proofs.md documents each key of the manifest and no other", proofsDocument, manifestHeading, jsonKeys(proof.Manifest{}))
+	check("docs/proofs.md documents each pending reason and no other", proofsDocument, reasonsHeading, reasons)
+	check("docs/proofs.md documents each trust level and no other", proofsDocument, trustHeading, proof.TrustNames())
+	check("docs/proofs.md documents each pass basis and no other", proofsDocument, basesHeading, proof.SignedPassBasisNames())
+	check("docs/proofs.md documents each isolation level and no other", proofsDocument, isolationHeading, proof.IsolationNames())
 }

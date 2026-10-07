@@ -27,6 +27,8 @@ type Input struct {
 	SourceTags []domain.SourceTag
 	TestCases  []domain.TestCase
 	Policy     domain.Policy
+	// Proofs is the verified proof set to consume; nil when the project configures none.
+	Proofs *ProofInput
 }
 
 type analyzer struct {
@@ -53,8 +55,10 @@ func Analyze(input Input) domain.Analysis {
 		a.settleRow(&rows[index])
 		a.reportStatementChange(rows[index].Requirement)
 	}
+	proofs := a.settleProofs(rows)
 	sortFindings(a.findings)
 	return domain.Analysis{
+		Proofs:     proofs,
 		Rows:       rows,
 		OutOfScope: outOfScope,
 		Findings:   a.findings,

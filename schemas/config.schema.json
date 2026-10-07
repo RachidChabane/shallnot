@@ -230,6 +230,126 @@
             "warning",
             "error"
           ]
+        },
+        "stale_proof": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "malformed_proof": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "correct_code_fails": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "surviving_valid_mutant": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "no_valid_mutant": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "no_killed_valid_mutant": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "escalated_mutant": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "misaligned_test": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "mutation_sensitive_test": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "example_failed": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "completeness_question": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "awaiting_host": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "awaiting_proof": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "awaiting_host_judgment": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
+        },
+        "host_unresponsive": {
+          "enum": [
+            "off",
+            "info",
+            "warning",
+            "error"
+          ]
         }
       },
       "additionalProperties": false

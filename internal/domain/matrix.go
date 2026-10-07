@@ -1,5 +1,7 @@
 package domain
 
+import "github.com/RachidChabane/shallnot/internal/domain/proof"
+
 // Coverage is the verification state of one requirement in one run.
 type Coverage uint8
 
@@ -91,4 +93,6 @@ type Analysis struct {
 	Findings   []Finding
 	Tests      TestTotals
 	Verdict    Verdict
+	// Proofs is what the verified proofs concluded; nil when the run consumed none.
+	Proofs *proof.Report
 }

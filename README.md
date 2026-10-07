@@ -163,6 +163,7 @@ skill tells the agent how to do it.
 - [docs/configuration.md](docs/configuration.md): `shallnot.yaml`, flags, severities
 - [docs/report.md](docs/report.md): the JSON report, every field and finding category
 - [docs/pipeline-gate.md](docs/pipeline-gate.md): gating an unattended agent pipeline, several repositories
+- [docs/proofs.md](docs/proofs.md): consuming alignment, discriminating-power and completeness proofs
 - [docs/comparison.md](docs/comparison.md): OpenFastTrace, Doorstop, StrictDoc, sphinx-needs
 - [schemas/](schemas): JSON Schemas for the report, the config and YAML specs
 - [llms.txt](llms.txt): the same index, for agents

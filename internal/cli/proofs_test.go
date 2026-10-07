@@ -1,0 +1,225 @@
+package cli_test
+
+import (
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/RachidChabane/shallnot/internal/app"
+	"github.com/RachidChabane/shallnot/internal/domain"
+	"github.com/RachidChabane/shallnot/internal/domain/proof"
+	"github.com/RachidChabane/shallnot/internal/domain/proof/prooftest"
+	"github.com/RachidChabane/shallnot/internal/testkit"
+)
+
+const (
+	proofSpec   = "- **REQ-1~1**: THE SYSTEM SHALL work.\n"
+	proofTests  = "tests/t.py"
+	proofCode   = "src/a.py"
+	proofConfig = "version: 1\nspecs: [spec.md]\ntests: [tests]\nresults: [junit.xml]\nproofs:\n  trust: local\n  code: [src]\n  require: [discriminating-power]\n"
+)
+
+// proofProject is a gated project with a spec, tests, code and results, and no proof yet.
+func proofProject(t *testing.T, config string) string {
+	t.Helper()
+	directory := t.TempDir()
+	for name, content := range map[string]string{
+		"spec.md":       proofSpec,
+		proofTests:      "def test_works(): pass\n",
+		proofCode:       "def work(): pass\n",
+		"junit.xml":     `<testsuite name="s"><testcase classname="c" name="works ` + testkit.Tag("REQ-1~1") + `"/></testsuite>`,
+		"shallnot.yaml": config,
+	} {
+		path := filepath.Join(directory, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return directory
+}
+
+func fileSetDigestOf(t *testing.T, directory string, paths ...string) string {
+	t.Helper()
+	files := make([]proof.File, len(paths))
+	for index, path := range paths {
+		content, err := os.ReadFile(filepath.Join(directory, filepath.FromSlash(path)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		files[index] = proof.File{Path: path, Content: content}
+	}
+	digest, err := proof.FileSetDigest(files)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return digest
+}
+
+// writeProofs writes a verified set holding one discriminating-power proof of REQ-1~1 produced from the current tree.
+func writeProofs(t *testing.T, directory string) {
+	t.Helper()
+	statementDigest := domain.Requirement{Statement: strings.TrimSpace("THE SYSTEM SHALL work.")}.StatementDigest()
+	inputs := []proof.Input{
+		{Role: proof.RoleCodeTree, Name: "src", Digest: proof.Digest{SHA256: fileSetDigestOf(t, directory, proofCode)}},
+		{Role: proof.RoleSpec, Name: "spec.md", Digest: proof.Digest{SHA256: fileSetDigestOf(t, directory, "spec.md")}},
+		{Role: proof.RoleTestSource, Name: "tests", Digest: proof.Digest{SHA256: fileSetDigestOf(t, directory, proofTests)}},
+	}
+	statement := prooftest.DiscriminatingPower("REQ-1", 1, statementDigest, inputs...)
+	statement.DiscriminatingPower.ProducedBy = proof.ProducedByLocal
+	statement = prooftest.Seal(statement)
+	content := prooftest.Bytes(statement)
+	manifest, err := json.Marshal(proof.Manifest{
+		VerifierVersion: "0.1.0", Trust: proof.TrustLocal, Pending: []proof.Pending{},
+		Statements: []proof.ManifestEntry{{Path: "discriminating-power/REQ-1~1/key.json", Digest: proof.SHA256Hex(content)}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := filepath.Join(directory, ".spec-proof", "verified")
+	if err := os.MkdirAll(filepath.Join(root, "discriminating-power", "REQ-1~1"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for name, data := range map[string][]byte{"manifest.json": manifest, "discriminating-power/REQ-1~1/key.json": content} {
+		if err := os.WriteFile(filepath.Join(root, filepath.FromSlash(name)), data, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func checkProject(t *testing.T, directory string, extra ...string) run {
+	t.Helper()
+	return shallnot(t, append([]string{"check", "--config", filepath.Join(directory, "shallnot.yaml"), "--format", "json"}, extra...)...)
+}
+
+func TestProofsEndToEnd(t *testing.T) {
+	t.Run("passes a covered requirement whose required proof is current [verifies SN-113~1]", func(t *testing.T) {
+		directory := proofProject(t, proofConfig)
+		writeProofs(t, directory)
+		result := checkProject(t, directory)
+		document := decode(t, result.stdout)
+		if result.exit != app.ExitClean || document.Verdict != domain.VerdictPass {
+			t.Fatalf("exit %d, findings %+v, stderr %s", result.exit, document.Findings, result.stderr)
+		}
+	})
+
+	t.Run("blocks with stale_proof when the proofs are missing [verifies SN-113~1]", func(t *testing.T) {
+		directory := proofProject(t, proofConfig)
+		result := checkProject(t, directory)
+		document := decode(t, result.stdout)
+		if result.exit != app.ExitBlocked || len(document.Findings) != 1 || document.Findings[0].Category != domain.CategoryStaleProof ||
+			document.Findings[0].Module != "spec-proof-dp" {
+			t.Fatalf("exit %d, findings %+v", result.exit, document.Findings)
+		}
+	})
+
+	t.Run("blocks with stale_proof once the code changed after the proof [verifies SN-111~1]", func(t *testing.T) {
+		directory := proofProject(t, proofConfig)
+		writeProofs(t, directory)
+		if err := os.WriteFile(filepath.Join(directory, proofCode), []byte("def work(): return 1\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		result := checkProject(t, directory)
+		document := decode(t, result.stdout)
+		if result.exit != app.ExitBlocked || document.Findings[0].Category != domain.CategoryStaleProof ||
+			!strings.Contains(string(result.stdout), "code_tree files changed") {
+			t.Fatalf("exit %d, stdout %s", result.exit, result.stdout)
+		}
+	})
+
+	t.Run("blocks with stale_proof once the statement changed without a revision bump [verifies SN-111~1]", func(t *testing.T) {
+		directory := proofProject(t, proofConfig)
+		writeProofs(t, directory)
+		if err := os.WriteFile(filepath.Join(directory, "spec.md"), []byte("- **REQ-1~1**: THE SYSTEM SHALL work differently.\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		result := checkProject(t, directory)
+		if result.exit != app.ExitBlocked || decode(t, result.stdout).Findings[0].Category != domain.CategoryStaleProof {
+			t.Fatalf("exit %d, stdout %s", result.exit, result.stdout)
+		}
+	})
+
+	t.Run("records the consumed proofs in extensions.proofs and validates against the report schema [verifies SN-125~1]", func(t *testing.T) {
+		directory := proofProject(t, proofConfig)
+		writeProofs(t, directory)
+		result := checkProject(t, directory)
+		var generic any
+		if err := json.Unmarshal([]byte(result.stdout), &generic); err != nil {
+			t.Fatal(err)
+		}
+		if err := reportSchema(t).Validate(generic); err != nil {
+			t.Fatal(err)
+		}
+		var extension proof.Report
+		if err := json.Unmarshal(decode(t, result.stdout).Extensions["proofs"], &extension); err != nil {
+			t.Fatal(err)
+		}
+		if extension.Trust != proof.TrustLocal || extension.Manifest == nil || extension.Manifest.Digest == "" || len(extension.Consumed) != 1 ||
+			extension.Consumed[0].State != proof.StateValid || len(extension.Criteria) != 1 || extension.Criteria[0].Ref != "REQ-1~1" ||
+			extension.Criteria[0].Modules[proof.KindDiscriminatingPower].Outcome != proof.OutcomePass {
+			t.Fatalf("extension %+v", extension)
+		}
+	})
+
+	t.Run("writes the same report bytes for the same commit and the same proof files [verifies SN-125~1]", func(t *testing.T) {
+		directory := proofProject(t, proofConfig)
+		writeProofs(t, directory)
+		first, second := checkProject(t, directory), checkProject(t, directory)
+		if first.stdout != second.stdout {
+			t.Fatal("two runs on the same inputs differ")
+		}
+	})
+
+	t.Run("adds no extension and reads no proof without a proofs block [verifies SN-125~1]", func(t *testing.T) {
+		directory := proofProject(t, "version: 1\nspecs: [spec.md]\nresults: [junit.xml]\n")
+		result := checkProject(t, directory)
+		if document := decode(t, result.stdout); len(document.Extensions) != 0 || result.exit != app.ExitClean {
+			t.Fatalf("extensions %v", document.Extensions)
+		}
+	})
+}
+
+func TestEscalationSeverity(t *testing.T) {
+	alignmentRequired := strings.Replace(proofConfig, "require: [discriminating-power]", "require: [alignment]", 1)
+
+	severityOf := func(t *testing.T, config string) (domain.Severity, app.ExitCode) {
+		t.Helper()
+		directory := proofProject(t, config)
+		result := checkProject(t, directory)
+		document := decode(t, result.stdout)
+		if len(document.Findings) != 1 || document.Findings[0].Category != domain.CategoryStaleProof {
+			t.Fatalf("findings %+v", document.Findings)
+		}
+		return document.Findings[0].Severity, result.exit
+	}
+
+	t.Run("fails the verdict on an escalating finding by default [verifies SN-122~1]", func(t *testing.T) {
+		if severity, exit := severityOf(t, alignmentRequired); severity != domain.SeverityError || exit != app.ExitBlocked {
+			t.Fatalf("severity %s, exit %d", severity, exit)
+		}
+	})
+
+	t.Run("only reports an escalating finding when the escalation is warning [verifies SN-122~1]", func(t *testing.T) {
+		if severity, exit := severityOf(t, alignmentRequired+"  escalation: warning\n"); severity != domain.SeverityWarning || exit != app.ExitClean {
+			t.Fatalf("severity %s, exit %d", severity, exit)
+		}
+	})
+
+	t.Run("lets a severity set for the category win over the escalation [verifies SN-122~1]", func(t *testing.T) {
+		config := alignmentRequired + "  escalation: warning\nseverities: {stale_proof: error}\n"
+		if severity, exit := severityOf(t, config); severity != domain.SeverityError || exit != app.ExitBlocked {
+			t.Fatalf("severity %s, exit %d", severity, exit)
+		}
+	})
+
+	t.Run("never lowers a blocking finding with the escalation [verifies SN-122~1]", func(t *testing.T) {
+		config := proofConfig + "  escalation: warning\n"
+		if severity, exit := severityOf(t, config); severity != domain.SeverityError || exit != app.ExitBlocked {
+			t.Fatalf("severity %s, exit %d", severity, exit)
+		}
+	})
+}

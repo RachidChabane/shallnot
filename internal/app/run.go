@@ -10,6 +10,7 @@ import (
 
 	"github.com/RachidChabane/shallnot/internal/adapters/baseline"
 	"github.com/RachidChabane/shallnot/internal/adapters/junitxml"
+	"github.com/RachidChabane/shallnot/internal/adapters/proofset"
 	"github.com/RachidChabane/shallnot/internal/adapters/scan"
 	"github.com/RachidChabane/shallnot/internal/adapters/spec"
 	"github.com/RachidChabane/shallnot/internal/analysis"
@@ -85,6 +86,14 @@ func Run(settings Settings) (Outcome, error) {
 			return Outcome{}, fmt.Errorf("test root %q: %w", root, err)
 		}
 		input.SourceTags = append(input.SourceTags, tags...)
+	}
+
+	if settings.Proofs != nil {
+		evidence, err := proofset.Load(proofSource(settings, specFiles))
+		if err != nil {
+			return Outcome{}, fmt.Errorf("proofs: %w", err)
+		}
+		input.Proofs = &analysis.ProofInput{Config: *settings.Proofs, Evidence: evidence}
 	}
 
 	return Outcome{
@@ -180,4 +189,37 @@ func (f focusRule) includes(file inputFile, id domain.RequirementID) bool {
 		}
 	}
 	return false
+}
+
+// proofSource says where the verified proofs are and which files the gate derives their input digests from.
+func proofSource(settings Settings, specFiles []inputFile) proofset.Source {
+	paths := make([]string, len(specFiles))
+	for index, file := range specFiles {
+		paths[index] = file.path
+	}
+	return proofset.Source{
+		Config:          *settings.Proofs,
+		WorkDir:         settings.WorkDir,
+		SpecFiles:       paths,
+		SpecGlobs:       relativeTo(settings.WorkDir, append(append([]string(nil), settings.Specs...), settings.Focus...)),
+		TestGlobs:       relativeTo(settings.WorkDir, settings.Tests),
+		Exclude:         settings.Exclude,
+		DefaultExcludes: settings.UseDefaultExcludes,
+	}
+}
+
+// relativeTo undoes the rebasing of configured paths against the configuration file's directory, which is how
+// they are written in shallnot.yaml and in a proof's input annotations.
+func relativeTo(workDir string, patterns []string) []string {
+	relative := make([]string, len(patterns))
+	for index, pattern := range patterns {
+		relative[index] = filepath.ToSlash(filepath.Clean(pattern))
+		if workDir == "" || filepath.IsAbs(pattern) {
+			continue
+		}
+		if trimmed, err := filepath.Rel(workDir, pattern); err == nil {
+			relative[index] = filepath.ToSlash(trimmed)
+		}
+	}
+	return relative
 }

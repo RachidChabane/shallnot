@@ -277,8 +277,13 @@
     },
     "extensions": {
       "type": "object",
-      "description": "Reserved for data contributed by analyses outside the deterministic core (code coverage, mutation score, judge answers). Keys are extension names. Empty in this version; consumers must tolerate unknown keys.",
-      "additionalProperties": true
+      "description": "Data contributed by analyses outside the traceability core. Keys are extension names; consumers must tolerate unknown keys. `proofs` is present only when the configuration has a `proofs` block.",
+      "additionalProperties": true,
+      "properties": {
+        "proofs": {
+          "$ref": "#/$defs/proofs"
+        }
+      }
     }
   },
   "required": [
@@ -471,7 +476,22 @@
             "unknown_dimension",
             "malformed_example",
             "detached_example",
-            "statement_changed"
+            "statement_changed",
+            "stale_proof",
+            "malformed_proof",
+            "correct_code_fails",
+            "surviving_valid_mutant",
+            "no_valid_mutant",
+            "no_killed_valid_mutant",
+            "escalated_mutant",
+            "misaligned_test",
+            "mutation_sensitive_test",
+            "example_failed",
+            "completeness_question",
+            "awaiting_host",
+            "awaiting_proof",
+            "awaiting_host_judgment",
+            "host_unresponsive"
           ]
         },
         "severity": {
@@ -494,6 +514,10 @@
         "requirement_id": {
           "type": "string",
           "description": "Requirement concerned, when there is one."
+        },
+        "module": {
+          "type": "string",
+          "description": "Proof module the finding concerns, when it is a proof finding."
         },
         "location": {
           "$ref": "#/$defs/location",
@@ -650,6 +674,299 @@
         "line",
         "dimension",
         "reason"
+      ]
+    },
+    "proofs": {
+      "type": "object",
+      "description": "What the gate consumed from the verified proof set and what the proofs concluded per criterion. The same commit and the same proof files give a byte-identical report.",
+      "properties": {
+        "trust": {
+          "enum": [
+            "signed",
+            "local"
+          ],
+          "description": "Trust level the proofs were consumed under; local proofs are feedback, never proof."
+        },
+        "policy": {
+          "type": "object",
+          "description": "The knobs of the policy that shaped the outcome.",
+          "properties": {
+            "signedPassBasis": {
+              "enum": [
+                "executed-only",
+                "corroborated",
+                "judged"
+              ]
+            },
+            "minIsolation": {
+              "enum": [
+                "restricted-attested",
+                "restricted",
+                "restricted-unverified",
+                "unrestricted",
+                "inline"
+              ]
+            },
+            "maxHostExclusions": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "validityThreshold": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "alignmentThreshold": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "escalation": {
+              "enum": [
+                "error",
+                "warning"
+              ]
+            },
+            "isolationFloorLowered": {
+              "type": "boolean",
+              "description": "True when the isolation floor is weaker than the default."
+            }
+          },
+          "required": [
+            "signedPassBasis",
+            "minIsolation",
+            "maxHostExclusions",
+            "validityThreshold",
+            "alignmentThreshold",
+            "escalation",
+            "isolationFloorLowered"
+          ]
+        },
+        "manifest": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "description": "The manifest of the verified set; null when there is none.",
+              "properties": {
+                "path": {
+                  "type": "string"
+                },
+                "digest": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "verifierVersion": {
+                  "type": "string"
+                },
+                "trustedRootDigest": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "policyDigest": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              },
+              "required": [
+                "path",
+                "digest"
+              ]
+            }
+          ]
+        },
+        "consumed": {
+          "type": "array",
+          "description": "Every statement file the manifest lists, ordered by path, with its SHA-256 and its state.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "digest": {
+                "type": "string"
+              },
+              "predicateType": {
+                "type": "string"
+              },
+              "subject": {
+                "type": "string"
+              },
+              "state": {
+                "enum": [
+                  "valid",
+                  "stale",
+                  "malformed",
+                  "ignored",
+                  "missing",
+                  "pending"
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "description": "Why the proof is stale or malformed."
+              }
+            },
+            "required": [
+              "path",
+              "digest",
+              "state"
+            ]
+          }
+        },
+        "pending": {
+          "type": "array",
+          "description": "Proofs a module is still producing, as the manifest lists them.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "module": {
+                "type": "string"
+              },
+              "criterion": {
+                "type": "string"
+              },
+              "reason": {
+                "enum": [
+                  "awaiting_host",
+                  "awaiting_proof",
+                  "awaiting_host_judgment",
+                  "host_unresponsive"
+                ]
+              }
+            },
+            "required": [
+              "module",
+              "criterion",
+              "reason"
+            ]
+          }
+        },
+        "criteria": {
+          "type": "array",
+          "description": "One entry per requirement in focus that traceability found covered, ordered by reference.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ref": {
+                "type": "string"
+              },
+              "modules": {
+                "type": "object",
+                "description": "Standing of each module that is required or present, keyed by proof kind.",
+                "propertyNames": {
+                  "enum": [
+                    "alignment",
+                    "discriminating-power",
+                    "completeness"
+                  ]
+                },
+                "additionalProperties": {
+                  "type": "object",
+                  "properties": {
+                    "state": {
+                      "enum": [
+                        "valid",
+                        "stale",
+                        "malformed",
+                        "ignored",
+                        "missing",
+                        "pending"
+                      ]
+                    },
+                    "outcome": {
+                      "enum": [
+                        "pass",
+                        "escalate",
+                        "block",
+                        "absent",
+                        "advisory"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "state",
+                    "outcome"
+                  ]
+                }
+              },
+              "absent": {
+                "type": "array",
+                "description": "Required modules with no valid proof for the criterion.",
+                "items": {
+                  "enum": [
+                    "alignment",
+                    "discriminating-power",
+                    "completeness"
+                  ]
+                }
+              },
+              "channels": {
+                "type": "object",
+                "description": "Judged claims by the channel that answered them.",
+                "propertyNames": {
+                  "enum": [
+                    "host-subagent",
+                    "host-sampled",
+                    "host-inline",
+                    "systemone-relay"
+                  ]
+                },
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "isolation": {
+                "type": "object",
+                "description": "Judged claims by the isolation level of their executor.",
+                "propertyNames": {
+                  "enum": [
+                    "restricted-attested",
+                    "restricted",
+                    "restricted-unverified",
+                    "unrestricted",
+                    "inline"
+                  ]
+                },
+                "additionalProperties": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              },
+              "hostExclusions": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Survivors excluded on a judgment alone."
+              },
+              "screenExclusions": {
+                "type": "integer",
+                "minimum": 0,
+                "description": "Operator mutants screened out before they were listed."
+              }
+            },
+            "required": [
+              "ref",
+              "modules",
+              "absent",
+              "channels",
+              "isolation",
+              "hostExclusions",
+              "screenExclusions"
+            ]
+          }
+        }
+      },
+      "required": [
+        "trust",
+        "policy",
+        "manifest",
+        "consumed",
+        "pending",
+        "criteria"
       ]
     }
   }

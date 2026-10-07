@@ -12,6 +12,7 @@ Install with `go install github.com/RachidChabane/shallnot/cmd/shallnot@latest` 
 - [Binding tests](https://raw.githubusercontent.com/RachidChabane/shallnot/main/docs/binding.md): where the tag goes for each test runner
 - [Configuration](https://raw.githubusercontent.com/RachidChabane/shallnot/main/docs/configuration.md): `shallnot.yaml`, flags, severities, exit codes
 - [JSON report](https://raw.githubusercontent.com/RachidChabane/shallnot/main/docs/report.md): the versioned report, every field, state and finding category
+- [Proofs](https://raw.githubusercontent.com/RachidChabane/shallnot/main/docs/proofs.md): consuming alignment, discriminating-power and completeness proofs, the verified set, the policy
 - [Pipeline gate](https://raw.githubusercontent.com/RachidChabane/shallnot/main/docs/pipeline-gate.md): gating an unattended agent pipeline, focus, advisory mode, several repositories
 
 ## Agent skills

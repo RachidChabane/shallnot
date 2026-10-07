@@ -285,6 +285,84 @@ The requirements of shallnot itself, in its own Markdown spec format.
   digests of the spec, test source and code sets from the tree with the
   file-set rule, over the files the `specs`, `tests` and `proofs.code`
   patterns match less the excluded paths, and the SHA-256 of each spec file.
+- **SN-111~1**: WHEN a proof's subject digest or revision differs from the
+  requirement's current statement, a spec file it covers changed, an input of
+  the role spec, test_source or code_tree differs from the digest the gate
+  recomputes, such an input names globs other than the configured ones, or
+  such an input cannot be checked because the configuration names no files for
+  it THE SYSTEM SHALL classify the proof stale, and under `trust: signed` SHALL
+  classify stale a proof produced locally and every proof of a set whose
+  manifest was not written by the signature verifier.
+- **SN-112~1**: WHEN a proof lists an input of the role `proof` whose digest is
+  that of no valid proof in the verified set THE SYSTEM SHALL classify it
+  stale, transitively.
+- **SN-113~1**: WHEN a requirement in focus is covered THE SYSTEM SHALL pass
+  it only if traceability and every module in `proofs.require` pass; a
+  required module with no valid proof SHALL be a `stale_proof` finding that
+  names the module, and SHALL block for discriminating power, whose evidence is
+  executed, and escalate for alignment, whose evidence is judged; an absent
+  module that is not required SHALL raise no finding.
+- **SN-114~1**: WHEN a discriminating-power proof records that the tests fail
+  on the reference code, or that an example of the criterion fails on it, THE
+  SYSTEM SHALL block with `correct_code_fails` or `example_failed`.
+- **SN-115~1**: WHEN a mutant survived every test and is VALID THE SYSTEM
+  SHALL block with `surviving_valid_mutant` if an example of the criterion
+  fails on it, or if its confidence reaches `thresholds.validity` and it names
+  a confirmed witness, a build and the other criteria's tests passing, and
+  otherwise escalate with `escalated_mutant`; a survivor judged UNDETERMINED
+  SHALL escalate.
+- **SN-116~1**: WHEN a mutant survived every test and is judged EQUIVALENT THE
+  SYSTEM SHALL exclude it only on a differential search that found no
+  difference, and WHEN it is judged NOT_VIOLATING, off target or unattributed
+  THE SYSTEM SHALL exclude it on an example of another criterion that fails on
+  it, or on the judgment alone only where `signed_pass_basis` is judged, the
+  confidence reaches the threshold, the isolation reaches the floor and fewer
+  than `max_host_exclusions` survivors are already excluded; any other
+  survivor SHALL escalate.
+- **SN-117~1**: WHEN a VALID mutant was killed THE SYSTEM SHALL grant pass
+  credit if an example of the criterion fails on it, or if the confidence
+  reaches the threshold, the isolation reaches the floor and the basis allows:
+  executed-only grants none to a judgment, corroborated requires a specific
+  kill, a build, the other criteria's tests passing and a confirmed witness,
+  judged requires nothing more; WHEN no VALID mutant was produced THE SYSTEM
+  SHALL escalate with `no_valid_mutant`, and WHEN VALID mutants exist and none
+  earned credit with `no_killed_valid_mutant`.
+- **SN-118~1**: WHEN a test killed a sentinel mutant THE SYSTEM SHALL escalate
+  with `mutation_sensitive_test`, give its kills no credit and cap its
+  alignment at UNDETERMINED.
+- **SN-119~1**: WHEN a passing test of a covered requirement has an alignment
+  proof THE SYSTEM SHALL clear it only if the verdict is ALIGNED at or above
+  `thresholds.alignment`, the isolation reaches the floor, and, unless trust is
+  local or the basis is judged, the verdict lists specific matrix evidence;
+  any other verdict SHALL escalate with `misaligned_test` and never block.
+- **SN-120~1**: WHEN `trust` is local THE SYSTEM SHALL apply the judged pass
+  basis, with the same thresholds and isolation floor.
+- **SN-121~1**: WHEN a valid completeness proof lists questions THE SYSTEM
+  SHALL report each as a `completeness_question` finding at the spec, which
+  does not block by default and cannot be required.
+- **SN-122~1**: WHEN a finding escalates a judged signal THE SYSTEM SHALL give
+  it the severity of `proofs.escalation`, error by default and warning when
+  configured, unless `severities` sets one for its category.
+- **SN-123~1**: WHEN the manifest lists a pending proof for a required module
+  and criterion that lacks a valid proof THE SYSTEM SHALL report the pending
+  reason, `awaiting_host`, `awaiting_proof`, `awaiting_host_judgment` or
+  `host_unresponsive`, instead of `stale_proof`, and its message SHALL name the
+  module and its fulfil skill and say never to answer the requests oneself, or,
+  for `host_unresponsive`, to report to the user and not to loop.
+- **SN-124~1**: WHEN the manifest cannot be used, a listed proof is malformed,
+  or several valid proofs of one kind answer one criterion THE SYSTEM SHALL
+  report `malformed_proof` and count what it cannot use as missing.
+- **SN-125~1**: WHEN the configuration has a `proofs` block THE SYSTEM SHALL
+  record in `extensions.proofs` the trust level, the policy, the manifest and
+  its digest, every consumed statement with its digest and state, the pending
+  entries and, per criterion, the module standings, the absent modules, the
+  channels, the isolation levels, the host exclusions and the screen
+  exclusions, and SHALL write the same report bytes for the same inputs; WHEN
+  it has none the extension SHALL be absent.
+- **SN-126~1**: THE documentation SHALL name exactly the keys of the `proofs`
+  block, the manifest keys, the pending reasons, the trust levels, the pass
+  bases, the isolation levels and the properties of `extensions.proofs` the
+  code defines.
 
 ## Architecture
 

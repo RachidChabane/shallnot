@@ -22,3 +22,9 @@ func (p Policy) SeverityOf(category Category) Severity {
 func (p Policy) Blocks(severity Severity) bool {
 	return severity != SeverityOff && severity >= p.FailOn
 }
+
+// Overrides reports the severity configured for a category, and whether the configuration sets one.
+func (p Policy) Overrides(category Category) (Severity, bool) {
+	severity, overridden := p.Severities[category]
+	return severity, overridden
+}

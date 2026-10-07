@@ -6,6 +6,7 @@ import (
 
 	"github.com/RachidChabane/shallnot/internal/app"
 	"github.com/RachidChabane/shallnot/internal/domain"
+	"github.com/RachidChabane/shallnot/internal/domain/proof"
 	"github.com/RachidChabane/shallnot/internal/version"
 )
 
@@ -151,6 +152,7 @@ type FindingInfo struct {
 	Blocking      bool                 `json:"blocking"`
 	Message       string               `json:"message"`
 	RequirementID domain.RequirementID `json:"requirement_id,omitempty"`
+	Module        string               `json:"module,omitempty"`
 	Location      LocationInfo         `json:"location"`
 	Test          *TestRefInfo         `json:"test,omitempty"`
 }
@@ -214,7 +216,21 @@ func BuildDocument(outcome app.Outcome) Document {
 	for _, finding := range outcome.Analysis.Findings {
 		document.Findings = append(document.Findings, findingInfo(finding))
 	}
+	if outcome.Analysis.Proofs != nil {
+		document.Extensions[ProofsExtension] = proofsExtension(*outcome.Analysis.Proofs)
+	}
 	return document
+}
+
+// ProofsExtension is the key of the extension that records the consumed proofs.
+const ProofsExtension = "proofs"
+
+func proofsExtension(proofs proof.Report) json.RawMessage {
+	encoded, err := json.Marshal(proofs)
+	if err != nil {
+		panic(err)
+	}
+	return encoded
 }
 
 // Summarize counts requirements in focus by coverage, tests, and findings by severity.
@@ -306,6 +322,7 @@ func findingInfo(finding domain.Finding) FindingInfo {
 		Blocking:      finding.Blocking,
 		Message:       finding.Message,
 		RequirementID: finding.RequirementID,
+		Module:        finding.Module,
 		Location:      LocationInfo(finding.Location),
 	}
 	if finding.Test != nil {

@@ -44,7 +44,7 @@ GitHub-annotation outputs.
 | `requirements` | array of [requirement](#requirement-object) | The coverage matrix: every known requirement, in focus or not, ordered by spec file then line. |
 | `out_of_scope` | array of [out-of-scope declaration](#out-of-scope-object) | The out-of-scope declarations of every known spec, ordered by spec file then line. Empty when there are none. |
 | `findings` | array of [finding](#finding-object) | Every finding whose severity is not `off`, ordered by file, then line, then category, then message. |
-| `extensions` | object | Reserved, empty. |
+| `extensions` | object | Empty, unless the configuration has a `proofs` block: then it holds `proofs`. See [Proof extension](#proof-extension). |
 
 ### `run` object
 
@@ -214,6 +214,7 @@ One entry per raised finding whose configured severity is not `off`.
 | `blocking` | boolean | True when `severity` is at or above `run.fail_on`. |
 | `message` | string | Human-readable explanation, safe to display as-is. |
 | `requirement_id` | string, optional | Requirement concerned, when there is one. |
+| `module` | string, optional | Proof module concerned, on a proof finding. |
 | `location` | [location](#location-object) | Where to act: a spec line, a source tag line, or a results file. |
 | `test` | object, optional | Test concerned, when the finding comes from a results file: `name`, `classname` (optional), `results_file`. |
 
@@ -252,9 +253,40 @@ are the defaults.
 | `detached_example` | warning | the example line | no | A Markdown line that reads as an example, `Example:` after an optional list bullet, is part of no requirement's statement: it follows a blank line, a `Non-testable:` line or an out-of-scope declaration, or sits outside every requirement. |
 | `statement_changed` | warning | requirement declaration | no | Raised only under `--baseline`: the requirement's statement digest differs from the baseline report's at the same `ID~REVISION`, so its text changed without a revision bump. |
 | `unknown_dimension` | warning | the out-of-scope declaration | no | An out-of-scope declaration names a dimension outside the closed list of [spec-format.md](spec-format.md#out-of-scope-declarations). The declaration is still recorded. |
+| `stale_proof` | error | requirement declaration | no | A required proof module has no valid proof for a requirement that is covered: none was produced, or it is stale (the statement, the specs, the tests or the code changed), produced locally under `trust: signed`, or consumes a proof that is stale. Blocks for discriminating power, escalates for alignment. |
+| `malformed_proof` | error | the proof file or the manifest | no | A statement breaks an invariant of the proof format, differs from the digest the manifest lists, the manifest cannot be used, or several valid proofs of one kind answer one requirement. What cannot be used counts as missing. |
+| `correct_code_fails` | error | requirement declaration | yes | The discriminating-power proof records that the tests fail on the reference code. |
+| `example_failed` | error | requirement declaration | yes | An example of the requirement fails on the reference code. |
+| `surviving_valid_mutant` | error | requirement declaration | yes | A mutant that violates the requirement survived every test, shown by a failing example or by a judgment with a confirmed witness. |
+| `escalated_mutant` | error | requirement declaration | yes | A mutant survived every test and the evidence does not settle whether it counts: a judgment below the threshold, UNDETERMINED, or an exclusion the basis, the isolation floor or `max_host_exclusions` does not allow. Escalates. |
+| `no_valid_mutant` | error | requirement declaration | yes | No mutant was judged to violate the requirement, so the tests were not shown to discriminate. Escalates. |
+| `no_killed_valid_mutant` | error | requirement declaration | yes | Valid mutants exist and no test killed one on evidence that earns pass credit. Escalates. |
+| `misaligned_test` | error | requirement declaration | yes | A passing test is not shown to check its statement: judged MISALIGNED or UNDETERMINED, ALIGNED below the threshold or the isolation floor, uncorroborated, or capped by a sentinel. Escalates, never blocks alone. |
+| `mutation_sensitive_test` | error | requirement declaration | yes | A test killed a sentinel mutant that is equivalent to the reference, so it earns no kill credit. Escalates. |
+| `completeness_question` | info | the spec file | no | An advisory question of a valid completeness proof. |
+| `awaiting_host` | error | requirement declaration | yes | The host harness has requests of a required module to answer. |
+| `awaiting_proof` | error | requirement declaration | yes | A required module waits for a proof it consumes. |
+| `awaiting_host_judgment` | error | requirement declaration | yes | A survivor that CI produced needs a judgment of the host. Escalates. |
+| `host_unresponsive` | error | requirement declaration | yes | The host did not answer the requests of a required module. Escalates. |
 
 What to do about each category, and who owns the action, is specified once, in the
 [routing table of docs/pipeline-gate.md](pipeline-gate.md#routing-table-finding-category-to-owner-and-action).
+
+## Proof extension
+
+When `shallnot.yaml` has a [`proofs` block](configuration.md#the-proofs-block),
+`extensions.proofs` records what the gate consumed and concluded; the same
+commit and the same proof files give byte-identical bytes. The policy is
+described in [proofs.md](proofs.md).
+
+| Property | Type | Meaning |
+|---|---|---|
+| `trust` | `"signed"` \| `"local"` | The trust level the proofs were consumed under. |
+| `policy` | object | `signedPassBasis`, `minIsolation`, `maxHostExclusions`, `validityThreshold`, `alignmentThreshold`, `escalation` and `isolationFloorLowered`. |
+| `manifest` | object \| null | `path`, `digest` (SHA-256 of the manifest) and the verifier fields; null when the verified set has no manifest. |
+| `consumed` | array | Every statement file the manifest lists, by path: `path`, `digest`, `predicateType`, `subject`, `state` (`valid`, `stale`, `malformed`, `ignored`) and the `reason` it is not valid. |
+| `pending` | array | The `pending` entries of the manifest. |
+| `criteria` | array | One entry per covered requirement in focus, by reference: `ref`, `modules` (the `state` and `outcome` of each kind required or present), `absent` (required kinds with no valid proof), `channels` and `isolation` (counts of judged claims), `hostExclusions` and `screenExclusions`. |
 
 ## Ordering guarantees
 

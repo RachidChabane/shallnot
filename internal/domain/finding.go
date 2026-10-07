@@ -51,6 +51,21 @@ const (
 	CategoryMalformedExample
 	CategoryDetachedExample
 	CategoryStatementChanged
+	CategoryStaleProof
+	CategoryMalformedProof
+	CategoryCorrectCodeFails
+	CategorySurvivingValidMutant
+	CategoryNoValidMutant
+	CategoryNoKilledValidMutant
+	CategoryEscalatedMutant
+	CategoryMisalignedTest
+	CategoryMutationSensitiveTest
+	CategoryExampleFailed
+	CategoryCompletenessQuestion
+	CategoryAwaitingHost
+	CategoryAwaitingProof
+	CategoryAwaitingHostJudgment
+	CategoryHostUnresponsive
 )
 
 var categoryNames = []string{
@@ -72,6 +87,21 @@ var categoryNames = []string{
 	"malformed_example",
 	"detached_example",
 	"statement_changed",
+	"stale_proof",
+	"malformed_proof",
+	"correct_code_fails",
+	"surviving_valid_mutant",
+	"no_valid_mutant",
+	"no_killed_valid_mutant",
+	"escalated_mutant",
+	"misaligned_test",
+	"mutation_sensitive_test",
+	"example_failed",
+	"completeness_question",
+	"awaiting_host",
+	"awaiting_proof",
+	"awaiting_host_judgment",
+	"host_unresponsive",
 }
 
 var categoryDefaultSeverities = map[Category]Severity{
@@ -93,6 +123,21 @@ var categoryDefaultSeverities = map[Category]Severity{
 	CategoryMalformedExample:       SeverityWarning,
 	CategoryDetachedExample:        SeverityWarning,
 	CategoryStatementChanged:       SeverityWarning,
+	CategoryStaleProof:             SeverityError,
+	CategoryMalformedProof:         SeverityError,
+	CategoryCorrectCodeFails:       SeverityError,
+	CategorySurvivingValidMutant:   SeverityError,
+	CategoryNoValidMutant:          SeverityError,
+	CategoryNoKilledValidMutant:    SeverityError,
+	CategoryEscalatedMutant:        SeverityError,
+	CategoryMisalignedTest:         SeverityError,
+	CategoryMutationSensitiveTest:  SeverityError,
+	CategoryExampleFailed:          SeverityError,
+	CategoryCompletenessQuestion:   SeverityInfo,
+	CategoryAwaitingHost:           SeverityError,
+	CategoryAwaitingProof:          SeverityError,
+	CategoryAwaitingHostJudgment:   SeverityError,
+	CategoryHostUnresponsive:       SeverityError,
 }
 
 const categoryKind = "category"
@@ -111,6 +156,15 @@ func ParseCategory(text string) (Category, error) {
 
 // CategoryNames lists the wire names of every category.
 func CategoryNames() []string { return append([]string(nil), categoryNames...) }
+
+// IsPending reports whether the category says a proof is still being produced rather than that evidence is wrong or absent.
+func (c Category) IsPending() bool {
+	switch c {
+	case CategoryAwaitingHost, CategoryAwaitingProof, CategoryAwaitingHostJudgment, CategoryHostUnresponsive:
+		return true
+	}
+	return false
+}
 
 // Categories lists every category in declaration order.
 func Categories() []Category {
@@ -140,4 +194,6 @@ type Finding struct {
 	RequirementID RequirementID
 	Location      Location
 	Test          *TestIdentity
+	// Module names the proof module a proof finding concerns, or "".
+	Module string
 }

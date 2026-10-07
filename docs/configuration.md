@@ -31,6 +31,7 @@ directory.
 | `strict` | boolean | `false` | Treat `untagged_test` as `error` instead of its default `info`. Equivalent to `severities: {untagged_test: error}` but does not prevent a further explicit override (see precedence below). |
 | `fail_on` | string | `error` | Lowest blocking severity: `info`, `warning` or `error`. `off` is rejected: use `advisory` to never block. |
 | `severities` | map of category to severity | `{}` | Per-category severity override. Keys are the finding categories of [docs/report.md](report.md#finding-categories); values are `off`, `info`, `warning` or `error`. |
+| `proofs` | mapping | unset | Consumption of the verified proof set. See [The `proofs` block](#the-proofs-block). |
 | `test_commands` | array of string | `[]` | Command lines `shallnot gate` runs, in order, before checking. See [Gate, init and hook](#gate-init-and-hook) below. |
 
 At least one of `specs` or `focus` must resolve to files across config and
@@ -121,6 +122,24 @@ Settings are resolved in three layers, later overriding earlier:
   tool failure.
 - With neither flag: if `shallnot.yaml` exists in the working directory, it
   is loaded; otherwise defaults are used.
+
+## The `proofs` block
+
+`proofs` turns on the consumption of the proofs that spec-proof modules write
+(see [proofs.md](proofs.md)). Unknown keys are refused. Without the block no
+proof is read.
+
+| Key | Type | Default | Semantics |
+|---|---|---|---|
+| `verified_dir` | string | `.spec-proof/verified` | Directory of the verified proof set and its `manifest.json`, relative to the config file's directory. |
+| `require` | array of string | `[]` | Kinds every covered requirement in focus must hold a valid proof of: `alignment`, `discriminating-power` or their predicate type URIs. `completeness` is advisory and is refused. |
+| `code` | array of string | `[]` | Globs of the source files a proof's `code_tree` input is derived from. Without them a proof that names a `code_tree` input is stale. |
+| `trust` | string | `signed` | `signed` or `local`. |
+| `thresholds` | mapping | `validity: 0.7`, `alignment: 0.7` | Confidence in [0,1] at which a judged claim has power: `validity` for mutants, `alignment` for verdicts. |
+| `escalation` | string | `error` | `error` fails the verdict on a finding that escalates a judged signal; `warning` only reports it. A severity set for a category wins. |
+| `signed_pass_basis` | string | `corroborated` | `executed-only`, `corroborated` or `judged`. |
+| `min_isolation` | string | `restricted` | Floor below which a judged response earns no pass credit: `restricted-attested`, `restricted`, `restricted-unverified`, `unrestricted` or `inline`. |
+| `max_host_exclusions` | integer | `2` | Survivors a criterion may exclude on a judgment alone. |
 
 ## Severities and `fail_on`
 

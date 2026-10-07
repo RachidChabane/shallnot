@@ -213,6 +213,14 @@ go to the pipeline.
 | `detached_example` | Spec owner | Move the example into the statement it belongs to: directly under the statement, with no blank line, and before any `Non-testable:` line. |
 | `statement_changed` | Spec owner | If the meaning changed, bump the revision so that the tests are re-verified. If only the wording changed, nothing: the finding stays a warning, and the next baseline carries the new digest. |
 | `unknown_dimension` | Spec owner | Name one of the dimensions of [the closed list](spec-format.md#out-of-scope-declarations), or remove the declaration. |
+| `stale_proof` | Implementing agent | Run the command the message names, or the `spec-proof:prove-all` skill, to regenerate the proof. Never edit or write a proof file. |
+| `malformed_proof` | Pipeline | Regenerate the verified set. A proof that breaks the format or differs from its manifest is evidence of a faulty module or a tampered file: report it. |
+| `correct_code_fails`, `example_failed` | Implementing agent | Fix the code until the tests and the examples of the requirement pass on the reference code. |
+| `surviving_valid_mutant` | Implementing agent | Strengthen the tests until one fails on the mutant. Never weaken the requirement. |
+| `escalated_mutant`, `no_valid_mutant`, `no_killed_valid_mutant`, `mutation_sensitive_test`, `misaligned_test` | Spec owner, then implementing agent | A judged signal that cannot block alone. Read the message; make the tests check the statement, or report the finding. Never mark the requirement non-testable or lower the severity to clear it. |
+| `completeness_question` | Spec owner | Answer the question in the spec, or declare the dimension out of scope with a reason. |
+| `awaiting_host`, `awaiting_proof`, `awaiting_host_judgment` | Implementing agent | Run the fulfil skill of the module the message names. Never answer the module's requests yourself. |
+| `host_unresponsive` | User | Report it to the user. Do not loop. |
 | `untagged_test` (blocking in strict mode) | Implementing agent | Tag the test with the requirement it verifies. A test that verifies no stated requirement is a sign of work outside the spec: report it rather than inventing a citation. |
 
 **Prohibitions, whatever the category.** Each of these turns the report green
