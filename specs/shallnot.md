@@ -273,6 +273,18 @@ The requirements of shallnot itself, in its own Markdown spec format.
   outside its closed set or a confidence outside [0,1], refuse to require
   completeness proofs, which are advisory, and publish the block in the config
   schema.
+- **SN-109~1**: WHEN `proofs` is configured THE SYSTEM SHALL read the manifest
+  of the verified directory and the statement files it lists with the
+  operating system and the standard JSON library alone, record the SHA-256 of
+  the manifest and of each statement, and treat as absent a missing manifest,
+  an unreadable or malformed manifest, and a statement whose bytes differ from
+  the digest the manifest lists, that does not decode or that breaks an
+  invariant, while ignoring a statement of another predicate type and a file
+  the manifest does not list.
+- **SN-110~1**: WHEN `proofs` is configured THE SYSTEM SHALL recompute the
+  digests of the spec, test source and code sets from the tree with the
+  file-set rule, over the files the `specs`, `tests` and `proofs.code`
+  patterns match less the excluded paths, and the SHA-256 of each spec file.
 
 ## Architecture
 
