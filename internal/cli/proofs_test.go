@@ -328,6 +328,24 @@ func TestHookOnPendingProofs(t *testing.T) {
 		}
 	})
 
+	t.Run("counts as waits the blocks of a project that requires alignment and discriminating power while one module is pending [verifies SN-127~1]", func(t *testing.T) {
+		isolateAttempts(t)
+		t.Chdir(t.TempDir())
+		both := strings.Replace(proofConfig, "require: [discriminating-power]", "require: [alignment, discriminating-power]", 1)
+		directory := proofProject(t, both)
+		writePending(t, directory, awaitingHost(proof.PendingAwaitingHost))
+		first := hook(t, directory)
+		if first.exit != claudeExitBlock || strings.Contains(first.stderr, "stale_proof") || !strings.Contains(first.stderr, "awaiting_proof") {
+			t.Fatalf("got %+v", first)
+		}
+		for attempt := 2; attempt <= agenthook.MaxHostWaits; attempt++ {
+			hook(t, directory)
+		}
+		if given := hook(t, directory); given.exit != claudeExitNotice {
+			t.Fatalf("got %+v", given)
+		}
+	})
+
 	t.Run("a pass resets both counters [verifies SN-127~1]", func(t *testing.T) {
 		directory := ready(t)
 		writePending(t, directory, awaitingHost(proof.PendingAwaitingHost))

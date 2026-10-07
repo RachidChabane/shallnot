@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -181,6 +182,9 @@ func TestSyncedGoldens(t *testing.T) {
 
 func TestSyncScript(t *testing.T) {
 	t.Run("the sync script refuses a call without a spec-proof checkout and a checkout without goldens [verifies SN-106~1]", func(t *testing.T) {
+		if runtime.GOOS == "windows" {
+			t.Skip("the script needs bash")
+		}
 		script, err := filepath.Abs("../../../script/sync-proof-fixtures")
 		if err != nil {
 			t.Fatal(err)

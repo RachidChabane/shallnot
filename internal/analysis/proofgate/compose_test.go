@@ -155,6 +155,17 @@ func TestPendingProofs(t *testing.T) {
 		}
 	})
 
+	t.Run("reports awaiting_proof for a required module whose criterion has another module pending [verifies SN-123~1]", func(t *testing.T) {
+		ev := pending("spec-proof-dp", proof.PendingAwaitingHost)
+		result := evaluate(config(requireBoth), ev)
+		wantCategories(t, result, "awaiting_host", "awaiting_proof")
+		for _, finding := range result.Findings {
+			if finding.Module != "spec-proof-dp" || finding.Category.String() == "stale_proof" {
+				t.Errorf("finding %+v", finding)
+			}
+		}
+	})
+
 	t.Run("ignores a pending entry of a module that is not required [verifies SN-123~1]", func(t *testing.T) {
 		ev := pending("spec-proof-alignment", proof.PendingAwaitingHost)
 		result := evaluate(config(), ev)

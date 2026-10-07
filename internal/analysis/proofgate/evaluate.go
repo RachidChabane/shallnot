@@ -109,6 +109,20 @@ func (e *evaluation) pendingFor(kind proof.Kind, criterion Criterion) (proof.Pen
 	return proof.Pending{}, false
 }
 
+// consumedKinds are the kinds whose proofs a module reads: alignment cross-checks its verdicts against the matrix of
+// discriminating power.
+var consumedKinds = map[proof.Kind][]proof.Kind{proof.KindAlignment: {proof.KindDiscriminatingPower}}
+
+// pendingConsumed finds a pending entry, for the criterion, of a module whose proof the kind consumes.
+func (e *evaluation) pendingConsumed(kind proof.Kind, criterion Criterion) (proof.Pending, bool) {
+	for _, consumed := range consumedKinds[kind] {
+		if pending, isPending := e.pendingFor(consumed, criterion); isPending {
+			return pending, true
+		}
+	}
+	return proof.Pending{}, false
+}
+
 var pendingCategories = map[proof.PendingReason]domain.Category{
 	proof.PendingAwaitingHost:         domain.CategoryAwaitingHost,
 	proof.PendingAwaitingProof:        domain.CategoryAwaitingProof,
@@ -135,6 +149,14 @@ func (e *evaluation) reportAbsence(kind proof.Kind, criterion Criterion, scope s
 		e.add(Finding{
 			Category: pendingCategories[pending.Reason], Effect: effect, Module: pending.Module, RequirementID: criterion.Ref.ID,
 			Location: criterion.Location, Message: pendingMessage(pending.Reason, ref, pending.Module),
+		})
+		return proof.StatePending
+	}
+	if waiting, isWaiting := e.pendingConsumed(kind, criterion); isWaiting {
+		// A module that consumes the proof of another cannot have its own while the other is pending.
+		e.add(Finding{
+			Category: domain.CategoryAwaitingProof, Effect: absenceEffect(kind), Module: waiting.Module, RequirementID: criterion.Ref.ID,
+			Location: criterion.Location, Message: pendingMessage(proof.PendingAwaitingProof, ref, waiting.Module),
 		})
 		return proof.StatePending
 	}

@@ -348,7 +348,10 @@ The requirements of shallnot itself, in its own Markdown spec format.
   reason, `awaiting_host`, `awaiting_proof`, `awaiting_host_judgment` or
   `host_unresponsive`, instead of `stale_proof`, and its message SHALL name the
   module and its fulfil skill and say never to answer the requests oneself, or,
-  for `host_unresponsive`, to report to the user and not to loop.
+  for `host_unresponsive`, to report to the user and not to loop; and WHEN a
+  required module has no valid proof for a criterion for which the manifest
+  lists a pending proof of a module whose proof it consumes THE SYSTEM SHALL
+  report `awaiting_proof` naming that module, instead of `stale_proof`.
 - **SN-124~1**: WHEN the manifest cannot be used, a listed proof is malformed,
   or several valid proofs of one kind answer one criterion THE SYSTEM SHALL
   report `malformed_proof` and count what it cannot use as missing.

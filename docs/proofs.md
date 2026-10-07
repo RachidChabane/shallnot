@@ -48,7 +48,7 @@ statement whose bytes differ from the digest the manifest lists is malformed.
 | Reason | Meaning |
 |---|---|
 | `awaiting_host` | The host harness has requests of the module to answer. |
-| `awaiting_proof` | Another proof the module consumes is not there yet. |
+| `awaiting_proof` | Another proof the module consumes is not there yet. The gate also reports it for an alignment proof that is absent while the discriminating-power proof of the same criterion is pending. |
 | `awaiting_host_judgment` | CI produced a survivor that needs a judgment of the host. |
 | `host_unresponsive` | The host did not answer after every emission. |
 
