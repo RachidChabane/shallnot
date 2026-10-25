@@ -107,7 +107,8 @@ func (p policy) evaluateDiscriminatingPower(criterion Criterion, predicate *proo
 		switch verdict.disposition {
 		case dispositionBlock:
 			blocked = true
-			emit(domain.CategorySurvivingValidMutant, EffectBlock, fmt.Sprintf("requirement %s: mutant %s violates it and survived every test (%s)", ref, name, verdict.reason))
+			emit(domain.CategorySurvivingValidMutant, EffectBlock, fmt.Sprintf("requirement %s: mutant %s violates it and survived every test (%s)", ref, name, verdict.reason)+
+				p.counterexampleText(criterion, predicate, mutant))
 		case dispositionEscalate:
 			emit(domain.CategoryEscalatedMutant, EffectEscalate, fmt.Sprintf("requirement %s: mutant %s survived every test and the evidence does not settle it (%s)", ref, name, verdict.reason))
 		case dispositionCredit:

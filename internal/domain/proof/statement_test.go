@@ -304,6 +304,23 @@ func TestClosedSetsAndOrders(t *testing.T) {
 	})
 }
 
+func TestCounterexampleDecoding(t *testing.T) {
+	t.Run("reads the counterexample a module records on a mutant [verifies SN-139~1]", func(t *testing.T) {
+		statement := discriminatingPower()
+		example := 2
+		statement.DiscriminatingPower.Mutants[0].Extensions = &proof.MutantExtensions{Counterexample: &proof.Counterexample{
+			Origin: proof.OriginOperator, Family: "relational", Example: &example,
+			Witness: &proof.WitnessExample{Name: "w", Clause: "c", Code: "def w(): pass", Truncated: true},
+		}}
+		decoded := roundTrip(t, statement)
+		got := decoded.DiscriminatingPower.Mutants[0].Extensions.Counterexample
+		if got == nil || got.Origin != proof.OriginOperator || got.Family != "relational" || got.Example == nil || *got.Example != example ||
+			got.Witness == nil || got.Witness.Code != "def w(): pass" || !got.Witness.Truncated {
+			t.Errorf("counterexample = %+v", got)
+		}
+	})
+}
+
 func TestStructuralInvariants(t *testing.T) {
 	t.Run("reports a judged VALID mutant without executed corroboration [verifies SN-105~1]", func(t *testing.T) {
 		statement := discriminatingPower()

@@ -427,6 +427,14 @@ The requirements of shallnot itself, in its own Markdown spec format.
   else on its predicate: the entry of the exact source, else the entry of its
   kind, else the default, SHALL name that threshold in the finding, and SHALL
   report the defaults and the entries by source in `extensions.proofs.policy`.
+- **SN-139~1**: WHEN a valid mutant survives every test of its criterion, the
+  trust is `local` and the local statement records a counterexample for it THE
+  SYSTEM SHALL add to its `surviving_valid_mutant` finding how the mutant was
+  drawn, the slot of a targeted mutant or the family of an operator one, and the
+  confirmed witness it fails: the criterion's example of the recorded index
+  written as the statement writes it, or the witness test with its name and its
+  clause; SHALL never show the mutant's code; and SHALL add nothing under
+  `signed` trust or for a statement produced elsewhere.
 
 ## Architecture
 

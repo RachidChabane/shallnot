@@ -196,6 +196,7 @@ A floor weaker than `restricted` is flagged in the report
 | `stale_proof` | Run the command the message names, or the `spec-proof:prove-all` skill. Never edit a proof file. |
 | `awaiting_host`, `awaiting_proof`, `awaiting_host_judgment` | Run the fulfil skill the message names (`<module>-fulfil`, or `spec-proof:prove-all`). Never answer the module's requests yourself. |
 | `host_unresponsive` | Report it to the user. Do not loop. |
+| `surviving_valid_mutant` | Under `trust: local`, the message names how the mutant was drawn (a targeted slot or an operator family) and the input the tests do not distinguish: the requirement's example the mutant fails, written as the spec writes it, or the witness test it fails. Add or strengthen a test bound to the requirement that checks that input. The mutant's code is never shown, so a test cannot be fitted to it. |
 
 An end-of-turn hook counts blocks whose only blocking findings are these
 pending reasons apart from the other blocks: at most `MaxAttempts + MaxHostWaits`

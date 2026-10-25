@@ -53,6 +53,8 @@ type Criterion struct {
 	PassingTests []TestName
 	// TestFiles are the test files, relative to the configuration file, that hold a test bound to the criterion.
 	TestFiles []string
+	// Examples are the well-formed inline examples of the criterion's statement.
+	Examples []domain.Example
 }
 
 // Input is everything the policy needs.

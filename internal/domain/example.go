@@ -381,3 +381,48 @@ func validateDatetime(token string) error {
 	}
 	return nil
 }
+
+// argumentSeparator and arrowSpacing space an example written back as text.
+const (
+	argumentSeparator = ", "
+	arrowSpacing      = " "
+)
+
+// String writes the literal as an example writes it: a string quoted with its
+// quotes, backslashes, line breaks and tabs escaped, every other type as its text.
+func (l Literal) String() string {
+	if l.Type != LiteralString {
+		return l.Value
+	}
+	unescaped := map[byte]byte{}
+	for escaped, raw := range quotedEscapes {
+		unescaped[raw] = escaped
+	}
+	var text strings.Builder
+	text.WriteByte(quote)
+	for index := 0; index < len(l.Value); index++ {
+		if escaped, special := unescaped[l.Value[index]]; special {
+			text.WriteByte(escape)
+			text.WriteByte(escaped)
+			continue
+		}
+		text.WriteByte(l.Value[index])
+	}
+	text.WriteByte(quote)
+	return text.String()
+}
+
+// String writes the example as a statement writes it: the call with its
+// arguments in order, then what it must give.
+func (e Example) String() string {
+	arguments := make([]string, len(e.Args))
+	for index, argument := range e.Args {
+		arguments[index] = argument.Name + string(argumentBinding) + argument.Value.String()
+	}
+	outcome := e.Expect.Value.String()
+	if e.Expect.Kind == OutcomeRaises {
+		outcome = raisesKeyword + arrowSpacing + e.Expect.Value.Value
+	}
+	return e.Operation + string(callOpen) + strings.Join(arguments, argumentSeparator) + string(callClose) +
+		arrowSpacing + outcomeArrow + arrowSpacing + outcome
+}

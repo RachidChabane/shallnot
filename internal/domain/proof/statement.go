@@ -174,6 +174,37 @@ type MutantExtensions struct {
 	Collateral   bool      `json:"collateral,omitempty"`
 	OffTarget    string    `json:"offTarget,omitempty"`
 	Unattributed bool      `json:"unattributed,omitempty"`
+	// Counterexample is what the local finding of a blocking survivor shows.
+	Counterexample *Counterexample `json:"counterexample,omitempty"`
+}
+
+// Origins of a counterexample's mutant.
+const (
+	OriginTargeted = "targeted"
+	OriginOperator = "operator"
+)
+
+// Counterexample is what a module records for a blocking survivor of a local
+// statement: how the mutant was drawn and one confirmed witness of the criterion
+// it fails, the index of one of the criterion's examples or a witness test
+// written from the spec alone. It never holds the mutant's code.
+type Counterexample struct {
+	Origin string `json:"origin"`
+	// Slot is the generation slot of a targeted mutant, Family the operator
+	// family of an operator one.
+	Slot    string          `json:"slot,omitempty"`
+	Family  string          `json:"family,omitempty"`
+	Example *int            `json:"example,omitempty"`
+	Witness *WitnessExample `json:"witness,omitempty"`
+}
+
+// WitnessExample is a witness test of a counterexample, with the clause of the
+// criterion it checks; Truncated says that the module cut its code.
+type WitnessExample struct {
+	Name      string `json:"name"`
+	Clause    string `json:"clause"`
+	Code      string `json:"code"`
+	Truncated bool   `json:"truncated,omitempty"`
 }
 
 // TestResult is the executed outcome of one test against one mutant.

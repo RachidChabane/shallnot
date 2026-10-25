@@ -34,6 +34,7 @@ func (a *analyzer) settleProofs(rows []domain.Row) *proof.Report {
 		if row.InFocus && row.Coverage == domain.CoverageCovered {
 			criteria = append(criteria, proofgate.Criterion{
 				Ref: requirement.Ref(), Digest: requirement.StatementDigest(), Location: requirement.Location, PassingTests: a.passingTests(row), TestFiles: a.testFiles(requirement.Ref()),
+				Examples: row.Examples,
 			})
 		}
 	}
