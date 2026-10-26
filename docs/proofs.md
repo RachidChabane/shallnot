@@ -120,10 +120,32 @@ These violations make the statement `malformed`.
 
 A criterion passes only if traceability and every kind in `proofs.require`
 pass. A required kind with no valid proof is a `stale_proof` finding that names
-the module and the command that regenerates it, never a pass. It blocks for
-`discriminating-power`, whose evidence is executed, and escalates for
+the module and both commands: prove, then publish into the verified set. It is
+never a pass. It blocks for `discriminating-power`, whose evidence is executed, and escalates for
 `alignment`, whose evidence is judged. A criterion that traceability did not find
 covered is not asked for proofs.
+
+When the manifest is absent, the finding names its path, for example
+`no verified proof set: .musthold/verified/manifest.json is absent`. Proofs in
+`.musthold/cache` are not yet in the verified set. When a manifest is present
+but has no statement for the criterion and kind, the detail says
+`none was produced`; stale statements retain their staleness reasons.
+
+Every stale-proof action gives both steps in order, even when the manifest
+exists. Under `trust: local`, with the default verified directory:
+
+```text
+Run `musthold-dp prove --changed`, then publish with `musthold-verify --accept-local .musthold/cache --out .musthold/verified`, or run the musthold:prove-all skill
+```
+
+Under `trust: signed`, the publish command is
+`musthold-verify --bundles <ledger export dir> --out .musthold/verified`.
+Replace `<ledger export dir>` with the directory written by
+`musthold-ledger ledger export`; local acceptance cannot satisfy signed trust.
+The finding uses the kind's prove command and the configured
+`proofs.verified_dir` for `--out`. Run the commands from the directory holding
+the configuration file. Publish after each prove run so the verified set
+reflects the regenerated proofs.
 
 An escalating finding fails the verdict when `proofs.escalation` is `error`
 (the default) and is only reported when it is `warning`. A severity set in
@@ -208,7 +230,7 @@ A floor weaker than `restricted` is flagged in the report
 
 | Finding | What to do |
 |---|---|
-| `stale_proof` | Run the command the message names, or the `musthold:prove-all` skill. Never edit a proof file. |
+| `stale_proof` | Run the prove command, then the publish command the message names, or run the `musthold:prove-all` skill. Never edit a proof file. |
 | `awaiting_host`, `awaiting_proof`, `awaiting_host_judgment` | Run the fulfil skill the message names (`<module>-fulfil`, or `musthold:prove-all`). Never answer the module's requests yourself. |
 | `host_unresponsive` | Report it to the user. Do not loop. |
 | `surviving_valid_mutant` | Under `trust: local`, the message names how the mutant was drawn (a targeted slot or an operator family) and the input the tests do not distinguish: the requirement's example the mutant fails, written as the spec writes it, or the witness test it fails. Add or strengthen a test bound to the requirement that checks that input. The mutant's code is never shown, so a test cannot be fitted to it. |

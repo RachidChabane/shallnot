@@ -175,7 +175,12 @@ read the event:
    pass announcement. A `fail` verdict, or a run that produced no verdict at
    all (missing or stale results, bad config), sends the agent back to work
    with the blocking findings (or the failure reason) in the message,
-   rendered as that protocol's block.
+   rendered as that protocol's block. For `stale_proof`, follow both commands
+   in the finding: prove, then publish into `proofs.verified_dir`, or run the
+   `musthold:prove-all` skill. Local trust publishes `.musthold/cache` with
+   `--accept-local`; signed trust publishes ledger-exported bundles with
+   `--bundles`. An absent manifest means the gate has no verified set to read,
+   even if proofs exist in the cache. See [proofs.md](proofs.md#policy).
 4. **Give up after three attempts.** The hook counts, per session, how many
    times in a row it has sent the same session back. Cursor reports this
    count itself (`loop_count`); every other hook keeps a small counter file
