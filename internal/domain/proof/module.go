@@ -43,3 +43,13 @@ func FulfilSkill(module string) string {
 func (k Kind) ProveCommand() string {
 	return strings.Join([]string{k.ModuleName(), "prove", "--changed"}, " ")
 }
+
+// PublishCommand names how to publish proofs into the configured verified set.
+// Signed trust requires bundles from musthold-ledger ledger export, never local acceptance.
+func (c Config) PublishCommand() string {
+	input := "--bundles <ledger export dir>"
+	if c.Trust == TrustLocal {
+		input = "--accept-local " + DefaultCacheDir
+	}
+	return "musthold-verify " + input + " --out " + c.VerifiedDir
+}

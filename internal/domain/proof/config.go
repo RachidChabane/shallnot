@@ -9,6 +9,7 @@ import (
 // Defaults of the `proofs` configuration.
 const (
 	DefaultVerifiedDir        = ".musthold/verified"
+	DefaultCacheDir           = ".musthold/cache"
 	DefaultValidityThreshold  = 0.70
 	DefaultAlignmentThreshold = 0.70
 	DefaultMaxHostExclusions  = 2

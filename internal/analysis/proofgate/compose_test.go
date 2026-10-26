@@ -10,7 +10,7 @@ import (
 )
 
 func TestComposition(t *testing.T) {
-	t.Run("passes a covered requirement whose required module passes [verifies SN-113~1]", func(t *testing.T) {
+	t.Run("passes a covered requirement whose required module passes [verifies SN-113~2]", func(t *testing.T) {
 		result := evaluate(config(), evidence(dp()))
 		wantCategories(t, result)
 		if outcome(t, result) != proofgate.OutcomePass || result.Report.Criteria[0].Modules[proof.KindDiscriminatingPower].Outcome != proof.OutcomePass {
@@ -18,7 +18,7 @@ func TestComposition(t *testing.T) {
 		}
 	})
 
-	t.Run("never passes a required module with no proof and names it [verifies SN-113~1]", func(t *testing.T) {
+	t.Run("never passes a required module with no proof and names it [verifies SN-113~2]", func(t *testing.T) {
 		for name, ev := range map[string]proof.Evidence{"no manifest": {ManifestPath: "verified/manifest.json", Derived: derived()}, "empty set": evidence()} {
 			result := evaluate(config(), ev)
 			wantCategories(t, result, "stale_proof")
@@ -33,19 +33,23 @@ func TestComposition(t *testing.T) {
 		}
 	})
 
-	t.Run("blocks an absent discriminating-power proof and escalates an absent alignment proof [verifies SN-113~1]", func(t *testing.T) {
+	t.Run("blocks an absent discriminating-power proof and escalates an absent alignment proof [verifies SN-113~2]", func(t *testing.T) {
 		result := evaluate(config(requireBoth), evidence())
 		wantCategories(t, result, "stale_proof", "stale_proof")
 		effects := map[string]proofgate.Effect{}
 		for _, finding := range result.Findings {
 			effects[finding.Module] = finding.Effect
+			wantAction := "Run `" + finding.Module + " prove --changed`, then publish with `musthold-verify --bundles <ledger export dir> --out .musthold/verified`, or run the musthold:prove-all skill"
+			if !strings.HasSuffix(finding.Message, wantAction) {
+				t.Errorf("message lacks prove and publish action: %s", finding.Message)
+			}
 		}
 		if effects["musthold-dp"] != proofgate.EffectBlock || effects["musthold-alignment"] != proofgate.EffectEscalate {
 			t.Fatalf("effects %v", effects)
 		}
 	})
 
-	t.Run("names the absent module of each criterion [verifies SN-113~1]", func(t *testing.T) {
+	t.Run("names the absent module of each criterion [verifies SN-113~2]", func(t *testing.T) {
 		result := evaluate(config(requireBoth), evidence(dp()))
 		wantCategories(t, result, "stale_proof")
 		if got := result.Report.Criteria[0].Absent; len(got) != 1 || got[0] != proof.KindAlignment {
@@ -56,11 +60,11 @@ func TestComposition(t *testing.T) {
 		}
 	})
 
-	t.Run("raises nothing for an absent module that is not required [verifies SN-113~1]", func(t *testing.T) {
+	t.Run("raises nothing for an absent module that is not required [verifies SN-113~2]", func(t *testing.T) {
 		wantCategories(t, evaluate(config(func(c *proof.Config) { c.Require = nil }), evidence()))
 	})
 
-	t.Run("asks nothing of a requirement that traceability did not find covered [verifies SN-113~1]", func(t *testing.T) {
+	t.Run("asks nothing of a requirement that traceability did not find covered [verifies SN-113~2]", func(t *testing.T) {
 		result := proofgate.Evaluate(proofgate.Input{Config: config(), Known: known(), Evidence: evidence()})
 		wantCategories(t, result)
 		if len(result.Report.Criteria) != 0 {
@@ -68,7 +72,7 @@ func TestComposition(t *testing.T) {
 		}
 	})
 
-	t.Run("applies the findings of a proof that is present although it is not required [verifies SN-113~1]", func(t *testing.T) {
+	t.Run("applies the findings of a proof that is present although it is not required [verifies SN-113~2]", func(t *testing.T) {
 		failing := dp()
 		failing.DiscriminatingPower.CorrectCodePasses = prooftest.Executed(false)
 		result := evaluate(config(func(c *proof.Config) { c.Require = nil }), evidence(failing))

@@ -21,13 +21,15 @@ func abbreviate(digest string) string {
 	return digest[:digestPrefixLength]
 }
 
-func staleMessage(ref string, kind proof.Kind, scope string, reasons []string) string {
+func staleMessage(ref string, kind proof.Kind, scope string, reasons []string, config proof.Config, manifestPresent bool) string {
 	detail := "none was produced"
-	if len(reasons) > 0 {
+	if !manifestPresent {
+		detail = "no verified proof set: " + strings.TrimSuffix(config.VerifiedDir, "/") + "/manifest.json is absent"
+	} else if len(reasons) > 0 {
 		detail = strings.Join(reasons, "; ")
 	}
-	return fmt.Sprintf("requirement %s has no valid %s proof%s (%s): a missing or stale proof never passes. Run `%s` or the %s skill",
-		ref, kind, scope, detail, kind.ProveCommand(), proof.UmbrellaSkill)
+	return fmt.Sprintf("requirement %s has no valid %s proof%s (%s): a missing or stale proof never passes. Run `%s`, then publish with `%s`, or run the %s skill",
+		ref, kind, scope, detail, kind.ProveCommand(), config.PublishCommand(), proof.UmbrellaSkill)
 }
 
 const (

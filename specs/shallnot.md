@@ -299,12 +299,23 @@ The requirements of shallnot itself, in its own Markdown spec format.
   input's `annotations.criterion` names, whose file has the input's digest THE
   SYSTEM SHALL classify it stale, transitively, and SHALL accept several such
   inputs of one kind that name different criteria.
-- **SN-113~1**: WHEN a requirement in focus is covered THE SYSTEM SHALL pass
+- **SN-113~2**: WHEN a requirement in focus is covered THE SYSTEM SHALL pass
   it only if traceability and every module in `proofs.require` pass; a
   required module with no valid proof SHALL be a `stale_proof` finding that
   names the module, and SHALL block for discriminating power, whose evidence is
   executed, and escalate for alignment, whose evidence is judged; an absent
-  module that is not required SHALL raise no finding.
+  module that is not required SHALL raise no finding. Every `stale_proof`
+  message SHALL distinguish an absent verified manifest, naming
+  `<proofs.verified_dir>/manifest.json`, from a manifest with no statement for
+  the criterion and kind, and retain the reasons when a proof is stale. Its
+  action SHALL name the kind's prove command, then the publish command, then
+  the alternative `musthold:prove-all` skill. The publish command SHALL be
+  `musthold-verify --accept-local .musthold/cache --out <proofs.verified_dir>`
+  under `trust: local` and
+  `musthold-verify --bundles <ledger export dir> --out <proofs.verified_dir>`
+  under `trust: signed`, where `<ledger export dir>` denotes the directory
+  written by `musthold-ledger ledger export` and `proofs.verified_dir` retains
+  its configured spelling relative to the configuration file.
 - **SN-114~1**: WHEN a discriminating-power proof records that the tests fail
   on the reference code, or that an example of the criterion fails on it, THE
   SYSTEM SHALL block with `correct_code_fails` or `example_failed`.

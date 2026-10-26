@@ -162,7 +162,7 @@ func (e *evaluation) reportAbsence(kind proof.Kind, criterion Criterion, scope s
 	}
 	e.add(Finding{
 		Category: domain.CategoryStaleProof, Effect: absenceEffect(kind), Module: kind.ModuleName(), RequirementID: criterion.Ref.ID,
-		Location: criterion.Location, Message: staleMessage(ref, kind, scope, reasons),
+		Location: criterion.Location, Message: staleMessage(ref, kind, scope, reasons, e.input.Config, e.input.Evidence.ManifestPresent),
 	})
 	if len(reasons) > 0 {
 		return proof.StateStale

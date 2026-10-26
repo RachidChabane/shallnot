@@ -90,7 +90,7 @@ func checkProject(t *testing.T, directory string, extra ...string) run {
 }
 
 func TestProofsEndToEnd(t *testing.T) {
-	t.Run("passes a covered requirement whose required proof is current [verifies SN-113~1]", func(t *testing.T) {
+	t.Run("passes a covered requirement whose required proof is current [verifies SN-113~2]", func(t *testing.T) {
 		directory := proofProject(t, proofConfig)
 		writeProofs(t, directory)
 		result := checkProject(t, directory)
@@ -120,13 +120,23 @@ func TestProofsEndToEnd(t *testing.T) {
 		}
 	})
 
-	t.Run("blocks with stale_proof when the proofs are missing [verifies SN-113~1]", func(t *testing.T) {
+	t.Run("blocks with publish guidance when cached proofs have no verified manifest [verifies SN-113~2]", func(t *testing.T) {
 		directory := proofProject(t, proofConfig)
+		writeProofs(t, directory)
+		// Produced proofs in the module cache have not been published into the verified set.
+		if err := os.Rename(filepath.Join(directory, ".musthold/verified"), filepath.Join(directory, ".musthold/cache")); err != nil {
+			t.Fatal(err)
+		}
 		result := checkProject(t, directory)
 		document := decode(t, result.stdout)
 		if result.exit != app.ExitBlocked || len(document.Findings) != 1 || document.Findings[0].Category != domain.CategoryStaleProof ||
 			document.Findings[0].Module != "musthold-dp" {
 			t.Fatalf("exit %d, findings %+v", result.exit, document.Findings)
+		}
+		message := document.Findings[0].Message
+		if !strings.Contains(message, "no verified proof set: .musthold/verified/manifest.json is absent") ||
+			!strings.HasSuffix(message, "Run `musthold-dp prove --changed`, then publish with `musthold-verify --accept-local .musthold/cache --out .musthold/verified`, or run the musthold:prove-all skill") {
+			t.Fatalf("missing publish guidance: %s", message)
 		}
 	})
 
