@@ -1,0 +1,216 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rachid-chabane.com/attestations/scan/v1",
+  "title": "Scan predicate: the executed record of one scan of a repository; never a proof of a requirement",
+  "x-minorVersion": 1,
+  "type": "object",
+  "required": ["module", "producedBy", "mode", "runner", "seed", "promisesChecked", "counts", "mutants", "tests"],
+  "properties": {
+    "module": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/module" },
+    "producedBy": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/producedBy" },
+    "mode": { "enum": ["repo", "pr"] },
+    "base": { "$ref": "#/$defs/commit" },
+    "runner": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" },
+    "seed": { "type": "string", "pattern": "^(0|[1-9][0-9]*)$" },
+    "partial": { "type": "boolean" },
+    "promisesChecked": { "type": "boolean" },
+    "counts": {
+      "type": "object",
+      "required": ["tests", "verifiesNothing", "caught", "unproven", "notSampled", "notGreen"],
+      "properties": {
+        "tests": { "$ref": "#/$defs/count" },
+        "verifiesNothing": { "$ref": "#/$defs/count" },
+        "caught": { "$ref": "#/$defs/count" },
+        "unproven": { "$ref": "#/$defs/count" },
+        "notSampled": { "$ref": "#/$defs/count" },
+        "notGreen": { "$ref": "#/$defs/count" }
+      }
+    },
+    "mutants": { "type": "array", "items": { "$ref": "#/$defs/mutant" } },
+    "tests": { "type": "array", "items": { "$ref": "#/$defs/test" } },
+    "promises": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "quote", "source"],
+        "properties": {
+          "id": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" },
+          "quote": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" },
+          "source": {
+            "type": "object",
+            "required": ["name", "digest"],
+            "properties": {
+              "name": { "type": "string", "pattern": "^(README\\.md|description|issue #[1-9][0-9]*)$" },
+              "digest": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/digest" }
+            }
+          }
+        }
+      }
+    },
+    "witnesses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "promise", "name", "imports", "code"],
+        "properties": {
+          "id": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/sha256Hex" },
+          "promise": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" },
+          "name": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" },
+          "imports": { "type": "string" },
+          "code": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" },
+          "admitted": { "type": "boolean" },
+          "blockBearing": { "type": "boolean" }
+        }
+      }
+    },
+    "brokenPromises": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["promise", "mutant", "witness"],
+        "properties": {
+          "promise": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" },
+          "mutant": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/sha256Hex" },
+          "witness": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/sha256Hex" }
+        }
+      }
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["promise", "witness"],
+        "properties": {
+          "promise": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" },
+          "witness": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/sha256Hex" }
+        }
+      }
+    }
+  },
+  "not": { "required": ["requirement"] },
+  "if": { "required": ["mode"], "properties": { "mode": { "const": "pr" } } },
+  "then": { "required": ["base"] },
+  "else": { "not": { "required": ["base"] } },
+  "$defs": {
+    "commit": { "type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$" },
+    "count": { "type": "integer", "minimum": 0 },
+    "relativePath": {
+      "type": "string",
+      "pattern": "^(?:[^/\\\\\\x00.][^/\\\\\\x00]*|\\.[^/\\\\\\x00.][^/\\\\\\x00]*|\\.\\.[^/\\\\\\x00]+)(?:/(?:[^/\\\\\\x00.][^/\\\\\\x00]*|\\.[^/\\\\\\x00.][^/\\\\\\x00]*|\\.\\.[^/\\\\\\x00]+))*$"
+    },
+    "mutant": {
+      "type": "object",
+      "required": ["id", "origin", "edits", "lines"],
+      "properties": {
+        "id": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/sha256Hex" },
+        "origin": { "enum": ["operator", "model"] },
+        "family": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" },
+        "sentinel": { "type": "boolean" },
+        "edits": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["file", "qualname", "new_source"],
+            "properties": {
+              "file": { "$ref": "#/$defs/relativePath" },
+              "qualname": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" },
+              "target": { "enum": ["module_assignment", "module_addition"] },
+              "new_source": { "type": "string" }
+            }
+          }
+        },
+        "lines": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["file", "line"],
+            "properties": {
+              "file": { "$ref": "#/$defs/relativePath" },
+              "line": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "routes": { "type": "array", "items": { "$ref": "#/$defs/route" } }
+      },
+      "if": { "required": ["sentinel"], "properties": { "sentinel": { "const": true } } },
+      "then": { "properties": { "origin": { "const": "operator" }, "routes": { "maxItems": 0 } } }
+    },
+    "route": {
+      "type": "object",
+      "required": ["kind"],
+      "oneOf": [
+        {
+          "properties": { "kind": { "const": "killed_by_test" }, "test": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" } },
+          "required": ["test"],
+          "not": { "anyOf": [{ "required": ["operation"] }, { "required": ["input"] }, { "required": ["channel"] }, { "required": ["reference"] }, { "required": ["mutant"] }, { "required": ["witness"] }] }
+        },
+        {
+          "properties": {
+            "kind": { "const": "f3_difference" },
+            "operation": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" },
+            "input": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" },
+            "channel": { "enum": ["return_value", "exception", "argument_mutation"] },
+            "reference": { "type": "string" },
+            "mutant": { "type": "string" }
+          },
+          "required": ["operation", "input", "channel"],
+          "not": { "anyOf": [{ "required": ["test"] }, { "required": ["witness"] }] }
+        },
+        {
+          "properties": { "kind": { "const": "witness_failure" }, "witness": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/sha256Hex" } },
+          "required": ["witness"],
+          "not": { "anyOf": [{ "required": ["test"] }, { "required": ["operation"] }, { "required": ["input"] }, { "required": ["channel"] }, { "required": ["reference"] }, { "required": ["mutant"] }] }
+        }
+      ]
+    },
+    "test": {
+      "type": "object",
+      "required": ["id", "class"],
+      "properties": {
+        "id": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" },
+        "class": { "enum": ["verifies_nothing", "caught", "unproven"] },
+        "reason": { "enum": ["too_few_changes", "inconclusive_outcome", "kills_sentinel"] },
+        "changes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["mutant", "outcome"],
+            "properties": {
+              "mutant": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/sha256Hex" },
+              "outcome": { "enum": ["killed", "survived", "inconclusive"] }
+            }
+          }
+        },
+        "notStarted": { "type": "array", "items": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/sha256Hex" }, "uniqueItems": true },
+        "promises": { "type": "array", "items": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/nonEmptyString" }, "uniqueItems": true }
+      },
+      "if": { "required": ["class"], "properties": { "class": { "const": "unproven" } } },
+      "then": { "required": ["reason"] },
+      "else": { "not": { "required": ["reason"] } }
+    },
+    "statement": {
+      "type": "object",
+      "required": ["_type", "subject", "predicateType", "predicate"],
+      "properties": {
+        "_type": { "const": "https://in-toto.io/Statement/v1" },
+        "subject": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["name", "digest"],
+            "properties": {
+              "name": { "$ref": "#/$defs/commit" },
+              "digest": { "$ref": "https://rachid-chabane.com/attestations/common/v1#/$defs/digest" }
+            }
+          }
+        },
+        "predicateType": { "const": "https://rachid-chabane.com/attestations/scan/v1" },
+        "predicate": { "$ref": "#" }
+      }
+    }
+  }
+}

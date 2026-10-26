@@ -34,6 +34,8 @@ const (
 	CodeExecutedWithExecutor      ViolationCode = "executed_with_executor"
 	CodeInconsistentAttribution   ViolationCode = "inconsistent_attribution"
 	CodeInputDescriptor           ViolationCode = "input_descriptor"
+	CodeCounterexampleNotLocal    ViolationCode = "counterexample_not_local"
+	CodeCounterexampleSize        ViolationCode = "counterexample_size"
 )
 
 // Violation is one broken invariant at a JSON path of the statement.

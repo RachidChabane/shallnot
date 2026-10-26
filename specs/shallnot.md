@@ -436,6 +436,17 @@ The requirements of shallnot itself, in its own Markdown spec format.
   clause; SHALL never show the mutant's code; and SHALL add nothing under
   `signed` trust or for a statement produced elsewhere.
 
+- **SN-140~1**: WHEN a mutant of a discriminating-power statement carries a
+  counterexample THE SYSTEM SHALL apply the format's counterexample rules:
+  report `counterexample_not_local` unless the statement is produced locally;
+  report `unknown_value` for an origin other than `targeted` or `operator`, or
+  for a targeted origin without a slot of `S1`, `S2` or `S3` or with a family;
+  report `missing_field` for an operator origin without a family or with a
+  slot, or unless exactly one example index or witness is present; when only a
+  witness is present, report `missing_field` for an empty name or code and
+  `counterexample_size` for code longer than 49,152 bytes, whether or not it is
+  marked truncated; and accept counterexamples that satisfy these rules.
+
 ## Architecture
 
 - **SN-66~1**: THE binary SHALL link no networking package.

@@ -184,6 +184,21 @@ const (
 	OriginOperator = "operator"
 )
 
+// Generation slots of a targeted counterexample.
+const (
+	SlotDirect   = "S1"
+	SlotBoundary = "S2"
+	SlotPartial  = "S3"
+)
+
+// SourceViewCap is the format's maximum witness code size in bytes.
+const SourceViewCap = 48 << 10
+
+var (
+	counterexampleOrigins = []string{OriginTargeted, OriginOperator}
+	generationSlots       = []string{SlotDirect, SlotBoundary, SlotPartial}
+)
+
 // Counterexample is what a module records for a blocking survivor of a local
 // statement: how the mutant was drawn and one confirmed witness of the criterion
 // it fails, the index of one of the criterion's examples or a witness test

@@ -138,7 +138,11 @@ func (p *DiscriminatingPower) check(sink *collector, subject []Subject) {
 	p.Executor.check(sink, "predicate.executor")
 	checkAscending(sink, "predicate.mutants", p.Mutants, func(a, b Mutant) int { return strings.Compare(a.Digest, b.Digest) })
 	for index, mutant := range p.Mutants {
-		checkMutant(sink, fmt.Sprintf("predicate.mutants[%d]", index), mutant)
+		path := fmt.Sprintf("predicate.mutants[%d]", index)
+		checkMutant(sink, path, mutant)
+		if mutant.Extensions != nil {
+			checkCounterexample(sink, path+".extensions.counterexample", p.ProducedBy, mutant.Extensions.Counterexample)
+		}
 	}
 	checkAscending(sink, "predicate.examples", p.Examples, func(a, b ExampleRun) int { return cmp.Compare(a.Index, b.Index) })
 	for index, example := range p.Examples {
@@ -192,6 +196,38 @@ func checkMutant(sink *collector, path string, mutant Mutant) {
 	if mutant.Extensions != nil {
 		checkDecision(sink, path+".extensions.decision", mutant.Extensions.Decision)
 		checkAttribution(sink, path, mutant)
+	}
+}
+
+// checkCounterexample enforces the shape of a counterexample and that only a
+// local statement carries one.
+func checkCounterexample(sink *collector, path string, producedBy ProducedBy, counterexample *Counterexample) {
+	if counterexample == nil {
+		return
+	}
+	if producedBy != ProducedByLocal {
+		sink.add(CodeCounterexampleNotLocal, path, "a statement produced by %s carries no counterexample", producedBy)
+	}
+	checkMember(sink, path+".origin", counterexample.Origin, counterexampleOrigins)
+	switch counterexample.Origin {
+	case OriginTargeted:
+		if !slices.Contains(generationSlots, counterexample.Slot) || counterexample.Family != "" {
+			sink.add(CodeUnknownValue, path+".slot", "a targeted mutant names one slot of %v and no family", generationSlots)
+		}
+	case OriginOperator:
+		if counterexample.Family == "" || counterexample.Slot != "" {
+			sink.add(CodeMissingField, path+".family", "an operator mutant names its family and no slot")
+		}
+	}
+	switch {
+	case (counterexample.Example == nil) == (counterexample.Witness == nil):
+		sink.add(CodeMissingField, path, "a counterexample shows exactly one example or one witness")
+	case counterexample.Witness != nil:
+		checkNotEmpty(sink, path+".witness.name", counterexample.Witness.Name)
+		checkNotEmpty(sink, path+".witness.code", counterexample.Witness.Code)
+		if len(counterexample.Witness.Code) > SourceViewCap {
+			sink.add(CodeCounterexampleSize, path+".witness.code", "the code of a witness is at most %d bytes", SourceViewCap)
+		}
 	}
 }
 

@@ -94,6 +94,21 @@ each is one `proof` input, and the pair of name and `annotations.criterion` is
 unique within the statement, a repeated pair makes it `malformed`. Inputs are
 strictly ascending by role, then name, then criterion.
 
+### Counterexamples
+
+A mutant's `extensions.counterexample` is allowed only in a statement whose
+`producedBy` is `local`; otherwise it raises `counterexample_not_local`. Its
+origin is `targeted`, with a slot of `S1`, `S2` or `S3` and no family, or
+`operator`, with a nonempty family and no slot. An unknown origin or invalid
+targeted slot/family combination raises `unknown_value`; an invalid operator
+family/slot combination raises `missing_field`.
+
+Exactly one example index or witness must be present (`missing_field`
+otherwise). When only a witness is present, its name and code must be nonempty
+(`missing_field`), and its code must not exceed 49,152 bytes
+(`counterexample_size`), even when marked `truncated`. The clause may be empty.
+These violations make the statement `malformed`.
+
 ## Trust levels
 
 | Level | Admits |
