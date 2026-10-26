@@ -23,8 +23,8 @@ func TestComposition(t *testing.T) {
 			result := evaluate(config(), ev)
 			wantCategories(t, result, "stale_proof")
 			finding := result.Findings[0]
-			if outcome(t, result) != proofgate.OutcomeBlock || finding.Effect != proofgate.EffectBlock || finding.Module != "spec-proof-dp" ||
-				!strings.Contains(finding.Message, "discriminating-power") || !strings.Contains(finding.Message, "spec-proof-dp prove --changed") {
+			if outcome(t, result) != proofgate.OutcomeBlock || finding.Effect != proofgate.EffectBlock || finding.Module != "musthold-dp" ||
+				!strings.Contains(finding.Message, "discriminating-power") || !strings.Contains(finding.Message, "musthold-dp prove --changed") {
 				t.Errorf("%s: %+v", name, finding)
 			}
 			if got := result.Report.Criteria[0]; len(got.Absent) != 1 || got.Absent[0] != proof.KindDiscriminatingPower || got.Modules[proof.KindDiscriminatingPower].Outcome != proof.OutcomeAbsent {
@@ -40,7 +40,7 @@ func TestComposition(t *testing.T) {
 		for _, finding := range result.Findings {
 			effects[finding.Module] = finding.Effect
 		}
-		if effects["spec-proof-dp"] != proofgate.EffectBlock || effects["spec-proof-alignment"] != proofgate.EffectEscalate {
+		if effects["musthold-dp"] != proofgate.EffectBlock || effects["musthold-alignment"] != proofgate.EffectEscalate {
 			t.Fatalf("effects %v", effects)
 		}
 	})
@@ -112,18 +112,18 @@ func TestPendingProofs(t *testing.T) {
 		proof.PendingAwaitingHostJudgment: "awaiting_host_judgment", proof.PendingHostUnresponsive: "host_unresponsive",
 	} {
 		t.Run("reports "+category+" instead of stale_proof [verifies SN-123~1]", func(t *testing.T) {
-			result := evaluate(config(), pending("spec-proof-dp", reason))
+			result := evaluate(config(), pending("musthold-dp", reason))
 			wantCategories(t, result, category)
 			finding := result.Findings[0]
-			if finding.Module != "spec-proof-dp" || result.Report.Criteria[0].Modules[proof.KindDiscriminatingPower].State != proof.StatePending {
+			if finding.Module != "musthold-dp" || result.Report.Criteria[0].Modules[proof.KindDiscriminatingPower].State != proof.StatePending {
 				t.Fatalf("got %+v", finding)
 			}
 		})
 	}
 
 	t.Run("names the module and its fulfil skill and forbids answering the requests oneself [verifies SN-123~1]", func(t *testing.T) {
-		message := evaluate(config(), pending("spec-proof-dp", proof.PendingAwaitingHost)).Findings[0].Message
-		for _, expected := range []string{"spec-proof-dp", "spec-proof-dp-fulfil", "never answer the requests yourself"} {
+		message := evaluate(config(), pending("musthold-dp", proof.PendingAwaitingHost)).Findings[0].Message
+		for _, expected := range []string{"musthold-dp", "musthold-dp-fulfil", "never answer the requests yourself"} {
 			if !strings.Contains(message, expected) {
 				t.Errorf("no %q in %q", expected, message)
 			}
@@ -131,13 +131,13 @@ func TestPendingProofs(t *testing.T) {
 	})
 
 	t.Run("falls back to the umbrella skill for a module it does not know [verifies SN-123~1]", func(t *testing.T) {
-		if got := proof.FulfilSkill("another-module"); got != "spec-proof:prove-all" {
+		if got := proof.FulfilSkill("another-module"); got != "musthold:prove-all" {
 			t.Fatalf("skill %s", got)
 		}
 	})
 
 	t.Run("tells the agent to report to the user and not to loop when the host is unresponsive [verifies SN-123~1]", func(t *testing.T) {
-		message := evaluate(config(), pending("spec-proof-dp", proof.PendingHostUnresponsive)).Findings[0].Message
+		message := evaluate(config(), pending("musthold-dp", proof.PendingHostUnresponsive)).Findings[0].Message
 		if !strings.Contains(message, "report this to the user") && !strings.Contains(message, "Report this to the user") || !strings.Contains(message, "do not loop") {
 			t.Fatalf("message %q", message)
 		}
@@ -149,25 +149,25 @@ func TestPendingProofs(t *testing.T) {
 			proof.PendingAwaitingHostJudgment: proofgate.EffectEscalate, proof.PendingHostUnresponsive: proofgate.EffectEscalate,
 		}
 		for reason, effect := range wantEffect {
-			if got := evaluate(config(), pending("spec-proof-dp", reason)).Findings[0].Effect; got != effect {
+			if got := evaluate(config(), pending("musthold-dp", reason)).Findings[0].Effect; got != effect {
 				t.Errorf("%s: effect %v, want %v", reason, got, effect)
 			}
 		}
 	})
 
 	t.Run("reports awaiting_proof for a required module whose criterion has another module pending [verifies SN-123~1]", func(t *testing.T) {
-		ev := pending("spec-proof-dp", proof.PendingAwaitingHost)
+		ev := pending("musthold-dp", proof.PendingAwaitingHost)
 		result := evaluate(config(requireBoth), ev)
 		wantCategories(t, result, "awaiting_host", "awaiting_proof")
 		for _, finding := range result.Findings {
-			if finding.Module != "spec-proof-dp" || finding.Category.String() == "stale_proof" {
+			if finding.Module != "musthold-dp" || finding.Category.String() == "stale_proof" {
 				t.Errorf("finding %+v", finding)
 			}
 		}
 	})
 
 	t.Run("ignores a pending entry of a module that is not required [verifies SN-123~1]", func(t *testing.T) {
-		ev := pending("spec-proof-alignment", proof.PendingAwaitingHost)
+		ev := pending("musthold-alignment", proof.PendingAwaitingHost)
 		result := evaluate(config(), ev)
 		wantCategories(t, result, "stale_proof")
 	})

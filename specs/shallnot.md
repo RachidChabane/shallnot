@@ -260,7 +260,7 @@ The requirements of shallnot itself, in its own Markdown spec format.
   advisory, or a mutant is both unattributed and off-target THE SYSTEM SHALL
   report a violation.
 - **SN-106~1**: WHEN it reads the golden proofs and predicate schemas that
-  spec-proof owns THE SYSTEM SHALL give each the decode result and the exact
+  musthold owns THE SYSTEM SHALL give each the decode result and the exact
   violation codes its manifest states, and SHALL refuse a copied file whose
   SHA-256 differs from the manifest of the copy.
 - **SN-108~2**: WHEN shallnot.yaml holds a `proofs` block of the keys

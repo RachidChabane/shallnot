@@ -45,7 +45,7 @@ func writeSurvivorProof(t *testing.T, directory string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	root := filepath.Join(directory, ".spec-proof", "verified")
+	root := filepath.Join(directory, ".musthold", "verified")
 	if err := os.MkdirAll(filepath.Join(root, "discriminating-power", "REQ-1~1"), 0o755); err != nil {
 		t.Fatal(err)
 	}

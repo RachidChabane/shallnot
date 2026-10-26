@@ -73,7 +73,7 @@ func writeProofs(t *testing.T, directory string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	root := filepath.Join(directory, ".spec-proof", "verified")
+	root := filepath.Join(directory, ".musthold", "verified")
 	if err := os.MkdirAll(filepath.Join(root, "discriminating-power", "REQ-1~1"), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -125,7 +125,7 @@ func TestProofsEndToEnd(t *testing.T) {
 		result := checkProject(t, directory)
 		document := decode(t, result.stdout)
 		if result.exit != app.ExitBlocked || len(document.Findings) != 1 || document.Findings[0].Category != domain.CategoryStaleProof ||
-			document.Findings[0].Module != "spec-proof-dp" {
+			document.Findings[0].Module != "musthold-dp" {
 			t.Fatalf("exit %d, findings %+v", result.exit, document.Findings)
 		}
 	})
@@ -295,7 +295,7 @@ func writePending(t *testing.T, directory string, pending ...proof.Pending) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	root := filepath.Join(directory, ".spec-proof", "verified")
+	root := filepath.Join(directory, ".musthold", "verified")
 	if err := os.MkdirAll(root, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -305,7 +305,7 @@ func writePending(t *testing.T, directory string, pending ...proof.Pending) {
 }
 
 func awaitingHost(reason proof.PendingReason) proof.Pending {
-	return proof.Pending{Module: "spec-proof-dp", Criterion: "REQ-1~1", Reason: reason}
+	return proof.Pending{Module: "musthold-dp", Criterion: "REQ-1~1", Reason: reason}
 }
 
 func TestHookOnPendingProofs(t *testing.T) {
@@ -328,7 +328,7 @@ func TestHookOnPendingProofs(t *testing.T) {
 		if result.exit != claudeExitBlock {
 			t.Fatalf("got %+v", result)
 		}
-		for _, expected := range []string{"spec-proof-dp", "spec-proof-dp-fulfil", "Never answer the requests yourself", "awaiting_host"} {
+		for _, expected := range []string{"musthold-dp", "musthold-dp-fulfil", "Never answer the requests yourself", "awaiting_host"} {
 			if !strings.Contains(result.stderr, expected) {
 				t.Errorf("no %q in:\n%s", expected, result.stderr)
 			}

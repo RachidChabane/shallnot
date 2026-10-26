@@ -45,8 +45,8 @@ func PassedMessage(covered, nonTestable int) string {
 }
 
 const (
-	pendingHeader  = "shallnot: the proof gate is waiting for %d proof(s) that a spec-proof module produces through the host harness:\n%s\n"
-	pendingFulfil  = "Run the fulfil skill each finding names (or spec-proof:prove-all) and finish when it reports that the requests are answered. Never answer the requests yourself.\n"
+	pendingHeader  = "shallnot: the proof gate is waiting for %d proof(s) that a musthold module produces through the host harness:\n%s\n"
+	pendingFulfil  = "Run the fulfil skill each finding names (or musthold:prove-all) and finish when it reports that the requests are answered. Never answer the requests yourself.\n"
 	pendingStalled = "A module's host did not answer its requests: report this to the user, do not loop.\n"
 )
 

@@ -356,11 +356,11 @@
     },
     "proofs": {
       "type": "object",
-      "description": "Consumption of the verified proof set that spec-proof modules write. Absent: no proof is read.",
+      "description": "Consumption of the verified proof set that musthold modules write. Absent: no proof is read.",
       "properties": {
         "verified_dir": {
           "type": "string",
-          "description": "Directory holding the verified proof set and its manifest.json, relative to the config file's directory. Default .spec-proof/verified."
+          "description": "Directory holding the verified proof set and its manifest.json, relative to the config file's directory. Default .musthold/verified."
         },
         "require": {
           "type": "array",

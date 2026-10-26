@@ -91,7 +91,7 @@ func core(inputs ...proof.Input) proof.Core {
 	if len(inputs) == 0 {
 		inputs = []proof.Input{Input(proof.RoleModelID, modelName)}
 	}
-	return proof.Core{Module: proof.Module{Name: "spec-proof-module", Version: moduleVersion}, Inputs: inputs, ProducedBy: proof.ProducedByCI}
+	return proof.Core{Module: proof.Module{Name: "musthold-module", Version: moduleVersion}, Inputs: inputs, ProducedBy: proof.ProducedByCI}
 }
 
 func requirementSubject(id string, revision int, statementDigest string) []proof.Subject {

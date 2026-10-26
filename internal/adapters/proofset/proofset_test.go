@@ -78,10 +78,10 @@ func TestLoad(t *testing.T) {
 		root := project(t)
 		files := statementFiles()
 		for name, content := range files {
-			write(t, root, ".spec-proof/verified/"+name, content)
+			write(t, root, ".musthold/verified/"+name, content)
 		}
 		manifest := manifestOf(t, proof.TrustSigned, files, nil)
-		write(t, root, ".spec-proof/verified/manifest.json", manifest)
+		write(t, root, ".musthold/verified/manifest.json", manifest)
 
 		evidence, err := proofset.Load(source(root))
 		if err != nil {
@@ -113,7 +113,7 @@ func TestLoad(t *testing.T) {
 			"unknown reason": `{"verifierVersion":"1","trust":"local","statements":[],"pending":[{"module":"m","criterion":"PARK-2~1","reason":"quota_paused"}]}`,
 		} {
 			root := project(t)
-			write(t, root, ".spec-proof/verified/manifest.json", []byte(content))
+			write(t, root, ".musthold/verified/manifest.json", []byte(content))
 			evidence, err := proofset.Load(source(root))
 			if err != nil || !evidence.ManifestPresent || evidence.ManifestProblem == "" || evidence.Usable() || len(evidence.Statements) != 0 {
 				t.Errorf("%s: got %+v, %v", name, evidence, err)
@@ -131,7 +131,7 @@ func TestLoad(t *testing.T) {
 		}
 		for name, content := range files {
 			if content != nil {
-				write(t, root, ".spec-proof/verified/"+name, content)
+				write(t, root, ".musthold/verified/"+name, content)
 			}
 		}
 		listed := map[string]string{"a-tampered.json": prooftest.Digest("other bytes")}
@@ -139,7 +139,7 @@ func TestLoad(t *testing.T) {
 		for name, content := range files {
 			manifestFiles[name] = content
 		}
-		write(t, root, ".spec-proof/verified/manifest.json", manifestOf(t, proof.TrustLocal, manifestFiles, listed))
+		write(t, root, ".musthold/verified/manifest.json", manifestOf(t, proof.TrustLocal, manifestFiles, listed))
 		evidence, err := proofset.Load(source(root))
 		if err != nil {
 			t.Fatal(err)
@@ -157,9 +157,9 @@ func TestLoad(t *testing.T) {
 	t.Run("ignores a statement of another predicate type and a file the manifest does not list [verifies SN-109~1]", func(t *testing.T) {
 		root := project(t)
 		future := []byte(`{"_type":"` + proof.StatementType + `","subject":[],"predicateType":"https://rachid-chabane.com/attestations/future/v1","predicate":{}}`)
-		write(t, root, ".spec-proof/verified/future.json", future)
-		write(t, root, ".spec-proof/verified/unlisted.json", []byte("junk"))
-		write(t, root, ".spec-proof/verified/manifest.json", manifestOf(t, proof.TrustLocal, map[string][]byte{"future.json": future}, nil))
+		write(t, root, ".musthold/verified/future.json", future)
+		write(t, root, ".musthold/verified/unlisted.json", []byte("junk"))
+		write(t, root, ".musthold/verified/manifest.json", manifestOf(t, proof.TrustLocal, map[string][]byte{"future.json": future}, nil))
 		evidence, err := proofset.Load(source(root))
 		if err != nil || len(evidence.Statements) != 1 || !evidence.Statements[0].Ignored || evidence.Statements[0].Problem != "" {
 			t.Fatalf("got %+v, %v", evidence.Statements, err)
@@ -172,8 +172,8 @@ func writeProofNaming(t *testing.T, root string, inputs ...proof.Input) {
 	t.Helper()
 	statement := prooftest.Seal(prooftest.DiscriminatingPower("PARK-2", 1, prooftest.Digest("statement"), inputs...))
 	content := prooftest.Bytes(statement)
-	write(t, root, ".spec-proof/verified/dp/PARK-2~1/key.json", content)
-	write(t, root, ".spec-proof/verified/manifest.json", manifestOf(t, proof.TrustLocal, map[string][]byte{"dp/PARK-2~1/key.json": content}, nil))
+	write(t, root, ".musthold/verified/dp/PARK-2~1/key.json", content)
+	write(t, root, ".musthold/verified/manifest.json", manifestOf(t, proof.TrustLocal, map[string][]byte{"dp/PARK-2~1/key.json": content}, nil))
 }
 
 func fileInput(role proof.InputRole, name, content string) proof.Input {

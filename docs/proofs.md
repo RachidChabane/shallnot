@@ -13,7 +13,7 @@ Without the block nothing changes: no proof is read and `extensions` stays empty
 
 ## The verified set
 
-`proofs.verified_dir` (default `.spec-proof/verified`) holds one `manifest.json`
+`proofs.verified_dir` (default `.musthold/verified`) holds one `manifest.json`
 and the statement files it lists. The signature verifier writes them; `shallnot`
 reads only this directory. Every statement is an in-toto Statement v1 whose
 predicate is one of three types:
@@ -208,8 +208,8 @@ A floor weaker than `restricted` is flagged in the report
 
 | Finding | What to do |
 |---|---|
-| `stale_proof` | Run the command the message names, or the `spec-proof:prove-all` skill. Never edit a proof file. |
-| `awaiting_host`, `awaiting_proof`, `awaiting_host_judgment` | Run the fulfil skill the message names (`<module>-fulfil`, or `spec-proof:prove-all`). Never answer the module's requests yourself. |
+| `stale_proof` | Run the command the message names, or the `musthold:prove-all` skill. Never edit a proof file. |
+| `awaiting_host`, `awaiting_proof`, `awaiting_host_judgment` | Run the fulfil skill the message names (`<module>-fulfil`, or `musthold:prove-all`). Never answer the module's requests yourself. |
 | `host_unresponsive` | Report it to the user. Do not loop. |
 | `surviving_valid_mutant` | Under `trust: local`, the message names how the mutant was drawn (a targeted slot or an operator family) and the input the tests do not distinguish: the requirement's example the mutant fails, written as the spec writes it, or the witness test it fails. Add or strengthen a test bound to the requirement that checks that input. The mutant's code is never shown, so a test cannot be fitted to it. |
 

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Copy the golden proofs and the predicate schemas of a spec-proof checkout into
+# Copy the golden proofs and the predicate schemas of a musthold checkout into
 # internal/domain/proof/testdata, then write and verify a SHA-256 manifest of
-# every copied file. Predicate schemas and goldens are owned by spec-proof;
+# every copied file. Predicate schemas and goldens are owned by musthold;
 # nothing flows the other way.
 #
-# usage: script/sync-proof-fixtures <spec-proof checkout>
+# usage: script/sync-proof-fixtures <musthold checkout>
 set -euo pipefail
 if [ "$#" -ne 1 ]; then
-  echo "usage: script/sync-proof-fixtures <spec-proof checkout>" >&2
+  echo "usage: script/sync-proof-fixtures <musthold checkout>" >&2
   exit 2
 fi
 checkout="$(cd "$1" && pwd)"

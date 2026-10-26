@@ -213,7 +213,7 @@ go to the pipeline.
 | `detached_example` | Spec owner | Move the example into the statement it belongs to: directly under the statement, with no blank line, and before any `Non-testable:` line. |
 | `statement_changed` | Spec owner | If the meaning changed, bump the revision so that the tests are re-verified. If only the wording changed, nothing: the finding stays a warning, and the next baseline carries the new digest. |
 | `unknown_dimension` | Spec owner | Name one of the dimensions of [the closed list](spec-format.md#out-of-scope-declarations), or remove the declaration. |
-| `stale_proof` | Implementing agent | Run the command the message names, or the `spec-proof:prove-all` skill, to regenerate the proof. Never edit or write a proof file. |
+| `stale_proof` | Implementing agent | Run the command the message names, or the `musthold:prove-all` skill, to regenerate the proof. Never edit or write a proof file. |
 | `malformed_proof` | Pipeline | Regenerate the verified set. A proof that breaks the format or differs from its manifest is evidence of a faulty module or a tampered file: report it. |
 | `correct_code_fails`, `example_failed` | Implementing agent | Fix the code until the tests and the examples of the requirement pass on the reference code. |
 | `surviving_valid_mutant` | Implementing agent | Strengthen the tests until one fails on the mutant. Never weaken the requirement. |

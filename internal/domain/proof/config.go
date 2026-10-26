@@ -8,7 +8,7 @@ import (
 
 // Defaults of the `proofs` configuration.
 const (
-	DefaultVerifiedDir        = ".spec-proof/verified"
+	DefaultVerifiedDir        = ".musthold/verified"
 	DefaultValidityThreshold  = 0.70
 	DefaultAlignmentThreshold = 0.70
 	DefaultMaxHostExclusions  = 2

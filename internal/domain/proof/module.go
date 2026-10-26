@@ -6,18 +6,18 @@ import "strings"
 func (k Kind) ModuleName() string {
 	switch k {
 	case KindAlignment:
-		return "spec-proof-alignment"
+		return "musthold-alignment"
 	case KindDiscriminatingPower:
-		return "spec-proof-dp"
+		return "musthold-dp"
 	default:
-		return "spec-proof-completeness"
+		return "musthold-completeness"
 	}
 }
 
 const (
 	fulfilSkillSuffix = "-fulfil"
 	// UmbrellaSkill is the skill that runs the fulfil loop of every module present.
-	UmbrellaSkill = "spec-proof:prove-all"
+	UmbrellaSkill = "musthold:prove-all"
 )
 
 // KindOfModule resolves the name of a module, by its binary or by its kind, to its kind.

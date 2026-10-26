@@ -125,13 +125,13 @@ Settings are resolved in three layers, later overriding earlier:
 
 ## The `proofs` block
 
-`proofs` turns on the consumption of the proofs that spec-proof modules write
+`proofs` turns on the consumption of the proofs that musthold modules write
 (see [proofs.md](proofs.md)). Unknown keys are refused. Without the block no
 proof is read.
 
 | Key | Type | Default | Semantics |
 |---|---|---|---|
-| `verified_dir` | string | `.spec-proof/verified` | Directory of the verified proof set and its `manifest.json`, relative to the config file's directory. |
+| `verified_dir` | string | `.musthold/verified` | Directory of the verified proof set and its `manifest.json`, relative to the config file's directory. |
 | `require` | array of string | `[]` | Kinds every covered requirement in focus must hold a valid proof of: `alignment`, `discriminating-power` or their predicate type URIs. `completeness` is advisory and is refused. |
 | `code` | array of string | `[]` | Files, directories or globs that a proof's `code_tree` descriptors may name. A descriptor outside them makes the proof stale, so without entries a proof that names a `code_tree` file is stale. |
 | `trust` | string | `signed` | `signed` or `local`. |
